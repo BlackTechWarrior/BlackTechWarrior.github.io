@@ -53,6 +53,24 @@ body.dark .quote {
     padding-bottom: 20px;
 }
 
+.name-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.profile-picture {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #cccccc;
+}
+
+body.dark .profile-picture {
+    border-color: #444444;
+}
+
 body.dark .header {
     border-bottom-color: #444444;
 }
@@ -156,6 +174,15 @@ p {
 @media (max-width: 600px) {
     body {
         padding: 10px;
+    }
+
+    .profile-picture {
+        width: 80px;
+        height: 80px;
+    }
+
+    .name-section {
+        gap: 10px;
     }
 
     .header {
