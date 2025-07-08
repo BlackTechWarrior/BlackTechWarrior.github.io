@@ -1,0 +1,178 @@
+/* Basic reset and typography */
+body {
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.5;
+    margin: 0;
+    padding: 20px;
+    background-color: #ffffff;
+    color: #000000;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Dark mode */
+body.dark {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+}
+
+body.dark a {
+    color: #87ceeb;
+}
+
+body.dark a:visited {
+    color: #dda0dd;
+}
+
+body.dark .theme-toggle {
+    background-color: #333333;
+    color: #e0e0e0;
+    border-color: #555555;
+}
+
+body.dark .section {
+    border-color: #444444;
+}
+
+body.dark .quote {
+    border-color: #444444;
+}
+
+/* Container */
+.container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #cccccc;
+    padding-bottom: 20px;
+}
+
+body.dark .header {
+    border-bottom-color: #444444;
+}
+
+h1 {
+    font-size: 1.8em;
+    margin: 0;
+    font-weight: normal;
+}
+
+.theme-toggle {
+    background-color: #f5f5f5;
+    border: 1px solid #cccccc;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-family: inherit;
+}
+
+.theme-toggle:hover {
+    background-color: #e0e0e0;
+}
+
+body.dark .theme-toggle:hover {
+    background-color: #404040;
+}
+
+/* Quote */
+.quote {
+    border: 1px solid #cccccc;
+    padding: 15px;
+    margin: 20px 0;
+    font-style: italic;
+}
+
+.attribution {
+    text-align: right;
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
+/* Links */
+.links {
+    text-align: center;
+    margin: 20px 0;
+    padding: 10px;
+}
+
+.links a {
+    text-decoration: none;
+    margin: 0 5px;
+}
+
+.links a:hover {
+    text-decoration: underline;
+}
+
+/* Sections */
+.section {
+    border: 1px solid #cccccc;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+h2 {
+    font-size: 1.3em;
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-weight: normal;
+}
+
+/* Lists */
+ul {
+    margin: 10px 0;
+    padding-left: 25px;
+}
+
+li {
+    margin: 5px 0;
+}
+
+/* Links */
+a {
+    color: #0000ee;
+}
+
+a:visited {
+    color: #551a8b;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Paragraphs */
+p {
+    margin: 10px 0;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    .container {
+        max-width: 100%;
+    }
+
+    .quote, .section {
+        padding: 10px;
+    }
+}

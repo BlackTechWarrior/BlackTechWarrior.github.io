@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peter Moses Personal Site</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Peter Moses here!</h1>
+        <button class="theme-toggle" onclick="toggleTheme()">
+            <span id="theme-text">Dark Mode</span>
+        </button>
+    </div>
+
+    <div class="quote">
+        <q><i>Pure mathematics is, in its way, the poetry of logical ideas.</i></q>
+        <p class="attribution">- Albert Einstein</p>
+    </div>
+
+    <div class="links">
+        <a href="https://github.com/BlackTechWarrior">GitHub</a> |
+        <a href="https://linkedin.com/in/petamos">LinkedIn</a> |
+        <a href="https://p14m.blogspot.com/">Blog</a>
+    </div>
+
+    <div class="section">
+        <p>I'm a Computer Engineering Undergraduate student at the University of Texas at Arlington with a focus on High Performance Computing and AI/ML.</p>
+
+        <p>I'm actively involved in:</p>
+        <ul>
+            <li>Our school's NSBE and ACM clubs</li>
+        </ul>
+
+        <p>I've also been part of <strong>leadership</strong> through:</p>
+        <ul>
+            <li>Freshman Leaders on Campus <i>(FLOC)</i> during my freshman year</li>
+            <li>Being a student advocate for our school's <a href="https://cahsi.utep.edu/">CAHSI</a> chapter whereby my goal was to bring awareness about the organization and its initiatives</li>
+        </ul>
+
+        <p>My long term goal is to use technology and math to solve really hard and fascinating problems and through that, positively impact the world.</p>
+
+        <p>I'm always looking for opportunities to both learn and actively apply my current knowledge.</p>
+    </div>
+
+    <div class="section">
+        <h2>Projects</h2>
+        <p>Projects will be added here as I complete them.</p>
+    </div>
+
+    <div class="section">
+        <h2>Publications</h2>
+        <p>Publications and research papers will be listed here once available.</p>
+    </div>
+
+    <div class="section">
+        <h2>Resume</h2>
+        <p><a href="peter_moses_resume.pdf">Download/View Resume (PDF)</a></p>
+    </div>
+
+    <div class="section">
+        <h2>Contact</h2>
+        <p>Email: petermoses862@gmail.com</p>
+        <p>Phone: (682) 702-4119</p>
+    </div>
+</div>
+
+<script>
+    function toggleTheme() {
+        const body = document.body;
+        const themeText = document.getElementById('theme-text');
+
+        if (body.classList.contains('dark')) {
+            body.classList.remove('dark');
+            themeText.textContent = 'Dark Mode';
+            localStorage.setItem('theme', 'light');
+        } else {
+            body.classList.add('dark');
+            themeText.textContent = 'Light Mode';
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+
+    // Load saved theme on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedTheme = localStorage.getItem('theme');
+        const themeText = document.getElementById('theme-text');
+
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark');
+            themeText.textContent = 'Light Mode';
+        }
+    });
+</script>
+</body>
+</html>
