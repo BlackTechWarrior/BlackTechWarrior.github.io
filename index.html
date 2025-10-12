@@ -10,11 +10,11 @@
 <div class="container">
     <div class="header">
         <div class="name-section">
-            <img src = "peter_moses_image.png" alt = "Peter Moses" class="profile-picture">
+            <img src = "peter_moses_image.jpeg" alt = "Peter Moses" class="profile-picture">
             <h1>Peter Moses here!</h1>
         </div>
         <button class="theme-toggle" onclick="toggleTheme()">
-            <span id="theme-text">Dark Mode</span>
+            <span id="theme-text">☾</span>
         </button>
     </div>
 
@@ -84,11 +84,11 @@
 
         if (body.classList.contains('dark')) {
             body.classList.remove('dark');
-            themeText.textContent = 'Dark Mode';
+            themeText.textContent = '☾';
             localStorage.setItem('theme', 'light');
         } else {
             body.classList.add('dark');
-            themeText.textContent = 'Light Mode';
+            themeText.textContent = '☼';
             localStorage.setItem('theme', 'dark');
         }
     }
@@ -100,7 +100,7 @@
 
         if (savedTheme === 'dark') {
             document.body.classList.add('dark');
-            themeText.textContent = 'Light Mode';
+            themeText.textContent = '☼';
         }
     });
 </script>
