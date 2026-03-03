@@ -189,6 +189,34 @@
     }
     .toggle-btns { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 
+    /* Mode selector - segmented control */
+    .mode-selector {
+      display: inline-flex;
+      border: 1px solid #cccccc;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    body.dark .mode-selector { border-color: #444444; }
+
+    .mode-btn {
+      background: transparent;
+      border: none;
+      color: #666666;
+      padding: 6px 14px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-right: 1px solid #cccccc;
+    }
+    .mode-btn:last-child { border-right: none; }
+    .mode-btn:hover { background: rgba(0, 102, 204, 0.05); color: #333333; }
+    .mode-btn.on { background: #0066cc; color: white; }
+    body.dark .mode-btn { color: #888888; border-right-color: #444444; }
+    body.dark .mode-btn:hover { background: rgba(135, 206, 235, 0.1); color: #cccccc; }
+    body.dark .mode-btn.on { background: #87ceeb; color: #1a1a1a; }
+
     .err {
       background: rgba(220, 53, 69, 0.1);
       border: 1px solid rgba(220, 53, 69, 0.3);
@@ -384,6 +412,8 @@
       .km-cell { width: 38px; height: 38px; font-size: 14px; }
       h1 { font-size: 1.5em; }
       .toggle-btns { margin-left: 0; margin-top: 10px; width: 100%; justify-content: flex-start; }
+      .mode-selector { width: 100%; display: flex; }
+      .mode-btn { flex: 1; text-align: center; }
     }
   </style>
 </head>
@@ -404,16 +434,35 @@
       <div class="input-row">
         <div>
           <label class="lbl">Variables</label>
-          <input class="inp" id="varInput" value="A, B, Cin" placeholder="A, B, C, D" spellcheck="false">
+          <input class="inp" id="varInput" value="A, B, C" placeholder="A, B, C, D" spellcheck="false">
         </div>
         <div>
-          <label class="lbl">Boolean Expression <span class="lbl-hint">(leave empty for manual)</span></label>
-          <input class="inp" id="exprInput" value="A * Cin + B * Cin + A * B" placeholder="A * B + ~C . D" spellcheck="false">
+          <label class="lbl">Input Mode</label>
+          <div class="mode-selector">
+            <button class="mode-btn on" id="modeExpr">Expression</button>
+            <button class="mode-btn" id="modeMinterms">Minterms</button>
+            <button class="mode-btn" id="modeMaxterms">Maxterms</button>
+          </div>
         </div>
       </div>
 
-      <div>
-        <label class="lbl">Don't-care minterms <span class="lbl-hint">(optional)</span></label>
+      <div id="inputContainer">
+        <div id="exprInputRow">
+          <label class="lbl">Boolean Expression <span class="lbl-hint">(leave empty for manual)</span></label>
+          <input class="inp" id="exprInput" value="A * B + C'" placeholder="A * B + ~C . D" spellcheck="false">
+        </div>
+        <div id="mintermsInputRow" style="display: none;">
+          <label class="lbl">Minterms <span class="lbl-hint">(comma-separated indices where F=1)</span></label>
+          <input class="inp" id="mintermsInput" placeholder="e.g. 1, 3, 5, 7" spellcheck="false">
+        </div>
+        <div id="maxtermsInputRow" style="display: none;">
+          <label class="lbl">Maxterms <span class="lbl-hint">(comma-separated indices where F=0)</span></label>
+          <input class="inp" id="maxtermsInput" placeholder="e.g. 0, 2, 4, 6" spellcheck="false">
+        </div>
+      </div>
+
+      <div style="margin-top: 15px;">
+        <label class="lbl">Don't-care terms <span class="lbl-hint">(optional)</span></label>
         <input class="inp" id="dcInput" placeholder="e.g. 2, 5, 7" spellcheck="false" style="max-width: 300px;">
       </div>
 
@@ -423,12 +472,14 @@
           <button class="btn-t on" id="groupsBtn">Groups</button>
           <button class="btn-t" id="posBtn">POS</button>
           <button class="btn-t" id="truthBtn">Truth Table</button>
+          <button class="btn-t" id="verilogBtn">Verilog</button>
+          <button class="btn-t" id="vhdlBtn">VHDL</button>
         </div>
       </div>
 
       <div id="errorBox" class="err" style="display: none;"></div>
 
-      <div class="ref-section">
+      <div class="ref-section" id="refSection">
         <strong>Operators:</strong> ' ~ ! (NOT) &middot; . * &amp; (AND) &middot; + | (OR) &middot; ^ (XOR) &middot; @ (XNOR) &middot; % (NAND) &middot; # (NOR)<br>
         <strong>Keywords:</strong> and, or, not, nand, nor, xor, xnor &middot; <strong>Precedence:</strong> NOT &rarr; AND/NAND &rarr; XOR/XNOR &rarr; OR/NOR
       </div>
@@ -818,14 +869,19 @@ let state = {
   showTruth: false,
   showGroups: true,
   showPOS: false,
+  showVerilog: false,
+  showVHDL: false,
   manualOverrides: {},
   manualMode: false,
+  inputMode: 'expression', // 'expression', 'minterms', 'maxterms'
 };
 
 /* ═══════════════════════ DOM REFS ═══════════════════════ */
 
 const varInput = document.getElementById('varInput');
 const exprInput = document.getElementById('exprInput');
+const mintermsInput = document.getElementById('mintermsInput');
+const maxtermsInput = document.getElementById('maxtermsInput');
 const dcInput = document.getElementById('dcInput');
 const generateBtn = document.getElementById('generateBtn');
 const groupsBtn = document.getElementById('groupsBtn');
@@ -835,6 +891,15 @@ const errorBox = document.getElementById('errorBox');
 const kmapPanel = document.getElementById('kmapPanel');
 const truthPanel = document.getElementById('truthPanel');
 const toast = document.getElementById('toast');
+const modeExpr = document.getElementById('modeExpr');
+const modeMinterms = document.getElementById('modeMinterms');
+const modeMaxterms = document.getElementById('modeMaxterms');
+const exprInputRow = document.getElementById('exprInputRow');
+const mintermsInputRow = document.getElementById('mintermsInputRow');
+const maxtermsInputRow = document.getElementById('maxtermsInputRow');
+const refSection = document.getElementById('refSection');
+const verilogBtn = document.getElementById('verilogBtn');
+const vhdlBtn = document.getElementById('vhdlBtn');
 
 /* ═══════════════════════ FUNCTIONS ═══════════════════════ */
 
@@ -857,6 +922,53 @@ function copyText(text, label) {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).then(() => showToast(`Copied ${label}!`));
   }
+}
+
+function setInputMode(mode) {
+  state.inputMode = mode;
+  hideError();
+
+  // Update mode buttons
+  modeExpr.classList.toggle('on', mode === 'expression');
+  modeMinterms.classList.toggle('on', mode === 'minterms');
+  modeMaxterms.classList.toggle('on', mode === 'maxterms');
+
+  // Show/hide input rows
+  exprInputRow.style.display = mode === 'expression' ? 'block' : 'none';
+  mintermsInputRow.style.display = mode === 'minterms' ? 'block' : 'none';
+  maxtermsInputRow.style.display = mode === 'maxterms' ? 'block' : 'none';
+
+  // Show/hide operator reference (only relevant for expression mode)
+  refSection.style.display = mode === 'expression' ? 'block' : 'none';
+}
+
+function parseTermList(input, maxVal, termType) {
+  const terms = [];
+  const seen = new Set();
+
+  if (!input.trim()) return { terms: [], isEmpty: true };
+
+  const parts = input.split(/[,\s]+/).filter(Boolean);
+
+  for (const p of parts) {
+    const n = parseInt(p);
+    if (isNaN(n)) {
+      throw new Error(`Invalid ${termType}: "${p}" is not a number.`);
+    }
+    if (n < 0) {
+      throw new Error(`Invalid ${termType}: ${n}. Must be non-negative.`);
+    }
+    if (n > maxVal) {
+      throw new Error(`${termType} ${n} is out of range. With ${Math.log2(maxVal + 1)} variables, valid range is 0\u2013${maxVal}.`);
+    }
+    if (seen.has(n)) {
+      throw new Error(`Duplicate ${termType}: ${n}`);
+    }
+    seen.add(n);
+    terms.push(n);
+  }
+
+  return { terms, isEmpty: false };
 }
 
 function getEffectiveResult() {
@@ -968,6 +1080,83 @@ function detectXOR(truthTable, varNames) {
   return null;
 }
 
+function generateVerilog(sopExpr, xorDetected) {
+  if (!sopExpr && !xorDetected) return null;
+
+  // If XOR/XNOR detected, prefer that
+  if (xorDetected) {
+    // Parse XOR expression like "A ⊕ B ⊕ C"
+    const parts = xorDetected.expr.split(/\s*[\u2295\u2299]\s*/).filter(Boolean);
+    // Handle complements (A')
+    const verilogParts = parts.map(p => {
+      if (p.endsWith("'")) return "~" + p.slice(0, -1);
+      return p;
+    });
+    if (xorDetected.type === "XNOR") {
+      return `assign F = ~(${verilogParts.join(" ^ ")});`;
+    }
+    return `assign F = ${verilogParts.join(" ^ ")};`;
+  }
+
+  // Convert SOP expression to Verilog
+  // SOP format: "A · B + C'" or "A' · B · C + D"
+  if (sopExpr === "0") return "assign F = 1'b0;";
+  if (sopExpr === "1") return "assign F = 1'b1;";
+
+  // Parse terms separated by " + "
+  const terms = sopExpr.split(/\s*\+\s*/).filter(Boolean);
+  const verilogTerms = terms.map(term => {
+    if (term === "1") return "1'b1";
+    // Parse literals separated by " · "
+    const literals = term.split(/\s*\u00b7\s*/).filter(Boolean);
+    const verilogLits = literals.map(lit => {
+      if (lit.endsWith("'")) return "~" + lit.slice(0, -1);
+      return lit;
+    });
+    if (verilogLits.length === 1) return verilogLits[0];
+    return "(" + verilogLits.join(" & ") + ")";
+  });
+
+  if (verilogTerms.length === 1) return `assign F = ${verilogTerms[0]};`;
+  return `assign F = ${verilogTerms.join(" | ")};`;
+}
+
+function generateVHDL(sopExpr, xorDetected) {
+  if (!sopExpr && !xorDetected) return null;
+
+  // If XOR/XNOR detected, prefer that
+  if (xorDetected) {
+    const parts = xorDetected.expr.split(/\s*[\u2295\u2299]\s*/).filter(Boolean);
+    const vhdlParts = parts.map(p => {
+      if (p.endsWith("'")) return "(not " + p.slice(0, -1) + ")";
+      return p;
+    });
+    if (xorDetected.type === "XNOR") {
+      return `F <= not (${vhdlParts.join(" xor ")});`;
+    }
+    return `F <= ${vhdlParts.join(" xor ")};`;
+  }
+
+  // Convert SOP expression to VHDL
+  if (sopExpr === "0") return "F <= '0';";
+  if (sopExpr === "1") return "F <= '1';";
+
+  const terms = sopExpr.split(/\s*\+\s*/).filter(Boolean);
+  const vhdlTerms = terms.map(term => {
+    if (term === "1") return "'1'";
+    const literals = term.split(/\s*\u00b7\s*/).filter(Boolean);
+    const vhdlLits = literals.map(lit => {
+      if (lit.endsWith("'")) return "(not " + lit.slice(0, -1) + ")";
+      return lit;
+    });
+    if (vhdlLits.length === 1) return vhdlLits[0];
+    return "(" + vhdlLits.join(" and ") + ")";
+  });
+
+  if (vhdlTerms.length === 1) return `F <= ${vhdlTerms[0]};`;
+  return `F <= ${vhdlTerms.join(" or ")};`;
+}
+
 function getMintermInfo(truthTable, varNames) {
   const minterms = [], maxterms = [], dontcares = [];
   truthTable.forEach((row) => {
@@ -986,6 +1175,7 @@ function generate() {
   kmapPanel.style.display = 'none';
 
   try {
+    // Parse variables
     const raw = varInput.value.split(/[,\s]+/).filter(Boolean);
     if (raw.length < 2) throw new Error("Enter at least 2 variables");
     if (raw.length > 6) throw new Error("Maximum 6 variables supported");
@@ -995,48 +1185,139 @@ function generate() {
     }
     if (new Set(raw).size !== raw.length) throw new Error("Duplicate variable names");
     const varNames = raw;
+    const n = varNames.length;
+    const maxVal = (1 << n) - 1;
 
-    const dcSet = new Set();
-    if (dcInput.value.trim()) {
-      const dcParts = dcInput.value.split(/[,\s]+/).filter(Boolean);
-      for (const p of dcParts) {
-        const n = parseInt(p);
-        if (isNaN(n) || n < 0 || n >= (1 << varNames.length)) {
-          throw new Error(`Invalid don't-care minterm: ${p}. Must be 0-${(1 << varNames.length) - 1}`);
+    // Parse don't-cares
+    const dcResult = parseTermList(dcInput.value, maxVal, "Don't-care");
+    const dcSet = new Set(dcResult.terms);
+
+    // Handle based on input mode
+    if (state.inputMode === 'expression') {
+      // Expression mode
+      if (!exprInput.value.trim()) {
+        // Manual mode
+        const rows = 1 << n;
+        const truthTable = [];
+        for (let i = 0; i < rows; i++) {
+          const env = {};
+          varNames.forEach((v, idx) => { env[v] = (i >> (n - 1 - idx)) & 1; });
+          truthTable.push({ env, result: dcSet.has(i) ? "X" : 0 });
         }
-        dcSet.add(n);
+        const kmap = buildKmapGrid(truthTable, varNames);
+        state.result = { varNames, truthTable, kmap };
+        state.manualMode = true;
+        render();
+        return;
       }
-    }
 
-    if (!exprInput.value.trim()) {
-      const n = varNames.length;
+      state.manualMode = false;
+      const tokens = tokenize(exprInput.value, varNames);
+      const ast = parse(tokens);
+      const truthTable = computeTruthTable(ast, varNames);
+
+      // Apply don't-cares
+      truthTable.forEach((row) => {
+        const idx = getMintermIndex(row.env, varNames);
+        if (dcSet.has(idx)) row.result = "X";
+      });
+
+      const kmap = buildKmapGrid(truthTable, varNames);
+      state.result = { varNames, truthTable, kmap };
+      render();
+
+    } else if (state.inputMode === 'minterms') {
+      // Minterms mode
+      const mintermResult = parseTermList(mintermsInput.value, maxVal, "Minterm");
+
+      if (mintermResult.isEmpty) {
+        // Empty input - enter manual mode
+        const rows = 1 << n;
+        const truthTable = [];
+        for (let i = 0; i < rows; i++) {
+          const env = {};
+          varNames.forEach((v, idx) => { env[v] = (i >> (n - 1 - idx)) & 1; });
+          truthTable.push({ env, result: dcSet.has(i) ? "X" : 0 });
+        }
+        const kmap = buildKmapGrid(truthTable, varNames);
+        state.result = { varNames, truthTable, kmap };
+        state.manualMode = true;
+        render();
+        return;
+      }
+
+      const mintermSet = new Set(mintermResult.terms);
+
+      // Check for overlap with don't-cares
+      for (const m of mintermSet) {
+        if (dcSet.has(m)) {
+          throw new Error(`Minterm ${m} also appears in don't-cares. A value can't be both.`);
+        }
+      }
+
+      state.manualMode = false;
       const rows = 1 << n;
       const truthTable = [];
       for (let i = 0; i < rows; i++) {
         const env = {};
         varNames.forEach((v, idx) => { env[v] = (i >> (n - 1 - idx)) & 1; });
-        truthTable.push({ env, result: dcSet.has(i) ? "X" : 0 });
+        let result;
+        if (dcSet.has(i)) result = "X";
+        else if (mintermSet.has(i)) result = 1;
+        else result = 0;
+        truthTable.push({ env, result });
       }
+
       const kmap = buildKmapGrid(truthTable, varNames);
       state.result = { varNames, truthTable, kmap };
-      state.manualMode = true;
       render();
-      return;
+
+    } else if (state.inputMode === 'maxterms') {
+      // Maxterms mode
+      const maxtermResult = parseTermList(maxtermsInput.value, maxVal, "Maxterm");
+
+      if (maxtermResult.isEmpty) {
+        // Empty input - enter manual mode (all 1s except don't-cares)
+        const rows = 1 << n;
+        const truthTable = [];
+        for (let i = 0; i < rows; i++) {
+          const env = {};
+          varNames.forEach((v, idx) => { env[v] = (i >> (n - 1 - idx)) & 1; });
+          truthTable.push({ env, result: dcSet.has(i) ? "X" : 1 });
+        }
+        const kmap = buildKmapGrid(truthTable, varNames);
+        state.result = { varNames, truthTable, kmap };
+        state.manualMode = true;
+        render();
+        return;
+      }
+
+      const maxtermSet = new Set(maxtermResult.terms);
+
+      // Check for overlap with don't-cares
+      for (const m of maxtermSet) {
+        if (dcSet.has(m)) {
+          throw new Error(`Maxterm ${m} also appears in don't-cares. A value can't be both.`);
+        }
+      }
+
+      state.manualMode = false;
+      const rows = 1 << n;
+      const truthTable = [];
+      for (let i = 0; i < rows; i++) {
+        const env = {};
+        varNames.forEach((v, idx) => { env[v] = (i >> (n - 1 - idx)) & 1; });
+        let result;
+        if (dcSet.has(i)) result = "X";
+        else if (maxtermSet.has(i)) result = 0;
+        else result = 1;
+        truthTable.push({ env, result });
+      }
+
+      const kmap = buildKmapGrid(truthTable, varNames);
+      state.result = { varNames, truthTable, kmap };
+      render();
     }
-
-    state.manualMode = false;
-    const tokens = tokenize(exprInput.value, varNames);
-    const ast = parse(tokens);
-    const truthTable = computeTruthTable(ast, varNames);
-
-    truthTable.forEach((row) => {
-      const idx = getMintermIndex(row.env, varNames);
-      if (dcSet.has(idx)) row.result = "X";
-    });
-
-    const kmap = buildKmapGrid(truthTable, varNames);
-    state.result = { varNames, truthTable, kmap };
-    render();
   } catch (e) {
     showError(e.message);
   }
@@ -1142,6 +1423,28 @@ function render() {
       </div>`;
   }
 
+  if (state.showVerilog) {
+    const verilogCode = generateVerilog(sopExpr, xorDetected);
+    if (verilogCode) {
+      html += `<div class="result-label">Verilog<span class="tag">${xorDetected ? 'XOR' : 'SOP'}</span></div>
+        <div class="expr-box">
+          <span class="expr-text">${verilogCode}</span>
+          <button class="btn-copy" data-copy="${encodeURIComponent(verilogCode)}" data-label="Verilog">Copy</button>
+        </div>`;
+    }
+  }
+
+  if (state.showVHDL) {
+    const vhdlCode = generateVHDL(sopExpr, xorDetected);
+    if (vhdlCode) {
+      html += `<div class="result-label">VHDL<span class="tag">${xorDetected ? 'XOR' : 'SOP'}</span></div>
+        <div class="expr-box">
+          <span class="expr-text">${vhdlCode}</span>
+          <button class="btn-copy" data-copy="${encodeURIComponent(vhdlCode)}" data-label="VHDL">Copy</button>
+        </div>`;
+    }
+  }
+
   const mintermInfo = getMintermInfo(truthTable, varNames);
   html += `<div class="result-label">Canonical Form</div>
     <div class="mint-box">
@@ -1212,7 +1515,13 @@ function render() {
 
 generateBtn.addEventListener('click', generate);
 exprInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') generate(); });
+mintermsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') generate(); });
+maxtermsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') generate(); });
 dcInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') generate(); });
+
+modeExpr.addEventListener('click', () => setInputMode('expression'));
+modeMinterms.addEventListener('click', () => setInputMode('minterms'));
+modeMaxterms.addEventListener('click', () => setInputMode('maxterms'));
 
 groupsBtn.addEventListener('click', () => {
   state.showGroups = !state.showGroups;
@@ -1229,6 +1538,18 @@ posBtn.addEventListener('click', () => {
 truthBtn.addEventListener('click', () => {
   state.showTruth = !state.showTruth;
   truthBtn.classList.toggle('on', state.showTruth);
+  render();
+});
+
+verilogBtn.addEventListener('click', () => {
+  state.showVerilog = !state.showVerilog;
+  verilogBtn.classList.toggle('on', state.showVerilog);
+  render();
+});
+
+vhdlBtn.addEventListener('click', () => {
+  state.showVHDL = !state.showVHDL;
+  vhdlBtn.classList.toggle('on', state.showVHDL);
   render();
 });
 
