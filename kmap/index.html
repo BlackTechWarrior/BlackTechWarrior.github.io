@@ -5,182 +5,210 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Interactive Karnaugh Map generator supporting 2-6 variables with SOP/POS minimization, XOR/XNOR detection, and don't-care states.">
   <title>K-Map Generator | p14m.com</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0d0f16; }
-    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
 
     body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
       margin: 0;
-      min-height: 100vh;
-      background: #090b10;
-      color: #e2e8f0;
-      font-family: 'JetBrains Mono', 'Fira Code', monospace;
       padding: 20px;
+      background-color: #ffffff;
+      color: #000000;
+      transition: background-color 0.3s, color 0.3s;
+      font-size: 18px;
     }
+
+    body.dark {
+      background-color: #1a1a1a;
+      color: #e0e0e0;
+    }
+
+    body.dark a { color: #87ceeb; }
+    body.dark a:visited { color: #dda0dd; }
+
+    a { color: #0066cc; }
+    a:visited { color: #551a8b; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #cccccc;
+    }
+    body.dark .nav-row { border-bottom-color: #444444; }
 
     .back-link {
-      position: fixed;
-      top: 16px;
-      left: 16px;
-      color: #4a5775;
+      font-size: 14px;
       text-decoration: none;
-      font-size: 12px;
-      font-family: 'Outfit', sans-serif;
-      font-weight: 500;
-      transition: color 0.2s;
-      z-index: 100;
     }
-    .back-link:hover { color: #60a5fa; }
 
-    .footer {
-      text-align: center;
-      padding: 30px 0 10px;
-      font-size: 11px;
-      color: #3a4560;
-      font-family: 'Outfit', sans-serif;
+    .theme-toggle {
+      background-color: #f5f5f5;
+      border: 1px solid #cccccc;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.95em;
+      font-family: inherit;
     }
-    .footer a { color: #4a5775; text-decoration: none; }
-    .footer a:hover { color: #60a5fa; }
+    .theme-toggle:hover { background-color: #e0e0e0; }
+    body.dark .theme-toggle {
+      background-color: #333333;
+      color: #e0e0e0;
+      border-color: #555555;
+    }
+    body.dark .theme-toggle:hover { background-color: #404040; }
 
-    .km-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 26px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin: 0 0 2px 0;
-      letter-spacing: -0.5px;
+    h1 {
+      font-size: 1.8em;
+      margin: 0 0 5px 0;
+      font-weight: 600;
     }
-    .km-sub {
-      font-size: 11px;
-      color: #3a4560;
+
+    .subtitle {
+      font-size: 0.9em;
+      color: #666666;
       margin: 0 0 20px 0;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      font-weight: 500;
     }
+    body.dark .subtitle { color: #888888; }
 
-    .pnl {
-      background: #0f1118;
-      border: 1px solid #191e2e;
-      border-radius: 10px;
-      padding: 18px;
-      margin-bottom: 14px;
-      transition: border-color 0.2s;
+    .section {
+      border: 1px solid #cccccc;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
     }
-    .pnl:hover { border-color: #252d45; }
+    body.dark .section { border-color: #444444; }
 
     .lbl {
-      font-size: 9.5px;
-      text-transform: uppercase;
-      letter-spacing: 1.8px;
-      color: #4a5775;
-      margin-bottom: 6px;
+      font-size: 12px;
       font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      color: #555555;
+      margin-bottom: 6px;
+      display: block;
+    }
+    body.dark .lbl { color: #aaaaaa; }
+    .lbl-hint {
+      font-weight: 400;
+      color: #999999;
+      font-size: 11px;
     }
 
     .inp {
       width: 100%;
-      background: #080a0f;
-      border: 1px solid #191e2e;
-      border-radius: 7px;
-      color: #e2e8f0;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      padding: 9px 12px;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      color: #000000;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 10px 12px;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color 0.2s;
     }
-    .inp:focus {
-      border-color: #60a5fa;
-      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.1);
+    .inp:focus { border-color: #0066cc; }
+    .inp::placeholder { color: #aaaaaa; }
+    body.dark .inp {
+      background: #2a2a2a;
+      border-color: #444444;
+      color: #e0e0e0;
     }
-    .inp::placeholder { color: #1e2538; }
+    body.dark .inp:focus { border-color: #87ceeb; }
+    body.dark .inp::placeholder { color: #666666; }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
 
     .btn-go {
-      background: linear-gradient(135deg, #3b82f6, #7c3aed);
+      background: #0066cc;
       color: white;
       border: none;
-      border-radius: 7px;
-      padding: 9px 26px;
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      font-size: 13px;
+      border-radius: 6px;
+      padding: 10px 24px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 14px;
       cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 0.4px;
+      transition: background 0.2s;
     }
-    .btn-go:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 18px rgba(59, 130, 246, 0.25);
-    }
-    .btn-go:active { transform: translateY(0); }
+    .btn-go:hover { background: #0052a3; }
+    body.dark .btn-go { background: #87ceeb; color: #1a1a1a; }
+    body.dark .btn-go:hover { background: #6bb8d9; }
 
     .btn-t {
       background: transparent;
-      border: 1px solid #191e2e;
-      color: #52607a;
+      border: 1px solid #cccccc;
+      color: #666666;
       border-radius: 5px;
-      padding: 5px 12px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 12px;
       cursor: pointer;
       transition: all 0.15s;
-      white-space: nowrap;
     }
-    .btn-t:hover { border-color: #3a4560; color: #94a3b8; }
-    .btn-t.on {
-      border-color: #60a5fa;
-      color: #60a5fa;
-      background: rgba(96, 165, 250, 0.05);
-    }
+    .btn-t:hover { border-color: #999999; color: #333333; }
+    .btn-t.on { border-color: #0066cc; color: #0066cc; background: rgba(0, 102, 204, 0.05); }
+    body.dark .btn-t { border-color: #444444; color: #888888; }
+    body.dark .btn-t:hover { border-color: #666666; color: #cccccc; }
+    body.dark .btn-t.on { border-color: #87ceeb; color: #87ceeb; background: rgba(135, 206, 235, 0.1); }
 
     .btn-copy {
       background: transparent;
-      border: 1px solid #191e2e;
-      color: #4a5775;
+      border: 1px solid #cccccc;
+      color: #666666;
       border-radius: 4px;
-      padding: 3px 8px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 9px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 11px;
       cursor: pointer;
       transition: all 0.15s;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
-    .btn-copy:hover { border-color: #3a4560; color: #94a3b8; }
+    .btn-copy:hover { border-color: #999999; color: #333333; }
+    body.dark .btn-copy { border-color: #444444; color: #888888; }
+    body.dark .btn-copy:hover { border-color: #666666; color: #cccccc; }
+
+    .btn-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    .toggle-btns { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 
     .err {
-      background: rgba(239, 68, 68, 0.06);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      border-radius: 7px;
+      background: rgba(220, 53, 69, 0.1);
+      border: 1px solid rgba(220, 53, 69, 0.3);
+      border-radius: 6px;
       padding: 10px 14px;
-      color: #fca5a5;
-      font-size: 12px;
+      color: #dc3545;
+      font-size: 13px;
       margin-top: 10px;
     }
+    body.dark .err { background: rgba(220, 53, 69, 0.15); }
 
     .toast {
       position: fixed;
       bottom: 24px;
       right: 24px;
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #60a5fa;
-      padding: 8px 16px;
+      background: #333333;
+      color: white;
+      padding: 10px 18px;
       border-radius: 6px;
-      font-size: 11px;
-      font-weight: 500;
+      font-size: 13px;
       z-index: 999;
       animation: toastIn 0.2s ease;
     }
@@ -189,79 +217,89 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    .ref-section {
+      font-size: 13px;
+      color: #666666;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e0e0e0;
+    }
+    body.dark .ref-section { color: #888888; border-top-color: #444444; }
+    .ref-section strong { color: #333333; }
+    body.dark .ref-section strong { color: #cccccc; }
+
     .km-tbl {
-      border-collapse: separate;
-      border-spacing: 0;
+      border-collapse: collapse;
       margin: 0 auto;
+      font-family: monospace;
     }
     .km-tbl th, .km-tbl td { text-align: center; padding: 0; }
     .km-hdr {
-      font-size: 11.5px;
+      font-size: 13px;
       font-weight: 500;
-      color: #5a6a85;
-      padding: 5px 8px !important;
+      color: #666666;
+      padding: 6px 10px !important;
     }
-    .km-hdr-v {
-      font-size: 12px;
-      font-weight: 600;
-      color: #a78bfa;
-      padding: 5px 8px !important;
-    }
+    body.dark .km-hdr { color: #888888; }
 
     .km-cell {
-      width: 50px;
-      height: 50px;
-      font-size: 15px;
+      width: 48px;
+      height: 48px;
+      font-size: 16px;
       font-weight: 600;
-      position: relative;
-      border: 1px solid #191e2e;
+      border: 1px solid #cccccc;
       transition: all 0.12s;
     }
+    body.dark .km-cell { border-color: #444444; }
     .km-cell span { position: relative; z-index: 2; }
-    .km-cell.v1 { color: #60a5fa; }
-    .km-cell.v0 { color: #1e2538; }
-    .km-cell.vx { color: #f59e0b; }
+    .km-cell.v1 { color: #0066cc; }
+    .km-cell.v0 { color: #cccccc; }
+    .km-cell.vx { color: #e67e22; }
+    body.dark .km-cell.v1 { color: #87ceeb; }
+    body.dark .km-cell.v0 { color: #444444; }
+    body.dark .km-cell.vx { color: #f39c12; }
     .km-cell.click { cursor: pointer; }
-    .km-cell.click:hover {
-      border-color: #60a5fa;
-      background: rgba(96, 165, 250, 0.04) !important;
-    }
+    .km-cell.click:hover { border-color: #0066cc; background: rgba(0, 102, 204, 0.05) !important; }
+    body.dark .km-cell.click:hover { border-color: #87ceeb; background: rgba(135, 206, 235, 0.1) !important; }
 
     .tt {
       border-collapse: collapse;
-      font-size: 12px;
+      font-size: 13px;
       margin: 0 auto;
+      font-family: monospace;
     }
     .tt th {
-      padding: 7px 12px;
-      border-bottom: 2px solid #191e2e;
-      color: #a78bfa;
+      padding: 8px 14px;
+      border-bottom: 2px solid #cccccc;
       font-weight: 600;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
       position: sticky;
       top: 0;
-      background: #0f1118;
+      background: #ffffff;
     }
+    body.dark .tt th { border-bottom-color: #444444; background: #1a1a1a; }
     .tt td {
-      padding: 5px 12px;
-      border-bottom: 1px solid #0b0d14;
+      padding: 6px 14px;
+      border-bottom: 1px solid #eeeeee;
       text-align: center;
-      color: #52607a;
+      color: #666666;
     }
-    .tt tr:hover td { background: rgba(96, 165, 250, 0.02); }
-    .tt .o1 { color: #60a5fa; font-weight: 600; }
-    .tt .o0 { color: #1e2538; }
-    .tt .ox { color: #f59e0b; font-weight: 600; }
+    body.dark .tt td { border-bottom-color: #333333; color: #888888; }
+    .tt tr:hover td { background: rgba(0, 102, 204, 0.03); }
+    body.dark .tt tr:hover td { background: rgba(135, 206, 235, 0.05); }
+    .tt .o1 { color: #0066cc; font-weight: 600; }
+    .tt .o0 { color: #cccccc; }
+    .tt .ox { color: #e67e22; font-weight: 600; }
+    body.dark .tt .o1 { color: #87ceeb; }
+    body.dark .tt .o0 { color: #444444; }
+    body.dark .tt .ox { color: #f39c12; }
 
     .expr-box {
-      background: #080a0f;
-      border: 1px solid #191e2e;
-      border-radius: 7px;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
       padding: 12px 16px;
       font-size: 14px;
-      font-weight: 500;
+      font-family: monospace;
       word-break: break-all;
       line-height: 1.6;
       display: flex;
@@ -269,129 +307,114 @@
       justify-content: space-between;
       gap: 10px;
     }
+    body.dark .expr-box { background: #2a2a2a; border-color: #444444; }
     .expr-box .expr-text { flex: 1; }
 
-    .mint-box {
-      background: #080a0f;
-      border: 1px solid #191e2e;
-      border-radius: 7px;
-      padding: 10px 14px;
-      font-size: 13px;
-      color: #7a8aa5;
-      line-height: 1.8;
+    .result-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #555555;
+      margin: 15px 0 6px 0;
     }
-    .mint-box .sym { color: #a78bfa; font-weight: 600; }
-    .mint-box .vals { color: #60a5fa; }
-    .mint-box .dc { color: #f59e0b; }
-
-    .ref-g {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr;
-      gap: 4px;
-      font-size: 10.5px;
-      color: #4a5775;
-    }
-    .ref-i { display: flex; align-items: center; gap: 6px; }
-    .ref-s { color: #a78bfa; font-weight: 600; width: 18px; text-align: center; font-size: 12px; }
-
-    .fade { animation: fadeIn 0.25s ease; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
+    body.dark .result-label { color: #aaaaaa; }
     .tag {
       display: inline-block;
-      background: rgba(96, 165, 250, 0.06);
-      border: 1px solid rgba(96, 165, 250, 0.12);
+      background: rgba(0, 102, 204, 0.1);
       border-radius: 3px;
-      padding: 1px 6px;
-      font-size: 9px;
-      color: #4a7cc9;
-      font-weight: 500;
-      letter-spacing: 0.5px;
-    }
-
-    .input-row {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 14px;
-      align-items: end;
-    }
-    .btn-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 14px;
-      flex-wrap: wrap;
-    }
-    .toggle-btns {
-      margin-left: auto;
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-    .group-legend {
-      margin-top: 14px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    .group-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 11px;
-      color: #5a6a85;
-    }
-    .group-swatch {
-      width: 12px;
-      height: 12px;
-      border-radius: 3px;
-      flex-shrink: 0;
-    }
-    .manual-indicator {
+      padding: 2px 6px;
       font-size: 10px;
-      color: #f59e0b;
-      letter-spacing: 0.5px;
+      color: #0066cc;
+      font-weight: 500;
+      margin-left: 6px;
     }
+    body.dark .tag { background: rgba(135, 206, 235, 0.15); color: #87ceeb; }
+    .tag.xor { background: rgba(230, 126, 34, 0.1); color: #e67e22; }
+    body.dark .tag.xor { background: rgba(243, 156, 18, 0.15); color: #f39c12; }
+
+    .mint-box {
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: monospace;
+      color: #555555;
+      line-height: 1.8;
+    }
+    body.dark .mint-box { background: #2a2a2a; border-color: #444444; color: #aaaaaa; }
+    .mint-box .sym { font-weight: 600; }
+    .mint-box .dc { color: #e67e22; }
+    body.dark .mint-box .dc { color: #f39c12; }
+
+    .group-legend {
+      margin-top: 15px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+    .group-item { display: flex; align-items: center; gap: 6px; }
+    .group-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+    .manual-indicator {
+      font-size: 12px;
+      color: #e67e22;
+      font-weight: 500;
+    }
+    body.dark .manual-indicator { color: #f39c12; }
+
     .kmap-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 14px;
+      margin-bottom: 15px;
     }
 
-    @media (max-width: 700px) {
+    .footer {
+      text-align: center;
+      padding: 30px 0 10px;
+      font-size: 12px;
+      color: #999999;
+    }
+    body.dark .footer { color: #666666; }
+
+    @media (max-width: 600px) {
+      body { padding: 15px; font-size: 16px; }
       .input-row { grid-template-columns: 1fr; }
-      .ref-g { grid-template-columns: 1fr 1fr; }
-      .km-cell { width: 40px; height: 40px; font-size: 13px; }
+      .km-cell { width: 38px; height: 38px; font-size: 14px; }
+      h1 { font-size: 1.5em; }
+      .toggle-btns { margin-left: 0; margin-top: 10px; width: 100%; justify-content: flex-start; }
     }
   </style>
 </head>
 <body>
-  <a href="/" class="back-link">&larr; Back to p14m.com</a>
+  <div class="container">
+    <div class="nav-row">
+      <a href="/" class="back-link">&larr; Back to p14m.com</a>
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-text">&#9790;</span>
+      </button>
+    </div>
 
-  <div style="max-width: 920px; margin: 0 auto;">
-    <h1 class="km-title">K-Map Generator</h1>
-    <p class="km-sub">Karnaugh Map Solver &amp; Visualizer</p>
+    <h1>K-Map Generator</h1>
+    <p class="subtitle">Karnaugh Map Solver &amp; Visualizer</p>
 
-    <!-- Input Panel -->
-    <div class="pnl">
+    <!-- Input Section -->
+    <div class="section">
       <div class="input-row">
         <div>
-          <div class="lbl">Variables</div>
+          <label class="lbl">Variables</label>
           <input class="inp" id="varInput" value="A, B, Cin" placeholder="A, B, C, D" spellcheck="false">
         </div>
         <div>
-          <div class="lbl">Boolean Expression <span style="color: #283040; letter-spacing: 0; font-size: 9px;">(leave empty for manual)</span></div>
-          <input class="inp" id="exprInput" value="A * Cin + B * Cin + A * B" placeholder="A * B + ~C . D  or  (A xor B) and C'" spellcheck="false">
+          <label class="lbl">Boolean Expression <span class="lbl-hint">(leave empty for manual)</span></label>
+          <input class="inp" id="exprInput" value="A * Cin + B * Cin + A * B" placeholder="A * B + ~C . D" spellcheck="false">
         </div>
       </div>
 
-      <div style="margin-top: 10px;">
-        <div class="lbl">Don't-care minterms <span style="color: #283040; letter-spacing: 0; font-size: 9px;">(optional, comma separated indices)</span></div>
-        <input class="inp" id="dcInput" placeholder="e.g.  2, 5, 7" spellcheck="false" style="max-width: 340px;">
+      <div>
+        <label class="lbl">Don't-care minterms <span class="lbl-hint">(optional)</span></label>
+        <input class="inp" id="dcInput" placeholder="e.g. 2, 5, 7" spellcheck="false" style="max-width: 300px;">
       </div>
 
       <div class="btn-row">
@@ -404,43 +427,52 @@
       </div>
 
       <div id="errorBox" class="err" style="display: none;"></div>
-    </div>
 
-    <!-- Reference Panel -->
-    <div class="pnl" style="padding: 12px 18px;">
-      <div class="lbl" style="margin-bottom: 5px;">Operator Reference</div>
-      <div class="ref-g">
-        <div class="ref-i"><span class="ref-s">'</span> NOT (postfix) - A'</div>
-        <div class="ref-i"><span class="ref-s">~</span> NOT (prefix) - ~A</div>
-        <div class="ref-i"><span class="ref-s">.</span> AND - A . B</div>
-        <div class="ref-i"><span class="ref-s">%</span> NAND - A % B</div>
-        <div class="ref-i"><span class="ref-s">^</span> XOR - A ^ B</div>
-        <div class="ref-i"><span class="ref-s">@</span> XNOR - A @ B</div>
-        <div class="ref-i"><span class="ref-s">+</span> OR - A + B</div>
-        <div class="ref-i"><span class="ref-s">#</span> NOR - A # B</div>
-      </div>
-      <div style="font-size: 10px; color: #2e3a52; margin-top: 6px;">
-        Also: <span style="color: #4a5775;">*  &amp;  &middot; (AND) | (OR)  ! (NOT)</span>
-        <br>Keywords: <span style="color: #4a5775;">and  or  not  nand  nor  xor  xnor</span>
-        &middot; Explicit operator required between variables
-        <br>Precedence (high&rarr;low): <span style="color: #4a5775;">NOT &rarr; AND/NAND &rarr; XOR/XNOR &rarr; OR/NOR</span>
+      <div class="ref-section">
+        <strong>Operators:</strong> ' ~ ! (NOT) &middot; . * &amp; (AND) &middot; + | (OR) &middot; ^ (XOR) &middot; @ (XNOR) &middot; % (NAND) &middot; # (NOR)<br>
+        <strong>Keywords:</strong> and, or, not, nand, nor, xor, xnor &middot; <strong>Precedence:</strong> NOT &rarr; AND/NAND &rarr; XOR/XNOR &rarr; OR/NOR
       </div>
     </div>
 
     <!-- K-Map Panel -->
-    <div id="kmapPanel" class="pnl fade" style="display: none;"></div>
+    <div id="kmapPanel" class="section" style="display: none;"></div>
 
     <!-- Truth Table Panel -->
-    <div id="truthPanel" class="pnl fade" style="display: none;"></div>
-  </div>
+    <div id="truthPanel" class="section" style="display: none;"></div>
 
-  <div class="footer">
-    Built by Peter Moses &middot; <a href="/">p14m.com</a>
+    <div class="footer">
+      Built by Peter Moses &middot; <a href="/">p14m.com</a>
+    </div>
   </div>
 
   <div id="toast" class="toast" style="display: none;"></div>
 
 <script>
+/* ───────────────────────── Theme ───────────────────────── */
+
+function toggleTheme() {
+  const body = document.body;
+  const themeText = document.getElementById('theme-text');
+  if (body.classList.contains('dark')) {
+    body.classList.remove('dark');
+    themeText.innerHTML = '&#9790;';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark');
+    themeText.innerHTML = '&#9788;';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const savedTheme = localStorage.getItem('theme');
+  const themeText = document.getElementById('theme-text');
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark');
+    themeText.innerHTML = '&#9788;';
+  }
+});
+
 /* ───────────────────────── helpers ───────────────────────── */
 
 const GRAY_CODE = {
@@ -768,14 +800,14 @@ function getMintermIndex(env, varNames) {
 /* ───────── colors ───────── */
 
 const GROUP_COLORS = [
-  "rgba(239, 68, 68, 0.22)", "rgba(59, 130, 246, 0.22)", "rgba(16, 185, 129, 0.22)",
-  "rgba(245, 158, 11, 0.22)", "rgba(139, 92, 246, 0.22)", "rgba(236, 72, 153, 0.22)",
-  "rgba(6, 182, 212, 0.22)", "rgba(132, 204, 22, 0.22)",
+  "rgba(220, 53, 69, 0.15)", "rgba(0, 123, 255, 0.15)", "rgba(40, 167, 69, 0.15)",
+  "rgba(255, 193, 7, 0.15)", "rgba(111, 66, 193, 0.15)", "rgba(232, 62, 140, 0.15)",
+  "rgba(23, 162, 184, 0.15)", "rgba(108, 117, 125, 0.15)",
 ];
 const GROUP_BORDERS = [
-  "rgba(239, 68, 68, 0.8)", "rgba(59, 130, 246, 0.8)", "rgba(16, 185, 129, 0.8)",
-  "rgba(245, 158, 11, 0.8)", "rgba(139, 92, 246, 0.8)", "rgba(236, 72, 153, 0.8)",
-  "rgba(6, 182, 212, 0.8)", "rgba(132, 204, 22, 0.8)",
+  "rgba(220, 53, 69, 0.7)", "rgba(0, 123, 255, 0.7)", "rgba(40, 167, 69, 0.7)",
+  "rgba(255, 193, 7, 0.7)", "rgba(111, 66, 193, 0.7)", "rgba(232, 62, 140, 0.7)",
+  "rgba(23, 162, 184, 0.7)", "rgba(108, 117, 125, 0.7)",
 ];
 
 /* ═══════════════════════ STATE ═══════════════════════ */
@@ -1043,7 +1075,6 @@ function render() {
   const { varNames, truthTable, kmap } = effectiveResult;
   const groups = findKmapGroups(kmap.grid, kmap.rowCodes, kmap.colCodes);
 
-  // Build cell group map
   const cellGroupMap = {};
   groups.forEach((g, gi) => {
     g.cells.forEach(([r, c]) => {
@@ -1053,32 +1084,30 @@ function render() {
     });
   });
 
-  // Build K-map HTML
   let html = `<div class="kmap-header">
-    <div class="lbl" style="margin: 0;">Karnaugh Map</div>
-    ${state.manualMode ? '<span class="manual-indicator">&#x25cf; MANUAL - click cells to cycle 0 &rarr; 1 &rarr; X</span>' : ''}
+    <div class="result-label" style="margin: 0;">Karnaugh Map</div>
+    ${state.manualMode ? '<span class="manual-indicator">MANUAL - click cells to cycle 0 &rarr; 1 &rarr; X</span>' : ''}
   </div>`;
 
   html += '<div style="overflow-x: auto; padding: 2px 0;"><table class="km-tbl"><thead><tr>';
-  html += `<th class="km-hdr-v" style="border-bottom: 2px solid #191e2e; border-right: 2px solid #191e2e;">
-    <span style="color: #f472b6;">${kmap.rowVars.join('')}</span> \\ <span style="color: #60a5fa;">${kmap.colVars.join('')}</span>
-  </th>`;
+  html += `<th class="km-hdr" style="border-bottom: 2px solid; border-right: 2px solid;">${kmap.rowVars.join('')} \\ ${kmap.colVars.join('')}</th>`;
   kmap.colCodes.forEach(cc => {
-    html += `<th class="km-hdr" style="border-bottom: 2px solid #191e2e;">${cc}</th>`;
+    html += `<th class="km-hdr" style="border-bottom: 2px solid;">${cc}</th>`;
   });
   html += '</tr></thead><tbody>';
 
   kmap.grid.forEach((row, ri) => {
     html += '<tr>';
-    html += `<td class="km-hdr" style="border-right: 2px solid #191e2e; font-weight: 500;">${kmap.rowCodes[ri]}</td>`;
+    html += `<td class="km-hdr" style="border-right: 2px solid;">${kmap.rowCodes[ri]}</td>`;
     row.forEach((val, ci) => {
       const key = `${ri},${ci}`;
       const gIdxs = cellGroupMap[key] || [];
       const bg = state.showGroups && gIdxs.length > 0 ? GROUP_COLORS[gIdxs[0] % GROUP_COLORS.length] : 'transparent';
-      const border = state.showGroups && gIdxs.length > 0 ? `2px solid ${GROUP_BORDERS[gIdxs[0] % GROUP_BORDERS.length]}` : '1px solid #191e2e';
+      const border = state.showGroups && gIdxs.length > 0 ? `2px solid ${GROUP_BORDERS[gIdxs[0] % GROUP_BORDERS.length]}` : '';
       const cls = val === 1 ? 'v1' : val === 'X' ? 'vx' : 'v0';
       const clickCls = state.manualMode ? 'click' : '';
-      html += `<td class="km-cell ${cls} ${clickCls}" data-r="${ri}" data-c="${ci}" style="background: ${bg}; border: ${border};">
+      const borderStyle = border ? `border: ${border};` : '';
+      html += `<td class="km-cell ${cls} ${clickCls}" data-r="${ri}" data-c="${ci}" style="background: ${bg}; ${borderStyle}">
         <span>${val === 'X' ? 'X' : val}</span>
       </td>`;
     });
@@ -1086,53 +1115,40 @@ function render() {
   });
   html += '</tbody></table></div>';
 
-  // SOP
   const sopExpr = groups.length > 0 ? computeSOP(groups, kmap) : null;
   if (sopExpr) {
-    html += `<div style="margin-top: 18px;">
-      <div class="lbl">Minimized SOP <span class="tag">Sum of Products</span></div>
-      <div class="expr-box" style="color: #f472b6;">
+    html += `<div class="result-label">Minimized SOP<span class="tag">Sum of Products</span></div>
+      <div class="expr-box">
         <span class="expr-text">${sopExpr}</span>
         <button class="btn-copy" data-copy="${encodeURIComponent(sopExpr)}" data-label="SOP">Copy</button>
-      </div>
-    </div>`;
+      </div>`;
   }
 
-  // XOR Detection
   const xorDetected = detectXOR(truthTable, varNames);
   if (xorDetected) {
-    html += `<div style="margin-top: 10px;">
-      <div class="lbl">Simplified Form <span class="tag" style="background: rgba(250, 204, 21, 0.08); border-color: rgba(250, 204, 21, 0.2); color: #eab308;">${xorDetected.type} Detected</span></div>
-      <div class="expr-box" style="color: #fbbf24;">
+    html += `<div class="result-label">Simplified Form<span class="tag xor">${xorDetected.type} Detected</span></div>
+      <div class="expr-box">
         <span class="expr-text">${xorDetected.expr}</span>
         <button class="btn-copy" data-copy="${encodeURIComponent(xorDetected.expr)}" data-label="${xorDetected.type}">Copy</button>
-      </div>
-    </div>`;
+      </div>`;
   }
 
-  // POS
   if (state.showPOS) {
     const posExpr = computePOS(truthTable, varNames);
-    html += `<div style="margin-top: 10px;">
-      <div class="lbl">POS <span class="tag">Product of Sums</span></div>
-      <div class="expr-box" style="color: #34d399;">
+    html += `<div class="result-label">POS<span class="tag">Product of Sums</span></div>
+      <div class="expr-box">
         <span class="expr-text">${posExpr}</span>
         <button class="btn-copy" data-copy="${encodeURIComponent(posExpr)}" data-label="POS">Copy</button>
-      </div>
-    </div>`;
+      </div>`;
   }
 
-  // Minterm/Maxterm
   const mintermInfo = getMintermInfo(truthTable, varNames);
-  html += `<div style="margin-top: 10px;">
-    <div class="lbl">Canonical Form</div>
+  html += `<div class="result-label">Canonical Form</div>
     <div class="mint-box">
-      <div><span class="sym">\u03a3m</span>(<span class="vals">${mintermInfo.minterms.join(', ') || '\u2205'}</span>)${mintermInfo.dontcares.length > 0 ? ` + <span class="sym">d</span>(<span class="dc">${mintermInfo.dontcares.join(', ')}</span>)` : ''}</div>
-      <div style="margin-top: 2px;"><span class="sym">\u03a0M</span>(<span class="vals">${mintermInfo.maxterms.join(', ') || '\u2205'}</span>)${mintermInfo.dontcares.length > 0 ? ` + <span class="sym">d</span>(<span class="dc">${mintermInfo.dontcares.join(', ')}</span>)` : ''}</div>
-    </div>
-  </div>`;
+      <div><span class="sym">\u03a3m</span>(${mintermInfo.minterms.join(', ') || '\u2205'})${mintermInfo.dontcares.length > 0 ? ` + <span class="sym">d</span>(<span class="dc">${mintermInfo.dontcares.join(', ')}</span>)` : ''}</div>
+      <div><span class="sym">\u03a0M</span>(${mintermInfo.maxterms.join(', ') || '\u2205'})${mintermInfo.dontcares.length > 0 ? ` + <span class="sym">d</span>(<span class="dc">${mintermInfo.dontcares.join(', ')}</span>)` : ''}</div>
+    </div>`;
 
-  // Group Legend
   if (state.showGroups && groups.length > 0) {
     html += '<div class="group-legend">';
     groups.forEach((g, i) => {
@@ -1161,26 +1177,23 @@ function render() {
   kmapPanel.innerHTML = html;
   kmapPanel.style.display = 'block';
 
-  // Event delegation for cell clicks
   kmapPanel.querySelectorAll('.km-cell.click').forEach(cell => {
     cell.addEventListener('click', () => {
       handleCellClick(parseInt(cell.dataset.r), parseInt(cell.dataset.c));
     });
   });
 
-  // Event delegation for copy buttons
   kmapPanel.querySelectorAll('.btn-copy').forEach(btn => {
     btn.addEventListener('click', () => {
       copyText(decodeURIComponent(btn.dataset.copy), btn.dataset.label);
     });
   });
 
-  // Truth Table
   if (state.showTruth) {
-    let ttHtml = '<div class="lbl" style="margin-bottom: 10px;">Truth Table</div>';
-    ttHtml += '<div style="overflow-x: auto; max-height: 380px; overflow-y: auto;"><table class="tt"><thead><tr>';
+    let ttHtml = '<div class="result-label" style="margin-top: 0;">Truth Table</div>';
+    ttHtml += '<div style="overflow-x: auto; max-height: 350px; overflow-y: auto;"><table class="tt"><thead><tr>';
     varNames.forEach(v => { ttHtml += `<th>${v}</th>`; });
-    ttHtml += '<th style="color: #f472b6;">F</th></tr></thead><tbody>';
+    ttHtml += '<th>F</th></tr></thead><tbody>';
     truthTable.forEach(row => {
       ttHtml += '<tr>';
       varNames.forEach(v => { ttHtml += `<td>${row.env[v]}</td>`; });
@@ -1198,14 +1211,8 @@ function render() {
 /* ═══════════════════════ EVENT LISTENERS ═══════════════════════ */
 
 generateBtn.addEventListener('click', generate);
-
-exprInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') generate();
-});
-
-dcInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') generate();
-});
+exprInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') generate(); });
+dcInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') generate(); });
 
 groupsBtn.addEventListener('click', () => {
   state.showGroups = !state.showGroups;
@@ -1225,7 +1232,6 @@ truthBtn.addEventListener('click', () => {
   render();
 });
 
-// Generate on load with default values
 generate();
 </script>
 </body>
