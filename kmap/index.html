@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive Karnaugh Map generator supporting 2-6 variables with SOP/POS minimization, XOR/XNOR detection, and don't-care states.">
+  <title>K-Map Generator | p14m.com</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0d0f16; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #090b10;
+      color: #e2e8f0;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      padding: 20px;
+    }
+
+    .back-link {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      color: #4a5775;
+      text-decoration: none;
+      font-size: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      transition: color 0.2s;
+      z-index: 100;
+    }
+    .back-link:hover { color: #60a5fa; }
+
+    .footer {
+      text-align: center;
+      padding: 30px 0 10px;
+      font-size: 11px;
+      color: #3a4560;
+      font-family: 'Outfit', sans-serif;
+    }
+    .footer a { color: #4a5775; text-decoration: none; }
+    .footer a:hover { color: #60a5fa; }
+
+    .km-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0 0 2px 0;
+      letter-spacing: -0.5px;
+    }
+    .km-sub {
+      font-size: 11px;
+      color: #3a4560;
+      margin: 0 0 20px 0;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .pnl {
+      background: #0f1118;
+      border: 1px solid #191e2e;
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .pnl:hover { border-color: #252d45; }
+
+    .lbl {
+      font-size: 9.5px;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      color: #4a5775;
+      margin-bottom: 6px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .inp {
+      width: 100%;
+      background: #080a0f;
+      border: 1px solid #191e2e;
+      border-radius: 7px;
+      color: #e2e8f0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .inp:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.1);
+    }
+    .inp::placeholder { color: #1e2538; }
+
+    .btn-go {
+      background: linear-gradient(135deg, #3b82f6, #7c3aed);
+      color: white;
+      border: none;
+      border-radius: 7px;
+      padding: 9px 26px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.4px;
+    }
+    .btn-go:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 18px rgba(59, 130, 246, 0.25);
+    }
+    .btn-go:active { transform: translateY(0); }
+
+    .btn-t {
+      background: transparent;
+      border: 1px solid #191e2e;
+      color: #52607a;
+      border-radius: 5px;
+      padding: 5px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-t:hover { border-color: #3a4560; color: #94a3b8; }
+    .btn-t.on {
+      border-color: #60a5fa;
+      color: #60a5fa;
+      background: rgba(96, 165, 250, 0.05);
+    }
+
+    .btn-copy {
+      background: transparent;
+      border: 1px solid #191e2e;
+      color: #4a5775;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .btn-copy:hover { border-color: #3a4560; color: #94a3b8; }
+
+    .err {
+      background: rgba(239, 68, 68, 0.06);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 7px;
+      padding: 10px 14px;
+      color: #fca5a5;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #60a5fa;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      z-index: 999;
+      animation: toastIn 0.2s ease;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .km-tbl {
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: 0 auto;
+    }
+    .km-tbl th, .km-tbl td { text-align: center; padding: 0; }
+    .km-hdr {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #5a6a85;
+      padding: 5px 8px !important;
+    }
+    .km-hdr-v {
+      font-size: 12px;
+      font-weight: 600;
+      color: #a78bfa;
+      padding: 5px 8px !important;
+    }
+
+    .km-cell {
+      width: 50px;
+      height: 50px;
+      font-size: 15px;
+      font-weight: 600;
+      position: relative;
+      border: 1px solid #191e2e;
+      transition: all 0.12s;
+    }
+    .km-cell span { position: relative; z-index: 2; }
+    .km-cell.v1 { color: #60a5fa; }
+    .km-cell.v0 { color: #1e2538; }
+    .km-cell.vx { color: #f59e0b; }
+    .km-cell.click { cursor: pointer; }
+    .km-cell.click:hover {
+      border-color: #60a5fa;
+      background: rgba(96, 165, 250, 0.04) !important;
+    }
+
+    .tt {
+      border-collapse: collapse;
+      font-size: 12px;
+      margin: 0 auto;
+    }
+    .tt th {
+      padding: 7px 12px;
+      border-bottom: 2px solid #191e2e;
+      color: #a78bfa;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      position: sticky;
+      top: 0;
+      background: #0f1118;
+    }
+    .tt td {
+      padding: 5px 12px;
+      border-bottom: 1px solid #0b0d14;
+      text-align: center;
+      color: #52607a;
+    }
+    .tt tr:hover td { background: rgba(96, 165, 250, 0.02); }
+    .tt .o1 { color: #60a5fa; font-weight: 600; }
+    .tt .o0 { color: #1e2538; }
+    .tt .ox { color: #f59e0b; font-weight: 600; }
+
+    .expr-box {
+      background: #080a0f;
+      border: 1px solid #191e2e;
+      border-radius: 7px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      word-break: break-all;
+      line-height: 1.6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .expr-box .expr-text { flex: 1; }
+
+    .mint-box {
+      background: #080a0f;
+      border: 1px solid #191e2e;
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #7a8aa5;
+      line-height: 1.8;
+    }
+    .mint-box .sym { color: #a78bfa; font-weight: 600; }
+    .mint-box .vals { color: #60a5fa; }
+    .mint-box .dc { color: #f59e0b; }
+
+    .ref-g {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 4px;
+      font-size: 10.5px;
+      color: #4a5775;
+    }
+    .ref-i { display: flex; align-items: center; gap: 6px; }
+    .ref-s { color: #a78bfa; font-weight: 600; width: 18px; text-align: center; font-size: 12px; }
+
+    .fade { animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tag {
+      display: inline-block;
+      background: rgba(96, 165, 250, 0.06);
+      border: 1px solid rgba(96, 165, 250, 0.12);
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-size: 9px;
+      color: #4a7cc9;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 14px;
+      align-items: end;
+    }
+    .btn-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .toggle-btns {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .group-legend {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .group-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: #5a6a85;
+    }
+    .group-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .manual-indicator {
+      font-size: 10px;
+      color: #f59e0b;
+      letter-spacing: 0.5px;
+    }
+    .kmap-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 700px) {
+      .input-row { grid-template-columns: 1fr; }
+      .ref-g { grid-template-columns: 1fr 1fr; }
+      .km-cell { width: 40px; height: 40px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <a href="/" class="back-link">&larr; Back to p14m.com</a>
+
+  <div style="max-width: 920px; margin: 0 auto;">
+    <h1 class="km-title">K-Map Generator</h1>
+    <p class="km-sub">Karnaugh Map Solver &amp; Visualizer</p>
+
+    <!-- Input Panel -->
+    <div class="pnl">
+      <div class="input-row">
+        <div>
+          <div class="lbl">Variables</div>
+          <input class="inp" id="varInput" value="A, B, Cin" placeholder="A, B, C, D" spellcheck="false">
+        </div>
+        <div>
+          <div class="lbl">Boolean Expression <span style="color: #283040; letter-spacing: 0; font-size: 9px;">(leave empty for manual)</span></div>
+          <input class="inp" id="exprInput" value="A * Cin + B * Cin + A * B" placeholder="A * B + ~C . D  or  (A xor B) and C'" spellcheck="false">
+        </div>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <div class="lbl">Don't-care minterms <span style="color: #283040; letter-spacing: 0; font-size: 9px;">(optional, comma separated indices)</span></div>
+        <input class="inp" id="dcInput" placeholder="e.g.  2, 5, 7" spellcheck="false" style="max-width: 340px;">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-go" id="generateBtn">Generate</button>
+        <div class="toggle-btns">
+          <button class="btn-t on" id="groupsBtn">Groups</button>
+          <button class="btn-t" id="posBtn">POS</button>
+          <button class="btn-t" id="truthBtn">Truth Table</button>
+        </div>
+      </div>
+
+      <div id="errorBox" class="err" style="display: none;"></div>
+    </div>
+
+    <!-- Reference Panel -->
+    <div class="pnl" style="padding: 12px 18px;">
+      <div class="lbl" style="margin-bottom: 5px;">Operator Reference</div>
+      <div class="ref-g">
+        <div class="ref-i"><span class="ref-s">'</span> NOT (postfix) - A'</div>
+        <div class="ref-i"><span class="ref-s">~</span> NOT (prefix) - ~A</div>
+        <div class="ref-i"><span class="ref-s">.</span> AND - A . B</div>
+        <div class="ref-i"><span class="ref-s">%</span> NAND - A % B</div>
+        <div class="ref-i"><span class="ref-s">^</span> XOR - A ^ B</div>
+        <div class="ref-i"><span class="ref-s">@</span> XNOR - A @ B</div>
+        <div class="ref-i"><span class="ref-s">+</span> OR - A + B</div>
+        <div class="ref-i"><span class="ref-s">#</span> NOR - A # B</div>
+      </div>
+      <div style="font-size: 10px; color: #2e3a52; margin-top: 6px;">
+        Also: <span style="color: #4a5775;">*  &amp;  &middot; (AND) | (OR)  ! (NOT)</span>
+        <br>Keywords: <span style="color: #4a5775;">and  or  not  nand  nor  xor  xnor</span>
+        &middot; Explicit operator required between variables
+        <br>Precedence (high&rarr;low): <span style="color: #4a5775;">NOT &rarr; AND/NAND &rarr; XOR/XNOR &rarr; OR/NOR</span>
+      </div>
+    </div>
+
+    <!-- K-Map Panel -->
+    <div id="kmapPanel" class="pnl fade" style="display: none;"></div>
+
+    <!-- Truth Table Panel -->
+    <div id="truthPanel" class="pnl fade" style="display: none;"></div>
+  </div>
+
+  <div class="footer">
+    Built by Peter Moses &middot; <a href="/">p14m.com</a>
+  </div>
+
+  <div id="toast" class="toast" style="display: none;"></div>
+
+<script>
+/* ───────────────────────── helpers ───────────────────────── */
+
+const GRAY_CODE = {
+  1: ["0", "1"],
+  2: ["00", "01", "11", "10"],
+  3: ["000", "001", "011", "010", "110", "111", "101", "100"],
+  4: ["0000","0001","0011","0010","0110","0111","0101","0100",
+      "1100","1101","1111","1110","1010","1011","1001","1000"],
+};
+
+function grayOrder(n) { return GRAY_CODE[n] || []; }
+
+/* ────────── expression tokenizer ────────── */
+
+const TOKEN = {
+  LPAREN: "(", RPAREN: ")",
+  NOT: "NOT", AND: "AND", OR: "OR",
+  NAND: "NAND", NOR: "NOR", XOR: "XOR", XNOR: "XNOR",
+  VAR: "VAR", LITERAL: "LITERAL",
+};
+
+const SYMBOLS = {
+  "'": TOKEN.NOT, "!": TOKEN.NOT, "~": TOKEN.NOT,
+  "\u00b7": TOKEN.AND, "*": TOKEN.AND, "&": TOKEN.AND, ".": TOKEN.AND,
+  "&&": TOKEN.AND,
+  "+": TOKEN.OR, "|": TOKEN.OR, "||": TOKEN.OR,
+  "\u2295": TOKEN.XOR, "^": TOKEN.XOR,
+  "\u22bc": TOKEN.NAND, "%": TOKEN.NAND,
+  "@": TOKEN.XNOR, "\u2299": TOKEN.XNOR,
+  "#": TOKEN.NOR, "\u22bd": TOKEN.NOR,
+};
+
+const KEYWORDS = {
+  not: TOKEN.NOT, and: TOKEN.AND, or: TOKEN.OR,
+  nand: TOKEN.NAND, nor: TOKEN.NOR, xor: TOKEN.XOR, xnor: TOKEN.XNOR,
+};
+
+function isAlpha(ch) { return /[a-zA-Z_]/.test(ch); }
+function isAlnum(ch) { return /[a-zA-Z0-9_]/.test(ch); }
+
+function tokenize(expr, varNames) {
+  const tokens = [];
+  let i = 0;
+  const s = expr;
+  const sortedVars = [...varNames].sort((a, b) => b.length - a.length);
+
+  while (i < s.length) {
+    if (s[i] === " " || s[i] === "\t") { i++; continue; }
+    if (s[i] === "(") { tokens.push({ type: TOKEN.LPAREN }); i++; continue; }
+    if (s[i] === ")") { tokens.push({ type: TOKEN.RPAREN }); i++; continue; }
+
+    if (s[i] === "'") {
+      tokens.push({ type: TOKEN.NOT, postfix: true });
+      i++; continue;
+    }
+
+    if (i + 1 < s.length && SYMBOLS[s[i] + s[i + 1]]) {
+      tokens.push({ type: SYMBOLS[s[i] + s[i + 1]] });
+      i += 2; continue;
+    }
+
+    if (SYMBOLS[s[i]] && s[i] !== "'") {
+      tokens.push({ type: SYMBOLS[s[i]] });
+      i++; continue;
+    }
+
+    if ((s[i] === "0" || s[i] === "1") && (i + 1 >= s.length || !isAlpha(s[i + 1]))) {
+      tokens.push({ type: TOKEN.LITERAL, value: parseInt(s[i]) });
+      i++; continue;
+    }
+
+    let matched = false;
+    for (const v of sortedVars) {
+      if (s.substring(i, i + v.length) === v) {
+        const after = i + v.length;
+        if (after >= s.length || !isAlnum(s[after])) {
+          tokens.push({ type: TOKEN.VAR, name: v });
+          i += v.length;
+          matched = true;
+          break;
+        }
+      }
+    }
+    if (matched) continue;
+
+    let kwMatch = false;
+    for (const [kw, tt] of Object.entries(KEYWORDS)) {
+      if (s.substring(i, i + kw.length).toLowerCase() === kw) {
+        const after = i + kw.length;
+        if (after >= s.length || !isAlnum(s[after])) {
+          tokens.push({ type: tt });
+          i += kw.length;
+          kwMatch = true;
+          break;
+        }
+      }
+    }
+    if (kwMatch) continue;
+
+    if (isAlpha(s[i])) {
+      let start = i;
+      while (i < s.length && isAlnum(s[i])) i++;
+      throw new Error(`Unknown variable "${s.substring(start, i)}". Declare it in the variables list.`);
+    }
+
+    throw new Error(`Unexpected character "${s[i]}" at position ${i + 1}`);
+  }
+  return tokens;
+}
+
+/* ────────── parser ────────── */
+
+function parse(tokens) {
+  let pos = 0;
+  function peek() { return pos < tokens.length ? tokens[pos] : null; }
+  function advance() { return tokens[pos++]; }
+
+  function parseOr() {
+    let left = parseXor();
+    while (peek() && (peek().type === TOKEN.OR || peek().type === TOKEN.NOR)) {
+      const op = advance().type;
+      left = { op, left, right: parseXor() };
+    }
+    return left;
+  }
+
+  function parseXor() {
+    let left = parseAnd();
+    while (peek() && (peek().type === TOKEN.XOR || peek().type === TOKEN.XNOR)) {
+      const op = advance().type;
+      left = { op, left, right: parseAnd() };
+    }
+    return left;
+  }
+
+  function parseAnd() {
+    let left = parseUnary();
+    while (peek() && (peek().type === TOKEN.AND || peek().type === TOKEN.NAND)) {
+      const op = advance().type;
+      left = { op, left, right: parseUnary() };
+    }
+    return left;
+  }
+
+  function parseUnary() {
+    if (peek() && peek().type === TOKEN.NOT && !peek().postfix) {
+      advance();
+      return { op: TOKEN.NOT, operand: parseUnary() };
+    }
+    return parsePostfix();
+  }
+
+  function parsePostfix() {
+    let node = parseAtom();
+    while (peek() && peek().type === TOKEN.NOT && peek().postfix) {
+      advance();
+      node = { op: TOKEN.NOT, operand: node };
+    }
+    return node;
+  }
+
+  function parseAtom() {
+    const t = peek();
+    if (!t) throw new Error("Unexpected end of expression");
+    if (t.type === TOKEN.LPAREN) {
+      advance();
+      const node = parseOr();
+      if (!peek() || peek().type !== TOKEN.RPAREN) throw new Error("Missing closing parenthesis");
+      advance();
+      let result = node;
+      while (peek() && peek().type === TOKEN.NOT && peek().postfix) {
+        advance();
+        result = { op: TOKEN.NOT, operand: result };
+      }
+      return result;
+    }
+    if (t.type === TOKEN.VAR) { advance(); return { op: TOKEN.VAR, name: t.name }; }
+    if (t.type === TOKEN.LITERAL) { advance(); return { op: TOKEN.LITERAL, value: t.value }; }
+    throw new Error(`Unexpected token: ${JSON.stringify(t)}`);
+  }
+
+  const ast = parseOr();
+  if (pos < tokens.length) throw new Error(`Unexpected token at position ${pos + 1}`);
+  return ast;
+}
+
+/* ────────── evaluator ────────── */
+
+function evaluate(ast, env) {
+  switch (ast.op) {
+    case TOKEN.VAR: return env[ast.name] ?? 0;
+    case TOKEN.LITERAL: return ast.value;
+    case TOKEN.NOT: return evaluate(ast.operand, env) ? 0 : 1;
+    case TOKEN.AND: return evaluate(ast.left, env) & evaluate(ast.right, env);
+    case TOKEN.OR: return evaluate(ast.left, env) | evaluate(ast.right, env);
+    case TOKEN.NOR: return (evaluate(ast.left, env) | evaluate(ast.right, env)) ? 0 : 1;
+    case TOKEN.NAND: return (evaluate(ast.left, env) & evaluate(ast.right, env)) ? 0 : 1;
+    case TOKEN.XOR: return evaluate(ast.left, env) ^ evaluate(ast.right, env);
+    case TOKEN.XNOR: return (evaluate(ast.left, env) ^ evaluate(ast.right, env)) ? 0 : 1;
+    default: throw new Error(`Unknown op: ${ast.op}`);
+  }
+}
+
+/* ────────── truth table & k-map ────────── */
+
+function computeTruthTable(ast, varNames) {
+  const n = varNames.length;
+  const rows = 1 << n;
+  const table = [];
+  for (let i = 0; i < rows; i++) {
+    const env = {};
+    varNames.forEach((v, idx) => { env[v] = (i >> (n - 1 - idx)) & 1; });
+    table.push({ env, result: evaluate(ast, env) });
+  }
+  return table;
+}
+
+function buildKmapGrid(truthTable, varNames) {
+  const n = varNames.length;
+  if (n < 2 || n > 6) return null;
+
+  let rowVars, colVars;
+  if (n === 2) { rowVars = [varNames[0]]; colVars = [varNames[1]]; }
+  else if (n === 3) { rowVars = [varNames[0]]; colVars = [varNames[1], varNames[2]]; }
+  else if (n === 4) { rowVars = [varNames[0], varNames[1]]; colVars = [varNames[2], varNames[3]]; }
+  else if (n === 5) { rowVars = [varNames[0], varNames[1]]; colVars = [varNames[2], varNames[3], varNames[4]]; }
+  else { rowVars = [varNames[0], varNames[1], varNames[2]]; colVars = [varNames[3], varNames[4], varNames[5]]; }
+
+  const rowCodes = grayOrder(rowVars.length);
+  const colCodes = grayOrder(colVars.length);
+
+  const grid = rowCodes.map((rc) =>
+    colCodes.map((cc) => {
+      const env = {};
+      rowVars.forEach((v, i) => { env[v] = parseInt(rc[i]); });
+      colVars.forEach((v, i) => { env[v] = parseInt(cc[i]); });
+      const row = truthTable.find((r) => varNames.every((v) => r.env[v] === env[v]));
+      return row ? row.result : 0;
+    })
+  );
+
+  return { grid, rowVars, colVars, rowCodes, colCodes };
+}
+
+/* ────────── K-map grouping ────────── */
+
+function findKmapGroups(grid, rowCodes, colCodes) {
+  const rows = grid.length;
+  const cols = grid[0].length;
+  const ones = [];
+  const onesOrDc = [];
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c] === 1) ones.push([r, c]);
+      if (grid[r][c] === 1 || grid[r][c] === "X") onesOrDc.push([r, c]);
+    }
+  }
+
+  if (ones.length === 0) return [];
+
+  const allCovered = onesOrDc.length === rows * cols;
+  if (allCovered && ones.length > 0) return [{ cells: onesOrDc, rStart: 0, cStart: 0, rSize: rows, cSize: cols }];
+
+  const groups = [];
+  const covered = new Set();
+  const cellKey = (r, c) => `${r},${c}`;
+  const oneKeys = new Set(ones.map(([r,c]) => cellKey(r,c)));
+
+  const sizes = [];
+  for (let rSize = rows; rSize >= 1; rSize = rSize / 2) {
+    for (let cSize = cols; cSize >= 1; cSize = cSize / 2) {
+      if (rSize * cSize > 0 && Number.isInteger(Math.log2(rSize * cSize))) {
+        sizes.push([rSize, cSize]);
+      }
+    }
+  }
+  sizes.sort((a, b) => b[0] * b[1] - a[0] * a[1]);
+
+  for (const [rSize, cSize] of sizes) {
+    for (let rStart = 0; rStart < rows; rStart++) {
+      for (let cStart = 0; cStart < cols; cStart++) {
+        const cells = [];
+        let allValid = true;
+        let hasUncoveredOne = false;
+
+        for (let dr = 0; dr < rSize && allValid; dr++) {
+          for (let dc = 0; dc < cSize && allValid; dc++) {
+            const r = (rStart + dr) % rows;
+            const c = (cStart + dc) % cols;
+            if (grid[r][c] !== 1 && grid[r][c] !== "X") { allValid = false; break; }
+            cells.push([r, c]);
+            if (grid[r][c] === 1 && !covered.has(cellKey(r, c))) hasUncoveredOne = true;
+          }
+        }
+
+        if (allValid && hasUncoveredOne && cells.length > 0) {
+          groups.push({ cells, rStart, cStart, rSize, cSize });
+          cells.forEach(([r, c]) => {
+            if (oneKeys.has(cellKey(r, c))) covered.add(cellKey(r, c));
+          });
+        }
+      }
+    }
+  }
+
+  ones.forEach(([r, c]) => {
+    if (!covered.has(cellKey(r, c))) {
+      groups.push({ cells: [[r, c]], rStart: r, cStart: c, rSize: 1, cSize: 1 });
+      covered.add(cellKey(r, c));
+    }
+  });
+
+  return groups;
+}
+
+/* ────────── minterm helper ────────── */
+
+function getMintermIndex(env, varNames) {
+  let idx = 0;
+  varNames.forEach((v) => { idx = (idx << 1) | env[v]; });
+  return idx;
+}
+
+/* ───────── colors ───────── */
+
+const GROUP_COLORS = [
+  "rgba(239, 68, 68, 0.22)", "rgba(59, 130, 246, 0.22)", "rgba(16, 185, 129, 0.22)",
+  "rgba(245, 158, 11, 0.22)", "rgba(139, 92, 246, 0.22)", "rgba(236, 72, 153, 0.22)",
+  "rgba(6, 182, 212, 0.22)", "rgba(132, 204, 22, 0.22)",
+];
+const GROUP_BORDERS = [
+  "rgba(239, 68, 68, 0.8)", "rgba(59, 130, 246, 0.8)", "rgba(16, 185, 129, 0.8)",
+  "rgba(245, 158, 11, 0.8)", "rgba(139, 92, 246, 0.8)", "rgba(236, 72, 153, 0.8)",
+  "rgba(6, 182, 212, 0.8)", "rgba(132, 204, 22, 0.8)",
+];
+
+/* ═══════════════════════ STATE ═══════════════════════ */
+
+let state = {
+  result: null,
+  error: null,
+  showTruth: false,
+  showGroups: true,
+  showPOS: false,
+  manualOverrides: {},
+  manualMode: false,
+};
+
+/* ═══════════════════════ DOM REFS ═══════════════════════ */
+
+const varInput = document.getElementById('varInput');
+const exprInput = document.getElementById('exprInput');
+const dcInput = document.getElementById('dcInput');
+const generateBtn = document.getElementById('generateBtn');
+const groupsBtn = document.getElementById('groupsBtn');
+const posBtn = document.getElementById('posBtn');
+const truthBtn = document.getElementById('truthBtn');
+const errorBox = document.getElementById('errorBox');
+const kmapPanel = document.getElementById('kmapPanel');
+const truthPanel = document.getElementById('truthPanel');
+const toast = document.getElementById('toast');
+
+/* ═══════════════════════ FUNCTIONS ═══════════════════════ */
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.style.display = 'block';
+}
+
+function hideError() {
+  errorBox.style.display = 'none';
+}
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 1800);
+}
+
+function copyText(text, label) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => showToast(`Copied ${label}!`));
+  }
+}
+
+function getEffectiveResult() {
+  if (!state.result) return null;
+  if (!state.manualMode || Object.keys(state.manualOverrides).length === 0) return state.result;
+  const tt = state.result.truthTable.map((row, i) => ({
+    ...row,
+    result: state.manualOverrides[i] !== undefined ? state.manualOverrides[i] : row.result,
+  }));
+  const kmap = buildKmapGrid(tt, state.result.varNames);
+  return { ...state.result, truthTable: tt, kmap };
+}
+
+function computeSOP(groups, kmap) {
+  const { rowVars, colVars, rowCodes, colCodes } = kmap;
+  const allVars = [...rowVars, ...colVars];
+  const terms = [];
+
+  for (const group of groups) {
+    const literals = [];
+    for (let vi = 0; vi < allVars.length; vi++) {
+      const vals = new Set();
+      group.cells.forEach(([r, c]) => {
+        const code = vi < rowVars.length ? rowCodes[r][vi] : colCodes[c][vi - rowVars.length];
+        vals.add(code);
+      });
+      if (vals.size === 1) {
+        const val = [...vals][0];
+        literals.push(val === "1" ? allVars[vi] : allVars[vi] + "'");
+      }
+    }
+    terms.push(literals.length === 0 ? "1" : literals.join(" \u00b7 "));
+  }
+  return terms.join(" + ") || "0";
+}
+
+function computePOS(truthTable, varNames) {
+  const maxterms = [];
+  truthTable.forEach((row) => {
+    if (row.result === 0) {
+      const literals = varNames.map((v) => row.env[v] === 0 ? v : v + "'");
+      maxterms.push("(" + literals.join(" + ") + ")");
+    }
+  });
+  if (maxterms.length === 0) return "1";
+  if (maxterms.length === (1 << varNames.length)) return "0";
+  return maxterms.join(" \u00b7 ");
+}
+
+function detectXOR(truthTable, varNames) {
+  const n = varNames.length;
+  if (n < 2 || n > 6) return null;
+
+  const definedRows = truthTable.filter(r => r.result !== "X");
+  if (definedRows.length !== (1 << n)) return null;
+
+  const allIdxs = varNames.map((_, i) => i);
+
+  function matchesXor(varIdxs, complementMap) {
+    return truthTable.every(row => {
+      const xorVal = varIdxs.reduce((acc, vi) => {
+        const raw = row.env[varNames[vi]];
+        const val = complementMap[vi] ? (1 - raw) : raw;
+        return acc ^ val;
+      }, 0);
+      return row.result === xorVal;
+    });
+  }
+
+  function matchesXnor(varIdxs, complementMap) {
+    return truthTable.every(row => {
+      const xorVal = varIdxs.reduce((acc, vi) => {
+        const raw = row.env[varNames[vi]];
+        const val = complementMap[vi] ? (1 - raw) : raw;
+        return acc ^ val;
+      }, 0);
+      return row.result === (xorVal ? 0 : 1);
+    });
+  }
+
+  if (matchesXor(allIdxs, {})) return { type: "XOR", expr: varNames.join(" \u2295 ") };
+  if (matchesXnor(allIdxs, {})) return { type: "XNOR", expr: varNames.join(" \u2299 ") };
+
+  if (n === 2) {
+    for (let mask = 1; mask < 4; mask++) {
+      const cm = {};
+      if (mask & 1) cm[0] = true;
+      if (mask & 2) cm[1] = true;
+      if (matchesXor(allIdxs, cm)) {
+        const parts = allIdxs.map(i => cm[i] ? varNames[i] + "'" : varNames[i]);
+        return { type: "XOR", expr: parts.join(" \u2295 ") };
+      }
+      if (matchesXnor(allIdxs, cm)) {
+        const parts = allIdxs.map(i => cm[i] ? varNames[i] + "'" : varNames[i]);
+        return { type: "XNOR", expr: parts.join(" \u2299 ") };
+      }
+    }
+  }
+
+  if (n >= 3) {
+    for (let skip = 0; skip < n; skip++) {
+      const subset = allIdxs.filter(i => i !== skip);
+      if (matchesXor(subset, {})) {
+        return { type: "XOR", expr: subset.map(i => varNames[i]).join(" \u2295 ") + " (independent of " + varNames[skip] + ")" };
+      }
+    }
+  }
+
+  return null;
+}
+
+function getMintermInfo(truthTable, varNames) {
+  const minterms = [], maxterms = [], dontcares = [];
+  truthTable.forEach((row) => {
+    const idx = getMintermIndex(row.env, varNames);
+    if (row.result === 1) minterms.push(idx);
+    else if (row.result === "X") dontcares.push(idx);
+    else maxterms.push(idx);
+  });
+  return { minterms, maxterms, dontcares };
+}
+
+function generate() {
+  hideError();
+  state.result = null;
+  state.manualOverrides = {};
+  kmapPanel.style.display = 'none';
+
+  try {
+    const raw = varInput.value.split(/[,\s]+/).filter(Boolean);
+    if (raw.length < 2) throw new Error("Enter at least 2 variables");
+    if (raw.length > 6) throw new Error("Maximum 6 variables supported");
+    for (const v of raw) {
+      if (/^[0-9]/.test(v)) throw new Error(`Variable "${v}" cannot start with a number`);
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(v)) throw new Error(`Invalid variable name "${v}"`);
+    }
+    if (new Set(raw).size !== raw.length) throw new Error("Duplicate variable names");
+    const varNames = raw;
+
+    const dcSet = new Set();
+    if (dcInput.value.trim()) {
+      const dcParts = dcInput.value.split(/[,\s]+/).filter(Boolean);
+      for (const p of dcParts) {
+        const n = parseInt(p);
+        if (isNaN(n) || n < 0 || n >= (1 << varNames.length)) {
+          throw new Error(`Invalid don't-care minterm: ${p}. Must be 0-${(1 << varNames.length) - 1}`);
+        }
+        dcSet.add(n);
+      }
+    }
+
+    if (!exprInput.value.trim()) {
+      const n = varNames.length;
+      const rows = 1 << n;
+      const truthTable = [];
+      for (let i = 0; i < rows; i++) {
+        const env = {};
+        varNames.forEach((v, idx) => { env[v] = (i >> (n - 1 - idx)) & 1; });
+        truthTable.push({ env, result: dcSet.has(i) ? "X" : 0 });
+      }
+      const kmap = buildKmapGrid(truthTable, varNames);
+      state.result = { varNames, truthTable, kmap };
+      state.manualMode = true;
+      render();
+      return;
+    }
+
+    state.manualMode = false;
+    const tokens = tokenize(exprInput.value, varNames);
+    const ast = parse(tokens);
+    const truthTable = computeTruthTable(ast, varNames);
+
+    truthTable.forEach((row) => {
+      const idx = getMintermIndex(row.env, varNames);
+      if (dcSet.has(idx)) row.result = "X";
+    });
+
+    const kmap = buildKmapGrid(truthTable, varNames);
+    state.result = { varNames, truthTable, kmap };
+    render();
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+function handleCellClick(r, c) {
+  const effectiveResult = getEffectiveResult();
+  if (!effectiveResult?.kmap || !state.manualMode) return;
+
+  const { varNames, kmap } = effectiveResult;
+  const env = {};
+  kmap.rowVars.forEach((v, i) => { env[v] = parseInt(kmap.rowCodes[r][i]); });
+  kmap.colVars.forEach((v, i) => { env[v] = parseInt(kmap.colCodes[c][i]); });
+
+  const ttIdx = effectiveResult.truthTable.findIndex((row) =>
+    varNames.every((v) => row.env[v] === env[v])
+  );
+
+  if (ttIdx >= 0) {
+    const cur = state.manualOverrides[ttIdx] !== undefined ? state.manualOverrides[ttIdx] : effectiveResult.truthTable[ttIdx].result;
+    const next = cur === 0 ? 1 : cur === 1 ? "X" : 0;
+    state.manualOverrides[ttIdx] = next;
+    render();
+  }
+}
+
+function render() {
+  const effectiveResult = getEffectiveResult();
+
+  if (!effectiveResult?.kmap) {
+    kmapPanel.style.display = 'none';
+    truthPanel.style.display = 'none';
+    return;
+  }
+
+  const { varNames, truthTable, kmap } = effectiveResult;
+  const groups = findKmapGroups(kmap.grid, kmap.rowCodes, kmap.colCodes);
+
+  // Build cell group map
+  const cellGroupMap = {};
+  groups.forEach((g, gi) => {
+    g.cells.forEach(([r, c]) => {
+      const key = `${r},${c}`;
+      if (!cellGroupMap[key]) cellGroupMap[key] = [];
+      cellGroupMap[key].push(gi);
+    });
+  });
+
+  // Build K-map HTML
+  let html = `<div class="kmap-header">
+    <div class="lbl" style="margin: 0;">Karnaugh Map</div>
+    ${state.manualMode ? '<span class="manual-indicator">&#x25cf; MANUAL - click cells to cycle 0 &rarr; 1 &rarr; X</span>' : ''}
+  </div>`;
+
+  html += '<div style="overflow-x: auto; padding: 2px 0;"><table class="km-tbl"><thead><tr>';
+  html += `<th class="km-hdr-v" style="border-bottom: 2px solid #191e2e; border-right: 2px solid #191e2e;">
+    <span style="color: #f472b6;">${kmap.rowVars.join('')}</span> \\ <span style="color: #60a5fa;">${kmap.colVars.join('')}</span>
+  </th>`;
+  kmap.colCodes.forEach(cc => {
+    html += `<th class="km-hdr" style="border-bottom: 2px solid #191e2e;">${cc}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  kmap.grid.forEach((row, ri) => {
+    html += '<tr>';
+    html += `<td class="km-hdr" style="border-right: 2px solid #191e2e; font-weight: 500;">${kmap.rowCodes[ri]}</td>`;
+    row.forEach((val, ci) => {
+      const key = `${ri},${ci}`;
+      const gIdxs = cellGroupMap[key] || [];
+      const bg = state.showGroups && gIdxs.length > 0 ? GROUP_COLORS[gIdxs[0] % GROUP_COLORS.length] : 'transparent';
+      const border = state.showGroups && gIdxs.length > 0 ? `2px solid ${GROUP_BORDERS[gIdxs[0] % GROUP_BORDERS.length]}` : '1px solid #191e2e';
+      const cls = val === 1 ? 'v1' : val === 'X' ? 'vx' : 'v0';
+      const clickCls = state.manualMode ? 'click' : '';
+      html += `<td class="km-cell ${cls} ${clickCls}" data-r="${ri}" data-c="${ci}" style="background: ${bg}; border: ${border};">
+        <span>${val === 'X' ? 'X' : val}</span>
+      </td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table></div>';
+
+  // SOP
+  const sopExpr = groups.length > 0 ? computeSOP(groups, kmap) : null;
+  if (sopExpr) {
+    html += `<div style="margin-top: 18px;">
+      <div class="lbl">Minimized SOP <span class="tag">Sum of Products</span></div>
+      <div class="expr-box" style="color: #f472b6;">
+        <span class="expr-text">${sopExpr}</span>
+        <button class="btn-copy" data-copy="${encodeURIComponent(sopExpr)}" data-label="SOP">Copy</button>
+      </div>
+    </div>`;
+  }
+
+  // XOR Detection
+  const xorDetected = detectXOR(truthTable, varNames);
+  if (xorDetected) {
+    html += `<div style="margin-top: 10px;">
+      <div class="lbl">Simplified Form <span class="tag" style="background: rgba(250, 204, 21, 0.08); border-color: rgba(250, 204, 21, 0.2); color: #eab308;">${xorDetected.type} Detected</span></div>
+      <div class="expr-box" style="color: #fbbf24;">
+        <span class="expr-text">${xorDetected.expr}</span>
+        <button class="btn-copy" data-copy="${encodeURIComponent(xorDetected.expr)}" data-label="${xorDetected.type}">Copy</button>
+      </div>
+    </div>`;
+  }
+
+  // POS
+  if (state.showPOS) {
+    const posExpr = computePOS(truthTable, varNames);
+    html += `<div style="margin-top: 10px;">
+      <div class="lbl">POS <span class="tag">Product of Sums</span></div>
+      <div class="expr-box" style="color: #34d399;">
+        <span class="expr-text">${posExpr}</span>
+        <button class="btn-copy" data-copy="${encodeURIComponent(posExpr)}" data-label="POS">Copy</button>
+      </div>
+    </div>`;
+  }
+
+  // Minterm/Maxterm
+  const mintermInfo = getMintermInfo(truthTable, varNames);
+  html += `<div style="margin-top: 10px;">
+    <div class="lbl">Canonical Form</div>
+    <div class="mint-box">
+      <div><span class="sym">\u03a3m</span>(<span class="vals">${mintermInfo.minterms.join(', ') || '\u2205'}</span>)${mintermInfo.dontcares.length > 0 ? ` + <span class="sym">d</span>(<span class="dc">${mintermInfo.dontcares.join(', ')}</span>)` : ''}</div>
+      <div style="margin-top: 2px;"><span class="sym">\u03a0M</span>(<span class="vals">${mintermInfo.maxterms.join(', ') || '\u2205'}</span>)${mintermInfo.dontcares.length > 0 ? ` + <span class="sym">d</span>(<span class="dc">${mintermInfo.dontcares.join(', ')}</span>)` : ''}</div>
+    </div>
+  </div>`;
+
+  // Group Legend
+  if (state.showGroups && groups.length > 0) {
+    html += '<div class="group-legend">';
+    groups.forEach((g, i) => {
+      const allVars = [...kmap.rowVars, ...kmap.colVars];
+      const label = allVars.map((v, vi) => {
+        const vals = new Set();
+        g.cells.forEach(([r, c]) => {
+          const code = vi < kmap.rowVars.length ? kmap.rowCodes[r][vi] : kmap.colCodes[c][vi - kmap.rowVars.length];
+          vals.add(code);
+        });
+        if (vals.size === 1) {
+          const val = [...vals][0];
+          return val === "1" ? v : v + "'";
+        }
+        return null;
+      }).filter(Boolean).join(" \u00b7 ") || "1";
+
+      html += `<div class="group-item">
+        <div class="group-swatch" style="background: ${GROUP_COLORS[i % GROUP_COLORS.length]}; border: 2px solid ${GROUP_BORDERS[i % GROUP_BORDERS.length]};"></div>
+        ${label}
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  kmapPanel.innerHTML = html;
+  kmapPanel.style.display = 'block';
+
+  // Event delegation for cell clicks
+  kmapPanel.querySelectorAll('.km-cell.click').forEach(cell => {
+    cell.addEventListener('click', () => {
+      handleCellClick(parseInt(cell.dataset.r), parseInt(cell.dataset.c));
+    });
+  });
+
+  // Event delegation for copy buttons
+  kmapPanel.querySelectorAll('.btn-copy').forEach(btn => {
+    btn.addEventListener('click', () => {
+      copyText(decodeURIComponent(btn.dataset.copy), btn.dataset.label);
+    });
+  });
+
+  // Truth Table
+  if (state.showTruth) {
+    let ttHtml = '<div class="lbl" style="margin-bottom: 10px;">Truth Table</div>';
+    ttHtml += '<div style="overflow-x: auto; max-height: 380px; overflow-y: auto;"><table class="tt"><thead><tr>';
+    varNames.forEach(v => { ttHtml += `<th>${v}</th>`; });
+    ttHtml += '<th style="color: #f472b6;">F</th></tr></thead><tbody>';
+    truthTable.forEach(row => {
+      ttHtml += '<tr>';
+      varNames.forEach(v => { ttHtml += `<td>${row.env[v]}</td>`; });
+      const cls = row.result === 1 ? 'o1' : row.result === 'X' ? 'ox' : 'o0';
+      ttHtml += `<td class="${cls}">${row.result === 'X' ? 'X' : row.result}</td></tr>`;
+    });
+    ttHtml += '</tbody></table></div>';
+    truthPanel.innerHTML = ttHtml;
+    truthPanel.style.display = 'block';
+  } else {
+    truthPanel.style.display = 'none';
+  }
+}
+
+/* ═══════════════════════ EVENT LISTENERS ═══════════════════════ */
+
+generateBtn.addEventListener('click', generate);
+
+exprInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') generate();
+});
+
+dcInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') generate();
+});
+
+groupsBtn.addEventListener('click', () => {
+  state.showGroups = !state.showGroups;
+  groupsBtn.classList.toggle('on', state.showGroups);
+  render();
+});
+
+posBtn.addEventListener('click', () => {
+  state.showPOS = !state.showPOS;
+  posBtn.classList.toggle('on', state.showPOS);
+  render();
+});
+
+truthBtn.addEventListener('click', () => {
+  state.showTruth = !state.showTruth;
+  truthBtn.classList.toggle('on', state.showTruth);
+  render();
+});
+
+// Generate on load with default values
+generate();
+</script>
+</body>
+</html>
