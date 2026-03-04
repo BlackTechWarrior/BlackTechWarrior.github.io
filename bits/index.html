@@ -76,7 +76,7 @@
 
     .subtitle {
       font-size: 0.9em;
-      color: #666666;
+      color: #595959;
       margin: 0 0 20px 0;
     }
     body.dark .subtitle { color: #888888; }
@@ -99,7 +99,7 @@
     body.dark .lbl { color: #aaaaaa; }
     .lbl-hint {
       font-weight: 400;
-      color: #999999;
+      color: #767676;
       font-size: 11px;
     }
 
@@ -116,14 +116,14 @@
       transition: border-color 0.2s;
     }
     .inp:focus { border-color: #0066cc; }
-    .inp::placeholder { color: #aaaaaa; }
+    .inp::placeholder { color: #767676; }
     body.dark .inp {
       background: #2a2a2a;
       border-color: #444444;
       color: #e0e0e0;
     }
     body.dark .inp:focus { border-color: #87ceeb; }
-    body.dark .inp::placeholder { color: #666666; }
+    body.dark .inp::placeholder { color: #9a9a9a; }
 
     .btn-go {
       background: #0066cc;
@@ -144,7 +144,7 @@
     .btn-t {
       background: transparent;
       border: 1px solid #cccccc;
-      color: #666666;
+      color: #595959;
       border-radius: 5px;
       padding: 6px 12px;
       font-family: inherit;
@@ -161,7 +161,7 @@
     .btn-copy {
       background: transparent;
       border: 1px solid #cccccc;
-      color: #666666;
+      color: #595959;
       border-radius: 4px;
       padding: 4px 10px;
       font-family: inherit;
@@ -185,7 +185,7 @@
     .mode-btn {
       background: transparent;
       border: none;
-      color: #666666;
+      color: #595959;
       padding: 6px 14px;
       font-family: inherit;
       font-size: 12px;
@@ -238,7 +238,7 @@
 
     .ref-section {
       font-size: 13px;
-      color: #666666;
+      color: #595959;
       margin-top: 15px;
       padding-top: 15px;
       border-top: 1px solid #e0e0e0;
@@ -251,9 +251,9 @@
       text-align: center;
       padding: 30px 0 10px;
       font-size: 12px;
-      color: #999999;
+      color: #767676;
     }
-    body.dark .footer { color: #666666; }
+    body.dark .footer { color: #9a9a9a; }
 
     /* ── Variable Bank ── */
     .var-controls {
@@ -315,14 +315,14 @@
       transition: border-color 0.2s;
     }
     .var-value-input:focus { border-color: #0066cc; }
-    .var-value-input::placeholder { color: #aaaaaa; }
+    .var-value-input::placeholder { color: #767676; }
     body.dark .var-value-input {
       background: #2a2a2a;
       border-color: #444444;
       color: #e0e0e0;
     }
     body.dark .var-value-input:focus { border-color: #87ceeb; }
-    body.dark .var-value-input::placeholder { color: #666666; }
+    body.dark .var-value-input::placeholder { color: #9a9a9a; }
 
     /* ── Bit Cells ── */
     .bit-row {
@@ -342,13 +342,13 @@
 
     .bit-idx {
       font-size: 10px;
-      color: #999999;
+      color: #767676;
       font-family: monospace;
       margin-bottom: 2px;
       height: 14px;
       line-height: 14px;
     }
-    body.dark .bit-idx { color: #666666; }
+    body.dark .bit-idx { color: #9a9a9a; }
 
     .bit-cell {
       display: flex;
@@ -363,9 +363,9 @@
     body.dark .bit-cell { border-color: #444444; }
 
     .bit-cell.b1 { color: #0066cc; }
-    .bit-cell.b0 { color: #cccccc; }
+    .bit-cell.b0 { color: #767676; }
     body.dark .bit-cell.b1 { color: #87ceeb; }
-    body.dark .bit-cell.b0 { color: #444444; }
+    body.dark .bit-cell.b0 { color: #6b6b6b; }
 
     .bit-cell.click { cursor: pointer; }
     .bit-cell.click:hover { border-color: #0066cc; background: rgba(0, 102, 204, 0.05); }
@@ -383,7 +383,7 @@
     .format-line {
       font-family: monospace;
       font-size: 12px;
-      color: #666666;
+      color: #595959;
       margin-top: 6px;
       word-break: break-all;
     }
@@ -403,7 +403,7 @@
       transition: border-color 0.2s;
     }
     .expr-input:focus { border-color: #87ceeb; }
-    .expr-input::placeholder { color: #666666; }
+    .expr-input::placeholder { color: #9a9a9a; }
 
     /* ── Step Rows ── */
     .step-row {
@@ -429,22 +429,22 @@
       flex-shrink: 0;
     }
 
-    .step-eq { color: #999999; flex-shrink: 0; }
+    .step-eq { color: #767676; flex-shrink: 0; }
 
     .step-vals {
       font-size: 12px;
-      color: #666666;
+      color: #595959;
       flex-shrink: 0;
     }
     body.dark .step-vals { color: #888888; }
 
     .step-desc {
       font-style: italic;
-      color: #999999;
+      color: #767676;
       font-size: 12px;
       margin-left: auto;
     }
-    body.dark .step-desc { color: #666666; }
+    body.dark .step-desc { color: #9a9a9a; }
 
     /* ── Result Box ── */
     .result-box {
@@ -469,7 +469,7 @@
       cursor: pointer;
       border-radius: 4px;
       transition: background 0.15s;
-      color: #666666;
+      color: #595959;
     }
     .history-item:hover { background: rgba(0, 102, 204, 0.05); color: #000000; }
     body.dark .history-item { color: #888888; }
@@ -499,13 +499,13 @@
     .trick-expr {
       min-width: 120px;
       flex-shrink: 0;
-      color: #999999;
+      color: #767676;
     }
-    body.dark .trick-expr { color: #666666; }
+    body.dark .trick-expr { color: #9a9a9a; }
 
     .trick-vals {
       font-size: 12px;
-      color: #666666;
+      color: #595959;
     }
     body.dark .trick-vals { color: #888888; }
 
@@ -537,7 +537,7 @@
   }
 })();
 </script>
-  <div class="container">
+  <main class="container">
     <div class="nav-row">
       <a href="/" class="back-link">&larr; Back to p14m.com</a>
       <button class="theme-toggle" onclick="toggleTheme()">
@@ -564,8 +564,8 @@
 
     <!-- Section 2: Expression Evaluator -->
     <div class="section" id="exprSection">
-      <label class="lbl">Expression</label>
-      <input class="expr-input" id="exprInput" placeholder="e.g. (A >> 4) & 0xF" spellcheck="false" autocomplete="off">
+      <label class="lbl" for="exprInput">Expression</label>
+      <input class="expr-input" id="exprInput" aria-label="Bitwise expression" placeholder="e.g. (A >> 4) & 0xF" spellcheck="false" autocomplete="off">
       <div class="ref-section" style="margin-top:10px;">
         <strong>Operators:</strong> ~ (NOT) &middot; * / % (Mul) &middot; + - (Add) &middot; &lt;&lt; &gt;&gt; &gt;&gt;&gt; (Shift) &middot; &amp; (AND) &middot; ^ (XOR) &middot; | (OR)<br>
         <strong>Literals:</strong> 255 &middot; 0xFF &middot; 0b11111111 &middot; 0o377 &middot; <strong>Precedence:</strong> ~ &rarr; * / % &rarr; + - &rarr; Shift &rarr; &amp; &rarr; ^ &rarr; |
@@ -586,7 +586,7 @@
     </div>
 
     <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
-  </div>
+  </main>
 
   <div id="toast" class="toast" style="display:none;"></div>
 
@@ -749,7 +749,8 @@ function renderBitCells(value, clickable, prevValue) {
     let idxHtml = (i % 4 === 0) ? i.toString() : '';
     html += '<div class="bit-col">';
     html += '<div class="bit-idx">' + idxHtml + '</div>';
-    html += '<div class="bit-cell ' + cls + '" data-bit="' + i + '">' + bit + '</div>';
+    let a11y = clickable ? ' role="button" tabindex="0" aria-label="Bit ' + i + '"' : '';
+    html += '<div class="bit-cell ' + cls + '" data-bit="' + i + '"' + a11y + '>' + bit + '</div>';
     html += '</div>';
   }
   html += '</div>';
@@ -804,9 +805,9 @@ function renderVarBank() {
   variables.forEach((v, i) => {
     html += '<div class="var-row" data-var-idx="' + i + '">';
     html += '<div class="var-top">';
-    html += '<input class="var-name-input" value="' + escHtml(v.name) + '" data-var-idx="' + i + '" data-field="name" maxlength="4" spellcheck="false">';
-    html += '<span style="color:#999999;font-size:12px;">=</span>';
-    html += '<input class="var-value-input" value="' + escHtml(toSigned(v.value).toString()) + '" data-var-idx="' + i + '" data-field="value" placeholder="0" spellcheck="false">';
+    html += '<input class="var-name-input" value="' + escHtml(v.name) + '" data-var-idx="' + i + '" data-field="name" maxlength="4" spellcheck="false" aria-label="Variable name">';
+    html += '<span style="color:#767676;font-size:12px;">=</span>';
+    html += '<input class="var-value-input" value="' + escHtml(toSigned(v.value).toString()) + '" data-var-idx="' + i + '" data-field="value" placeholder="0" spellcheck="false" aria-label="Value for variable ' + escHtml(v.name) + '">';
     html += '</div>';
     html += '<div class="var-bits" data-var-idx="' + i + '">';
     html += renderBitCells(v.value, true);

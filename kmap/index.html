@@ -76,7 +76,7 @@
 
     .subtitle {
       font-size: 0.9em;
-      color: #666666;
+      color: #595959;
       margin: 0 0 20px 0;
     }
     body.dark .subtitle { color: #888888; }
@@ -99,7 +99,7 @@
     body.dark .lbl { color: #aaaaaa; }
     .lbl-hint {
       font-weight: 400;
-      color: #999999;
+      color: #767676;
       font-size: 11px;
     }
 
@@ -116,14 +116,14 @@
       transition: border-color 0.2s;
     }
     .inp:focus { border-color: #0066cc; }
-    .inp::placeholder { color: #aaaaaa; }
+    .inp::placeholder { color: #767676; }
     body.dark .inp {
       background: #2a2a2a;
       border-color: #444444;
       color: #e0e0e0;
     }
     body.dark .inp:focus { border-color: #87ceeb; }
-    body.dark .inp::placeholder { color: #666666; }
+    body.dark .inp::placeholder { color: #9a9a9a; }
 
     .input-row {
       display: grid;
@@ -151,7 +151,7 @@
     .btn-t {
       background: transparent;
       border: 1px solid #cccccc;
-      color: #666666;
+      color: #595959;
       border-radius: 5px;
       padding: 6px 12px;
       font-family: inherit;
@@ -168,7 +168,7 @@
     .btn-copy {
       background: transparent;
       border: 1px solid #cccccc;
-      color: #666666;
+      color: #595959;
       border-radius: 4px;
       padding: 4px 10px;
       font-family: inherit;
@@ -202,7 +202,7 @@
     .mode-btn {
       background: transparent;
       border: none;
-      color: #666666;
+      color: #595959;
       padding: 6px 14px;
       font-family: inherit;
       font-size: 12px;
@@ -247,7 +247,7 @@
 
     .ref-section {
       font-size: 13px;
-      color: #666666;
+      color: #595959;
       margin-top: 15px;
       padding-top: 15px;
       border-top: 1px solid #e0e0e0;
@@ -265,7 +265,7 @@
     .km-hdr {
       font-size: 13px;
       font-weight: 500;
-      color: #666666;
+      color: #595959;
       padding: 6px 10px !important;
     }
     body.dark .km-hdr { color: #888888; }
@@ -281,10 +281,10 @@
     body.dark .km-cell { border-color: #444444; }
     .km-cell span { position: relative; z-index: 2; }
     .km-cell.v1 { color: #0066cc; }
-    .km-cell.v0 { color: #cccccc; }
+    .km-cell.v0 { color: #767676; }
     .km-cell.vx { color: #e67e22; }
     body.dark .km-cell.v1 { color: #87ceeb; }
-    body.dark .km-cell.v0 { color: #444444; }
+    body.dark .km-cell.v0 { color: #6b6b6b; }
     body.dark .km-cell.vx { color: #f39c12; }
     .km-cell.click { cursor: pointer; }
     .km-cell.click:hover { border-color: #0066cc; background: rgba(0, 102, 204, 0.05) !important; }
@@ -309,16 +309,16 @@
       padding: 6px 14px;
       border-bottom: 1px solid #eeeeee;
       text-align: center;
-      color: #666666;
+      color: #595959;
     }
     body.dark .tt td { border-bottom-color: #333333; color: #888888; }
     .tt tr:hover td { background: rgba(0, 102, 204, 0.03); }
     body.dark .tt tr:hover td { background: rgba(135, 206, 235, 0.05); }
     .tt .o1 { color: #0066cc; font-weight: 600; }
-    .tt .o0 { color: #cccccc; }
+    .tt .o0 { color: #767676; }
     .tt .ox { color: #e67e22; font-weight: 600; }
     body.dark .tt .o1 { color: #87ceeb; }
-    body.dark .tt .o0 { color: #444444; }
+    body.dark .tt .o0 { color: #6b6b6b; }
     body.dark .tt .ox { color: #f39c12; }
 
     .expr-box {
@@ -402,9 +402,9 @@
       text-align: center;
       padding: 30px 0 10px;
       font-size: 12px;
-      color: #999999;
+      color: #767676;
     }
-    body.dark .footer { color: #666666; }
+    body.dark .footer { color: #9a9a9a; }
 
     @media (max-width: 600px) {
       body { padding: 15px; font-size: 16px; }
@@ -426,7 +426,7 @@
   }
 })();
 </script>
-  <div class="container">
+  <main class="container">
     <div class="nav-row">
       <a href="/" class="back-link">&larr; Back to p14m.com</a>
       <button class="theme-toggle" onclick="toggleTheme()">
@@ -441,7 +441,7 @@
     <div class="section">
       <div class="input-row">
         <div>
-          <label class="lbl">Variables</label>
+          <label class="lbl" for="varInput">Variables</label>
           <input class="inp" id="varInput" value="A, B, C" placeholder="A, B, C, D" spellcheck="false">
         </div>
         <div>
@@ -456,21 +456,21 @@
 
       <div id="inputContainer">
         <div id="exprInputRow">
-          <label class="lbl">Boolean Expression <span class="lbl-hint">(leave empty for manual)</span></label>
+          <label class="lbl" for="exprInput">Boolean Expression <span class="lbl-hint">(leave empty for manual)</span></label>
           <input class="inp" id="exprInput" value="A * B + C'" placeholder="A * B + ~C . D" spellcheck="false">
         </div>
         <div id="mintermsInputRow" style="display: none;">
-          <label class="lbl">Minterms <span class="lbl-hint">(comma-separated indices where F=1)</span></label>
+          <label class="lbl" for="mintermsInput">Minterms <span class="lbl-hint">(comma-separated indices where F=1)</span></label>
           <input class="inp" id="mintermsInput" placeholder="e.g. 1, 3, 5, 7" spellcheck="false">
         </div>
         <div id="maxtermsInputRow" style="display: none;">
-          <label class="lbl">Maxterms <span class="lbl-hint">(comma-separated indices where F=0)</span></label>
+          <label class="lbl" for="maxtermsInput">Maxterms <span class="lbl-hint">(comma-separated indices where F=0)</span></label>
           <input class="inp" id="maxtermsInput" placeholder="e.g. 0, 2, 4, 6" spellcheck="false">
         </div>
       </div>
 
       <div style="margin-top: 15px;">
-        <label class="lbl">Don't-care terms <span class="lbl-hint">(optional)</span></label>
+        <label class="lbl" for="dcInput">Don't-care terms <span class="lbl-hint">(optional)</span></label>
         <input class="inp" id="dcInput" placeholder="e.g. 2, 5, 7" spellcheck="false" style="max-width: 300px;">
       </div>
 
@@ -502,7 +502,7 @@
     <div class="footer">
 &copy; 2026 <a href="/">p14m.com</a>
     </div>
-  </div>
+  </main>
 
   <div id="toast" class="toast" style="display: none;"></div>
 
