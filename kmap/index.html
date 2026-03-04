@@ -776,28 +776,28 @@ function buildKmapGrid(truthTable, varNames) {
 
 /* ────────── K-map grouping ────────── */
 
-function findKmapGroups(grid, rowCodes, colCodes) {
+function findKmapGroups(grid, rowCodes, colCodes, targetValue = 1) {
   const rows = grid.length;
   const cols = grid[0].length;
-  const ones = [];
-  const onesOrDc = [];
+  const targets = [];
+  const targetsOrDc = [];
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      if (grid[r][c] === 1) ones.push([r, c]);
-      if (grid[r][c] === 1 || grid[r][c] === "X") onesOrDc.push([r, c]);
+      if (grid[r][c] === targetValue) targets.push([r, c]);
+      if (grid[r][c] === targetValue || grid[r][c] === "X") targetsOrDc.push([r, c]);
     }
   }
 
-  if (ones.length === 0) return [];
+  if (targets.length === 0) return [];
 
-  const allCovered = onesOrDc.length === rows * cols;
-  if (allCovered && ones.length > 0) return [{ cells: onesOrDc, rStart: 0, cStart: 0, rSize: rows, cSize: cols }];
+  const allCovered = targetsOrDc.length === rows * cols;
+  if (allCovered && targets.length > 0) return [{ cells: targetsOrDc, rStart: 0, cStart: 0, rSize: rows, cSize: cols }];
 
   const groups = [];
   const covered = new Set();
   const cellKey = (r, c) => `${r},${c}`;
-  const oneKeys = new Set(ones.map(([r,c]) => cellKey(r,c)));
+  const targetKeys = new Set(targets.map(([r,c]) => cellKey(r,c)));
 
   const sizes = [];
   for (let rSize = rows; rSize >= 1; rSize = rSize / 2) {
@@ -814,29 +814,29 @@ function findKmapGroups(grid, rowCodes, colCodes) {
       for (let cStart = 0; cStart < cols; cStart++) {
         const cells = [];
         let allValid = true;
-        let hasUncoveredOne = false;
+        let hasUncoveredTarget = false;
 
         for (let dr = 0; dr < rSize && allValid; dr++) {
           for (let dc = 0; dc < cSize && allValid; dc++) {
             const r = (rStart + dr) % rows;
             const c = (cStart + dc) % cols;
-            if (grid[r][c] !== 1 && grid[r][c] !== "X") { allValid = false; break; }
+            if (grid[r][c] !== targetValue && grid[r][c] !== "X") { allValid = false; break; }
             cells.push([r, c]);
-            if (grid[r][c] === 1 && !covered.has(cellKey(r, c))) hasUncoveredOne = true;
+            if (grid[r][c] === targetValue && !covered.has(cellKey(r, c))) hasUncoveredTarget = true;
           }
         }
 
-        if (allValid && hasUncoveredOne && cells.length > 0) {
+        if (allValid && hasUncoveredTarget && cells.length > 0) {
           groups.push({ cells, rStart, cStart, rSize, cSize });
           cells.forEach(([r, c]) => {
-            if (oneKeys.has(cellKey(r, c))) covered.add(cellKey(r, c));
+            if (targetKeys.has(cellKey(r, c))) covered.add(cellKey(r, c));
           });
         }
       }
     }
   }
 
-  ones.forEach(([r, c]) => {
+  targets.forEach(([r, c]) => {
     if (!covered.has(cellKey(r, c))) {
       groups.push({ cells: [[r, c]], rStart: r, cStart: c, rSize: 1, cSize: 1 });
       covered.add(cellKey(r, c));
@@ -1435,7 +1435,8 @@ function render() {
   }
 
   const { varNames, truthTable, kmap } = effectiveResult;
-  const groups = findKmapGroups(kmap.grid, kmap.rowCodes, kmap.colCodes);
+  const groupTarget = state.showPOS ? 0 : 1;
+  const groups = findKmapGroups(kmap.grid, kmap.rowCodes, kmap.colCodes, groupTarget);
 
   const cellGroupMap = {};
   groups.forEach((g, gi) => {
@@ -1537,7 +1538,7 @@ function render() {
     html += '<div class="group-legend">';
     groups.forEach((g, i) => {
       const allVars = [...kmap.rowVars, ...kmap.colVars];
-      const label = allVars.map((v, vi) => {
+      const literals = allVars.map((v, vi) => {
         const vals = new Set();
         g.cells.forEach(([r, c]) => {
           const code = vi < kmap.rowVars.length ? kmap.rowCodes[r][vi] : kmap.colCodes[c][vi - kmap.rowVars.length];
@@ -1545,10 +1546,23 @@ function render() {
         });
         if (vals.size === 1) {
           const val = [...vals][0];
-          return val === "1" ? v : v + "'";
+          if (state.showPOS) {
+            return val === "0" ? v : v + "'";
+          } else {
+            return val === "1" ? v : v + "'";
+          }
         }
         return null;
-      }).filter(Boolean).join("\u00b7") || "1";
+      }).filter(Boolean);
+
+      let label;
+      if (literals.length === 0) {
+        label = state.showPOS ? "0" : "1";
+      } else if (state.showPOS) {
+        label = "(" + literals.join(" + ") + ")";
+      } else {
+        label = literals.join("\u00b7");
+      }
 
       html += `<div class="group-item">
         <div class="group-swatch" style="background: ${GROUP_COLORS[i % GROUP_COLORS.length]}; border: 2px solid ${GROUP_BORDERS[i % GROUP_BORDERS.length]};"></div>
