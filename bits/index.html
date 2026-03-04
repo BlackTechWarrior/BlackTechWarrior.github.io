@@ -760,6 +760,29 @@ function renderSmallBitCells(value, prevValue) {
 
 /* ═══════════════════════ Variable Bank ═══════════════════════ */
 
+function normalizeVarInput(inputEl, parsed) {
+  let raw = inputEl.value.trim();
+  if (raw === '' || raw === '-') return;
+  let signed = toSigned(parsed);
+  let unsigned = toUnsigned(parsed);
+  // Figure out what number the user actually typed
+  let cleanRaw = raw.replace(/[uU][lL]{0,2}$/, '').replace(/[lL]{1,2}$/, '');
+  let typedNum;
+  let negPrefix = false;
+  let s = cleanRaw;
+  if (s[0] === '-') { negPrefix = true; s = s.substring(1).trim(); }
+  if (/^0[xX]/.test(s)) typedNum = parseInt(s.substring(2), 16);
+  else if (/^0[bB]/.test(s)) typedNum = parseInt(s.substring(2), 2);
+  else if (/^0[oO]/.test(s)) typedNum = parseInt(s.substring(2), 8);
+  else typedNum = parseInt(s, 10);
+  if (isNaN(typedNum)) return;
+  if (negPrefix) typedNum = -typedNum;
+  // If typed value matches either interpretation, leave as-is
+  if (typedNum === signed || typedNum === unsigned) return;
+  // Normalize: show signed if high bit set, unsigned otherwise
+  inputEl.value = ((toUnsigned(parsed) >>> (bitWidth - 1)) & 1) ? signed.toString() : unsigned.toString();
+}
+
 function renderVarBank() {
   let container = document.getElementById('varBank');
   let html = '';
@@ -793,9 +816,11 @@ function renderVarBank() {
   container.querySelectorAll('.var-value-input').forEach(inp => {
     inp.addEventListener('input', function() {
       let idx = parseInt(this.dataset.varIdx);
-      variables[idx].value = parseValue(this.value);
+      let parsed = parseValue(this.value);
+      variables[idx].value = parsed;
       activeVarIndex = idx;
-      // Re-render bits and format but not the input itself
+      // Normalize if typed value overflows the bit width
+      normalizeVarInput(this, parsed);
       renderVarBitsAndFormat(idx);
       renderTricks();
     });
@@ -1159,15 +1184,20 @@ function evaluate() {
     html += '<div class="format-line">' + escHtml(formatLine(rv)) + '</div>';
     resultDiv.innerHTML = html;
 
-    // Render steps
+    // Render steps — deduplicate consecutive identical leaf nodes
     let steps = evalResult.steps;
-    if (steps.length > 1) {
+    let dedupedSteps = [];
+    for (let i = 0; i < steps.length; i++) {
+      if (i > 0 && steps[i].expr === steps[i - 1].expr && steps[i].value === steps[i - 1].value) continue;
+      dedupedSteps.push(steps[i]);
+    }
+    if (dedupedSteps.length > 1) {
       let sHtml = '<div class="result-label">Steps</div>';
-      for (let i = 0; i < steps.length; i++) {
-        let step = steps[i];
-        let prevVal = i > 0 ? steps[i - 1].value : undefined;
-        let label = i === steps.length - 1 ? 'Result:' : 'Step ' + (i + 1) + ':';
-        let isResult = i === steps.length - 1;
+      let stepNum = 1;
+      for (let i = 0; i < dedupedSteps.length; i++) {
+        let step = dedupedSteps[i];
+        let prevVal = i > 0 ? dedupedSteps[i - 1].value : undefined;
+        let label = i === dedupedSteps.length - 1 ? 'Result:' : 'Step ' + stepNum++ + ':';
 
         sHtml += '<div class="step-row">';
         sHtml += '<span class="step-label">' + label + '</span>';
@@ -1188,6 +1218,22 @@ function evaluate() {
     errBox.textContent = e.message;
     errBox.style.display = 'block';
   }
+}
+
+function normalizeExprSpacing(expr) {
+  // Ensure single spaces around binary operators
+  // Process multi-char operators first to avoid partial matches
+  let s = expr;
+  s = s.replace(/\s*(>>>|>>|<<)\s*/g, ' $1 ');
+  // For single-char binary ops, use lookbehind to avoid unary -/+
+  // A binary op follows a value (digit, letter, or close paren)
+  s = s.replace(/([a-zA-Z0-9_)])\s*([&|^*/%])\s*/g, '$1 $2 ');
+  s = s.replace(/([a-zA-Z0-9_)])\s*([+\-])\s*(?=[a-zA-Z0-9_(~])/g, '$1 $2 ');
+  s = s.replace(/\s*~\s*/g, '~');
+  s = s.replace(/\(\s+/g, '(');
+  s = s.replace(/\s+\)/g, ')');
+  s = s.replace(/\s{2,}/g, ' ');
+  return s.trim();
 }
 
 function renderHistory() {
@@ -1214,7 +1260,7 @@ function renderHistory() {
     } catch(e) {
       resultStr = ' = ?';
     }
-    html += '<div class="history-item" data-expr="' + escHtml(expr) + '">' + escHtml(expr) + resultStr + '</div>';
+    html += '<div class="history-item" data-expr="' + escHtml(expr) + '">' + escHtml(normalizeExprSpacing(expr)) + resultStr + '</div>';
   });
   list.innerHTML = html;
 
@@ -1272,7 +1318,8 @@ function nextPow2(v) {
 }
 
 function renderTricks() {
-  let activeVar = variables[activeVarIndex] || variables[0];
+  if (activeVarIndex >= variables.length) activeVarIndex = 0;
+  let activeVar = variables[activeVarIndex];
   if (!activeVar) return;
 
   document.getElementById('tricksActiveVar').textContent = '(applied to ' + activeVar.name + ')';
@@ -1349,8 +1396,9 @@ document.getElementById('bitWidthSelector').addEventListener('click', function(e
   if (bits === bitWidth) return;
   bitWidth = bits;
   this.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('on', parseInt(b.dataset.bits) === bits));
-  // Reset all variables to 0
+  // Reset all variables to 0 and active var to first
   variables.forEach(v => { v.value = 0; });
+  activeVarIndex = 0;
   renderAll();
 });
 
