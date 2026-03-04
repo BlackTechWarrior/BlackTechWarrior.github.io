@@ -1952,13 +1952,6 @@ function render() {
         <span class="expr-text">${posExpr}</span>
         <button class="btn-copy" data-copy="${encodeURIComponent(posExpr)}" data-label="POS">Copy</button>
       </div>`;
-    if (xorDetected) {
-      html += `<div class="result-label">POS Simplified<span class="tag xor">XOR/XNOR</span></div>
-        <div class="expr-box">
-          <span class="expr-text">${xorDetected.expr}</span>
-          <button class="btn-copy" data-copy="${encodeURIComponent(xorDetected.expr)}" data-label="POS XOR">Copy</button>
-        </div>`;
-    }
   }
 
   if (state.showVerilog) {
