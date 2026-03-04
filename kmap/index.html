@@ -418,6 +418,14 @@
   </style>
 </head>
 <body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
   <div class="container">
     <div class="nav-row">
       <a href="/" class="back-link">&larr; Back to p14m.com</a>
@@ -516,10 +524,8 @@ function toggleTheme() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  const savedTheme = localStorage.getItem('theme');
   const themeText = document.getElementById('theme-text');
-  if (savedTheme === 'dark') {
-    document.body.classList.add('dark');
+  if (document.body.classList.contains('dark')) {
     themeText.innerHTML = '&#9788;';
   }
 });
