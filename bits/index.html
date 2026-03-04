@@ -236,6 +236,17 @@
     }
     body.dark .result-label { color: #aaaaaa; }
 
+    .ref-section {
+      font-size: 13px;
+      color: #666666;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e0e0e0;
+    }
+    body.dark .ref-section { color: #888888; border-top-color: #444444; }
+    .ref-section strong { color: #333333; }
+    body.dark .ref-section strong { color: #cccccc; }
+
     .footer {
       text-align: center;
       padding: 30px 0 10px;
@@ -555,6 +566,10 @@
     <div class="section" id="exprSection">
       <label class="lbl">Expression</label>
       <input class="expr-input" id="exprInput" placeholder="e.g. (A >> 4) & 0xF" spellcheck="false" autocomplete="off">
+      <div class="ref-section" style="margin-top:10px;">
+        <strong>Operators:</strong> ~ (NOT) &middot; * / % (Mul) &middot; + - (Add) &middot; &lt;&lt; &gt;&gt; &gt;&gt;&gt; (Shift) &middot; &amp; (AND) &middot; ^ (XOR) &middot; | (OR)<br>
+        <strong>Literals:</strong> 255 &middot; 0xFF &middot; 0b11111111 &middot; 0o377 &middot; <strong>Precedence:</strong> ~ &rarr; * / % &rarr; + - &rarr; Shift &rarr; &amp; &rarr; ^ &rarr; |
+      </div>
       <div id="exprError" class="err" style="display:none;"></div>
       <div id="exprResult"></div>
       <div id="exprSteps"></div>
