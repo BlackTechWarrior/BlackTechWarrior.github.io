@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Interactive Karnaugh Map generator supporting 2-6 variables with SOP/POS minimization, XOR/XNOR detection, and don't-care states.">
   <title>K-Map Generator | p14m.com</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <style>
     * { box-sizing: border-box; }
 
@@ -801,6 +802,25 @@ function buildKmapGrid(truthTable, varNames) {
 
 /* ────────── K-map grouping ────────── */
 
+function isValidImplicant(cells, rowCodes, colCodes, rowVarCount) {
+  // A valid K-map group must have exactly log2(size) "free" variables
+  // (variables that take both 0 and 1 across the cells).
+  const totalVars = (rowCodes[0] ? rowCodes[0].length : 0) + (colCodes[0] ? colCodes[0].length : 0);
+  const expectedFree = Math.log2(cells.length);
+  if (!Number.isInteger(expectedFree)) return false;
+
+  let freeCount = 0;
+  for (let vi = 0; vi < totalVars; vi++) {
+    const vals = new Set();
+    for (const [r, c] of cells) {
+      const code = vi < rowVarCount ? rowCodes[r][vi] : colCodes[c][vi - rowVarCount];
+      vals.add(code);
+    }
+    if (vals.size === 2) freeCount++;
+  }
+  return freeCount === expectedFree;
+}
+
 function findKmapGroups(grid, rowCodes, colCodes, targetValue = 1) {
   const rows = grid.length;
   const cols = grid[0].length;
@@ -851,7 +871,8 @@ function findKmapGroups(grid, rowCodes, colCodes, targetValue = 1) {
           }
         }
 
-        if (allValid && hasUncoveredTarget && cells.length > 0) {
+        if (allValid && hasUncoveredTarget && cells.length > 0 &&
+            isValidImplicant(cells, rowCodes, colCodes, rowCodes[0] ? rowCodes[0].length : 0)) {
           groups.push({ cells, rStart, cStart, rSize, cSize });
           cells.forEach(([r, c]) => {
             if (targetKeys.has(cellKey(r, c))) covered.add(cellKey(r, c));
@@ -1084,6 +1105,9 @@ function simplifySOPByAdjacency(sopExpr) {
   }
 
   let terms = sopExpr.split(" + ").map(parseTerm);
+
+  // Absorption: if any term is "1" (empty literal set), entire SOP = "1"
+  if (terms.some(t => Object.keys(t).length === 0)) return "1";
 
   let changed = true;
   while (changed) {
@@ -1845,6 +1869,11 @@ function render() {
   html += '</tbody></table></div>';
 
   const sopExpr = oneGroups.length > 0 ? computeSOP(oneGroups, kmap) : null;
+  // Sanity check: "1" in SOP should only appear if truth table is all-1s
+  if (sopExpr && sopExpr.split(" + ").some(t => t.trim() === "1")) {
+    const allOnes = truthTable.every(r => r.result === 1 || r.result === "X");
+    if (!allOnes) console.warn("K-map sanity check: SOP contains '1' term but truth table is not all-1s. SOP:", sopExpr);
+  }
   if (sopExpr) {
     html += `<div class="result-label">Minimized SOP<span class="tag">Sum of Products</span></div>
       <div class="expr-box">
