@@ -1359,11 +1359,13 @@ function evaluate() {
       input.value = '';
     }
 
-    // Add to history
-    history = history.filter(h => h !== expr);
-    history.unshift(expr);
-    if (history.length > 50) history.pop();
-    historyIndex = -1;
+    // Add to history (skip chain expressions — $ has no meaning outside the chain)
+    if (!chainMode) {
+      history = history.filter(h => h !== expr);
+      history.unshift(expr);
+      if (history.length > 50) history.pop();
+      historyIndex = -1;
+    }
 
     // Render result
     let rv = evalResult.result;
