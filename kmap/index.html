@@ -1000,7 +1000,7 @@ function computeSOP(groups, kmap) {
         literals.push(val === "1" ? allVars[vi] : allVars[vi] + "'");
       }
     }
-    terms.push(literals.length === 0 ? "1" : literals.join(" \u00b7 "));
+    terms.push(literals.length === 0 ? "1" : literals.join("\u00b7"));
   }
   return terms.join(" + ") || "0";
 }
@@ -1467,7 +1467,7 @@ function render() {
           return val === "1" ? v : v + "'";
         }
         return null;
-      }).filter(Boolean).join(" \u00b7 ") || "1";
+      }).filter(Boolean).join("\u00b7") || "1";
 
       html += `<div class="group-item">
         <div class="group-swatch" style="background: ${GROUP_COLORS[i % GROUP_COLORS.length]}; border: 2px solid ${GROUP_BORDERS[i % GROUP_BORDERS.length]};"></div>
