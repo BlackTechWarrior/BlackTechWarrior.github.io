@@ -1002,7 +1002,82 @@ function computeSOP(groups, kmap) {
     }
     terms.push(literals.length === 0 ? "1" : literals.join("\u00b7"));
   }
-  return terms.join(" + ") || "0";
+  const rawSop = terms.join(" + ") || "0";
+  return simplifySOPByAdjacency(rawSop);
+}
+
+function simplifySOPByAdjacency(sopExpr) {
+  if (!sopExpr || sopExpr === "0" || sopExpr === "1") return sopExpr;
+
+  function parseTerm(termStr) {
+    if (termStr === "1") return {};
+    const literals = termStr.split("\u00b7");
+    const result = {};
+    for (const lit of literals) {
+      if (lit.endsWith("'")) {
+        result[lit.slice(0, -1)] = false;
+      } else {
+        result[lit] = true;
+      }
+    }
+    return result;
+  }
+
+  function termToString(t) {
+    const vars = Object.keys(t).sort();
+    if (vars.length === 0) return "1";
+    return vars.map(v => t[v] ? v : v + "'").join("\u00b7");
+  }
+
+  function tryMerge(t1, t2) {
+    const vars1 = Object.keys(t1).sort();
+    const vars2 = Object.keys(t2).sort();
+    if (vars1.length !== vars2.length) return null;
+    if (vars1.join(",") !== vars2.join(",")) return null;
+
+    let diffVar = null;
+    for (const v of vars1) {
+      if (t1[v] !== t2[v]) {
+        if (diffVar !== null) return null;
+        diffVar = v;
+      }
+    }
+    if (diffVar === null) return null;
+
+    const merged = { ...t1 };
+    delete merged[diffVar];
+    return merged;
+  }
+
+  let terms = sopExpr.split(" + ").map(parseTerm);
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    outer:
+    for (let i = 0; i < terms.length; i++) {
+      for (let j = i + 1; j < terms.length; j++) {
+        const merged = tryMerge(terms[i], terms[j]);
+        if (merged !== null) {
+          terms[i] = merged;
+          terms.splice(j, 1);
+          changed = true;
+          break outer;
+        }
+      }
+    }
+  }
+
+  const seen = new Set();
+  terms = terms.filter(t => {
+    const s = termToString(t);
+    if (seen.has(s)) return false;
+    seen.add(s);
+    return true;
+  });
+
+  if (terms.length === 0) return "1";
+  return terms.map(termToString).join(" + ");
 }
 
 function computePOS(truthTable, varNames) {
