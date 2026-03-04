@@ -374,6 +374,27 @@
     .mint-box .dc { color: #e67e22; }
     body.dark .mint-box .dc { color: #f39c12; }
 
+    .steps-box {
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    body.dark .steps-box { background: #2a2a2a; border-color: #444444; color: #cccccc; }
+    .steps-box .step { margin-bottom: 12px; }
+    .steps-box .step:last-child { margin-bottom: 0; }
+    .steps-box .step-num { font-weight: 700; color: #0066cc; margin-right: 4px; }
+    body.dark .steps-box .step-num { color: #87ceeb; }
+    .steps-box .step-title { font-weight: 600; }
+    .steps-box .step-body { margin-top: 4px; padding-left: 20px; color: #555555; }
+    body.dark .steps-box .step-body { color: #aaaaaa; }
+    .steps-box .step-body code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 3px; font-family: monospace; }
+    body.dark .steps-box .step-body code { background: rgba(255,255,255,0.08); }
+    .steps-box .step-body ul { margin: 4px 0 0 0; padding-left: 18px; }
+    .steps-box .step-body li { margin-bottom: 2px; }
+
     .group-legend {
       margin-top: 15px;
       display: flex;
@@ -482,6 +503,7 @@
           <button class="btn-t" id="truthBtn">Truth Table</button>
           <button class="btn-t" id="verilogBtn">Verilog</button>
           <button class="btn-t" id="vhdlBtn">VHDL</button>
+          <button class="btn-t" id="stepsBtn">Steps</button>
         </div>
       </div>
 
@@ -498,6 +520,9 @@
 
     <!-- Truth Table Panel -->
     <div id="truthPanel" class="section" style="display: none;"></div>
+
+    <!-- Steps Panel -->
+    <div id="stepsPanel" class="section" style="display: none;"></div>
 
     <div class="footer">
 &copy; 2026 <a href="/">p14m.com</a>
@@ -877,6 +902,7 @@ let state = {
   showPOS: false,
   showVerilog: false,
   showVHDL: false,
+  showSteps: false,
   manualOverrides: {},
   manualMode: false,
   inputMode: 'expression', // 'expression', 'minterms', 'maxterms'
@@ -906,6 +932,8 @@ const maxtermsInputRow = document.getElementById('maxtermsInputRow');
 const refSection = document.getElementById('refSection');
 const verilogBtn = document.getElementById('verilogBtn');
 const vhdlBtn = document.getElementById('vhdlBtn');
+const stepsBtn = document.getElementById('stepsBtn');
+const stepsPanel = document.getElementById('stepsPanel');
 
 /* ═══════════════════════ FUNCTIONS ═══════════════════════ */
 
@@ -1116,96 +1144,309 @@ function computeMinimizedPOS(groups, kmap) {
   return terms.join(" \u00b7 ");
 }
 
-function detectXOR(truthTable, varNames) {
+function detectXORFromSOP(sopExpr, truthTable, varNames) {
+  if (!sopExpr || sopExpr === "0" || sopExpr === "1") return null;
   const n = varNames.length;
   if (n < 2 || n > 6) return null;
 
-  const definedRows = truthTable.filter(r => r.result !== "X");
-  if (definedRows.length !== (1 << n)) return null;
+  // Factor: { atom: string, neg: boolean }
+  // Term: array of Factors (ANDed)
+  // Expression: array of Terms (ORed)
 
-  const allIdxs = varNames.map((_, i) => i);
-
-  function matchesXor(varIdxs, complementMap) {
-    return truthTable.every(row => {
-      const xorVal = varIdxs.reduce((acc, vi) => {
-        const raw = row.env[varNames[vi]];
-        const val = complementMap[vi] ? (1 - raw) : raw;
-        return acc ^ val;
-      }, 0);
-      return row.result === xorVal;
+  // Step 1: Parse SOP into structured terms
+  function parseSOPToTerms(sop) {
+    const termStrs = sop.split(" + ");
+    return termStrs.map(ts => {
+      if (ts === "1") return [];
+      const lits = ts.split("\u00b7");
+      return lits.map(lit => {
+        if (lit.endsWith("'")) return { atom: lit.slice(0, -1), neg: true };
+        return { atom: lit, neg: false };
+      });
     });
   }
 
-  function matchesXnor(varIdxs, complementMap) {
-    return truthTable.every(row => {
-      const xorVal = varIdxs.reduce((acc, vi) => {
-        const raw = row.env[varNames[vi]];
-        const val = complementMap[vi] ? (1 - raw) : raw;
-        return acc ^ val;
-      }, 0);
-      return row.result === (xorVal ? 0 : 1);
-    });
+  // Step 2 & 3: Pairwise XOR/XNOR scan with recursion
+  function getAtomNames(term) {
+    return term.map(f => f.atom).sort();
   }
 
-  if (matchesXor(allIdxs, {})) return { type: "XOR", expr: varNames.join(" \u2295 ") };
-  if (matchesXnor(allIdxs, {})) return { type: "XNOR", expr: varNames.join(" \u2299 ") };
+  function atomKey(term) {
+    return getAtomNames(term).join(",");
+  }
 
-  if (n === 2) {
-    for (let mask = 1; mask < 4; mask++) {
-      const cm = {};
-      if (mask & 1) cm[0] = true;
-      if (mask & 2) cm[1] = true;
-      if (matchesXor(allIdxs, cm)) {
-        const parts = allIdxs.map(i => cm[i] ? varNames[i] + "'" : varNames[i]);
-        return { type: "XOR", expr: parts.join(" \u2295 ") };
-      }
-      if (matchesXnor(allIdxs, cm)) {
-        const parts = allIdxs.map(i => cm[i] ? varNames[i] + "'" : varNames[i]);
-        return { type: "XNOR", expr: parts.join(" \u2299 ") };
+  function tryXORMerge(terms) {
+    for (let i = 0; i < terms.length; i++) {
+      for (let j = i + 1; j < terms.length; j++) {
+        const t1 = terms[i], t2 = terms[j];
+        if (t1.length !== t2.length || t1.length < 1) continue;
+        if (atomKey(t1) !== atomKey(t2)) continue;
+
+        const map1 = {};
+        t1.forEach(f => { map1[f.atom] = f.neg; });
+        const map2 = {};
+        t2.forEach(f => { map2[f.atom] = f.neg; });
+
+        const diffAtoms = [];
+        const sameAtoms = [];
+        for (const atom of getAtomNames(t1)) {
+          if (map1[atom] !== map2[atom]) {
+            diffAtoms.push(atom);
+          } else {
+            sameAtoms.push(atom);
+          }
+        }
+
+        if (diffAtoms.length !== 2) continue;
+
+        const [p, q] = diffAtoms;
+        const p1neg = map1[p], q1neg = map1[q];
+
+        // XOR: polarities opposite within each term (P\u00b7Q' + P'\u00b7Q)
+        const isXOR = (p1neg !== q1neg);
+        // XNOR: polarities same within each term (P\u00b7Q + P'\u00b7Q')
+        const isXNOR = (p1neg === q1neg);
+
+        if (!isXOR && !isXNOR) continue;
+
+        const xorAtom = "(" + p + "\u2295" + q + ")";
+        const newFactor = { atom: xorAtom, neg: isXNOR };
+        const commonFactors = sameAtoms.map(a => ({ atom: a, neg: map1[a] }));
+        const newTerm = [...commonFactors, newFactor];
+
+        const newTerms = terms.filter((_, idx) => idx !== i && idx !== j);
+        newTerms.push(newTerm);
+        return { terms: newTerms, changed: true };
       }
     }
+    return { terms, changed: false };
   }
 
-  if (n >= 3) {
-    for (let skip = 0; skip < n; skip++) {
-      const subset = allIdxs.filter(i => i !== skip);
-      if (matchesXor(subset, {})) {
-        return { type: "XOR", expr: subset.map(i => varNames[i]).join(" \u2295 ") + " (independent of " + varNames[skip] + ")" };
+  function reduceXOR(terms) {
+    let changed = true;
+    while (changed) {
+      const result = tryXORMerge(terms);
+      terms = result.terms;
+      changed = result.changed;
+    }
+    return terms;
+  }
+
+  // Step 4: Verify against truth table
+  function evalAtom(atom, env) {
+    if (env.hasOwnProperty(atom)) return env[atom];
+    if (atom.startsWith("(") && atom.endsWith(")")) {
+      const inner = atom.slice(1, -1);
+      let depth = 0;
+      for (let k = 0; k < inner.length; k++) {
+        if (inner[k] === '(') depth++;
+        else if (inner[k] === ')') depth--;
+        else if (inner[k] === '\u2295' && depth === 0) {
+          const left = inner.slice(0, k);
+          const right = inner.slice(k + 1);
+          return evalAtom(left, env) ^ evalAtom(right, env);
+        }
       }
     }
+    return env[atom] || 0;
   }
 
-  return null;
+  function evalFactor(factor, env) {
+    const val = evalAtom(factor.atom, env);
+    return factor.neg ? (1 - val) : val;
+  }
+
+  function evalTerms(terms, env) {
+    for (const term of terms) {
+      if (term.length === 0) return 1;
+      let allTrue = true;
+      for (const factor of term) {
+        if (evalFactor(factor, env) === 0) { allTrue = false; break; }
+      }
+      if (allTrue) return 1;
+    }
+    return 0;
+  }
+
+  function verifyAgainstTruthTable(terms) {
+    for (const row of truthTable) {
+      if (row.result === "X") continue;
+      const computed = evalTerms(terms, row.env);
+      if (computed !== row.result) return false;
+    }
+    return true;
+  }
+
+  // Step 5: Format and compare
+  function factorToString(f) {
+    if (f.neg) return f.atom + "'";
+    return f.atom;
+  }
+
+  function termToString(term) {
+    if (term.length === 0) return "1";
+    return term.map(factorToString).join(" \u00b7 ");
+  }
+
+  function exprToString(terms) {
+    if (terms.length === 0) return "0";
+    return terms.map(termToString).join(" + ");
+  }
+
+  function isTopLevelXNOR(terms) {
+    if (terms.length !== 1 || terms[0].length !== 1) return false;
+    const f = terms[0][0];
+    return f.neg && f.atom.startsWith("(") && f.atom.includes("\u2295");
+  }
+
+  function formatDisplay(terms) {
+    if (isTopLevelXNOR(terms)) {
+      const inner = terms[0][0].atom.slice(1, -1);
+      return inner.replace("\u2295", " \u2299 ");
+    }
+    let s = exprToString(terms);
+    s = s.replace(/\u2295/g, " \u2295 ");
+    return s;
+  }
+
+  // Verilog generation
+  function atomToVerilog(atom) {
+    if (atom.startsWith("(") && atom.endsWith(")")) {
+      const inner = atom.slice(1, -1);
+      let depth = 0;
+      for (let k = 0; k < inner.length; k++) {
+        if (inner[k] === '(') depth++;
+        else if (inner[k] === ')') depth--;
+        else if (inner[k] === '\u2295' && depth === 0) {
+          const left = inner.slice(0, k);
+          const right = inner.slice(k + 1);
+          return "(" + atomToVerilog(left) + " ^ " + atomToVerilog(right) + ")";
+        }
+      }
+    }
+    return atom;
+  }
+
+  function factorToVerilog(f) {
+    let s = atomToVerilog(f.atom);
+    if (f.neg) s = "~" + s;
+    return s;
+  }
+
+  function termToVerilog(term) {
+    if (term.length === 0) return "1'b1";
+    const parts = term.map(factorToVerilog);
+    if (parts.length === 1) return parts[0];
+    return "(" + parts.join(" & ") + ")";
+  }
+
+  function exprToVerilog(terms) {
+    if (terms.length === 0) return "1'b0";
+    if (isTopLevelXNOR(terms)) {
+      const inner = terms[0][0].atom.slice(1, -1);
+      let depth = 0;
+      for (let k = 0; k < inner.length; k++) {
+        if (inner[k] === '(') depth++;
+        else if (inner[k] === ')') depth--;
+        else if (inner[k] === '\u2295' && depth === 0) {
+          const left = inner.slice(0, k);
+          const right = inner.slice(k + 1);
+          return atomToVerilog(left) + " ~^ " + atomToVerilog(right);
+        }
+      }
+    }
+    const vTerms = terms.map(termToVerilog);
+    if (vTerms.length === 1) return vTerms[0];
+    return vTerms.join(" | ");
+  }
+
+  // VHDL generation
+  function atomToVHDL(atom) {
+    if (atom.startsWith("(") && atom.endsWith(")")) {
+      const inner = atom.slice(1, -1);
+      let depth = 0;
+      for (let k = 0; k < inner.length; k++) {
+        if (inner[k] === '(') depth++;
+        else if (inner[k] === ')') depth--;
+        else if (inner[k] === '\u2295' && depth === 0) {
+          const left = inner.slice(0, k);
+          const right = inner.slice(k + 1);
+          return "(" + atomToVHDL(left) + " xor " + atomToVHDL(right) + ")";
+        }
+      }
+    }
+    return atom;
+  }
+
+  function factorToVHDL(f) {
+    let s = atomToVHDL(f.atom);
+    if (f.neg) s = "(not " + s + ")";
+    return s;
+  }
+
+  function termToVHDL(term) {
+    if (term.length === 0) return "'1'";
+    const parts = term.map(factorToVHDL);
+    if (parts.length === 1) return parts[0];
+    return "(" + parts.join(" and ") + ")";
+  }
+
+  function exprToVHDL(terms) {
+    if (terms.length === 0) return "'0'";
+    if (isTopLevelXNOR(terms)) {
+      const inner = terms[0][0].atom.slice(1, -1);
+      let depth = 0;
+      for (let k = 0; k < inner.length; k++) {
+        if (inner[k] === '(') depth++;
+        else if (inner[k] === ')') depth--;
+        else if (inner[k] === '\u2295' && depth === 0) {
+          const left = inner.slice(0, k);
+          const right = inner.slice(k + 1);
+          return atomToVHDL(left) + " xnor " + atomToVHDL(right);
+        }
+      }
+    }
+    const vTerms = terms.map(termToVHDL);
+    if (vTerms.length === 1) return vTerms[0];
+    return vTerms.join(" or ");
+  }
+
+  // Main logic
+  const parsed = parseSOPToTerms(sopExpr);
+  const reduced = reduceXOR(parsed);
+
+  const hasXOR = reduced.some(term => term.some(f => f.atom.includes("\u2295")));
+  if (!hasXOR) return null;
+
+  if (!verifyAgainstTruthTable(reduced)) return null;
+
+  const xorStr = formatDisplay(reduced);
+  if (xorStr.length >= sopExpr.length) return null;
+
+  const verilogExpr = exprToVerilog(reduced);
+  const vhdlExpr = exprToVHDL(reduced);
+
+  return {
+    expr: xorStr,
+    verilogExpr: "assign F = " + verilogExpr + ";",
+    vhdlExpr: "F <= " + vhdlExpr + ";"
+  };
 }
+
 
 function generateVerilog(sopExpr, xorDetected) {
   if (!sopExpr && !xorDetected) return null;
 
-  // If XOR/XNOR detected, prefer that
-  if (xorDetected) {
-    // Parse XOR expression like "A ⊕ B ⊕ C"
-    const parts = xorDetected.expr.split(/\s*[\u2295\u2299]\s*/).filter(Boolean);
-    // Handle complements (A')
-    const verilogParts = parts.map(p => {
-      if (p.endsWith("'")) return "~" + p.slice(0, -1);
-      return p;
-    });
-    if (xorDetected.type === "XNOR") {
-      return `assign F = ~(${verilogParts.join(" ^ ")});`;
-    }
-    return `assign F = ${verilogParts.join(" ^ ")};`;
-  }
+  // If XOR form detected, use pre-generated Verilog
+  if (xorDetected) return xorDetected.verilogExpr;
 
   // Convert SOP expression to Verilog
-  // SOP format: "A · B + C'" or "A' · B · C + D"
   if (sopExpr === "0") return "assign F = 1'b0;";
   if (sopExpr === "1") return "assign F = 1'b1;";
 
-  // Parse terms separated by " + "
   const terms = sopExpr.split(/\s*\+\s*/).filter(Boolean);
   const verilogTerms = terms.map(term => {
     if (term === "1") return "1'b1";
-    // Parse literals separated by " · "
     const literals = term.split(/\s*\u00b7\s*/).filter(Boolean);
     const verilogLits = literals.map(lit => {
       if (lit.endsWith("'")) return "~" + lit.slice(0, -1);
@@ -1215,25 +1456,16 @@ function generateVerilog(sopExpr, xorDetected) {
     return "(" + verilogLits.join(" & ") + ")";
   });
 
-  if (verilogTerms.length === 1) return `assign F = ${verilogTerms[0]};`;
-  return `assign F = ${verilogTerms.join(" | ")};`;
+  if (verilogTerms.length === 1) return "assign F = " + verilogTerms[0] + ";";
+  return "assign F = " + verilogTerms.join(" | ") + ";";
 }
+
 
 function generateVHDL(sopExpr, xorDetected) {
   if (!sopExpr && !xorDetected) return null;
 
-  // If XOR/XNOR detected, prefer that
-  if (xorDetected) {
-    const parts = xorDetected.expr.split(/\s*[\u2295\u2299]\s*/).filter(Boolean);
-    const vhdlParts = parts.map(p => {
-      if (p.endsWith("'")) return "(not " + p.slice(0, -1) + ")";
-      return p;
-    });
-    if (xorDetected.type === "XNOR") {
-      return `F <= not (${vhdlParts.join(" xor ")});`;
-    }
-    return `F <= ${vhdlParts.join(" xor ")};`;
-  }
+  // If XOR form detected, use pre-generated VHDL
+  if (xorDetected) return xorDetected.vhdlExpr;
 
   // Convert SOP expression to VHDL
   if (sopExpr === "0") return "F <= '0';";
@@ -1251,9 +1483,10 @@ function generateVHDL(sopExpr, xorDetected) {
     return "(" + vhdlLits.join(" and ") + ")";
   });
 
-  if (vhdlTerms.length === 1) return `F <= ${vhdlTerms[0]};`;
-  return `F <= ${vhdlTerms.join(" or ")};`;
+  if (vhdlTerms.length === 1) return "F <= " + vhdlTerms[0] + ";";
+  return "F <= " + vhdlTerms.join(" or ") + ";";
 }
+
 
 function getMintermInfo(truthTable, varNames) {
   const minterms = [], maxterms = [], dontcares = [];
@@ -1442,12 +1675,123 @@ function handleCellClick(r, c) {
   }
 }
 
+function generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetected) {
+  const allVars = [...kmap.rowVars, ...kmap.colVars];
+  const rows = kmap.grid.length;
+  const cols = kmap.grid[0].length;
+  let steps = [];
+  let stepNum = 1;
+
+  function cellLabel(r, c) {
+    const env = {};
+    for (let vi = 0; vi < allVars.length; vi++) {
+      const code = vi < kmap.rowVars.length ? kmap.rowCodes[r][vi] : kmap.colCodes[c][vi - kmap.rowVars.length];
+      env[allVars[vi]] = parseInt(code);
+    }
+    let idx = 0;
+    varNames.forEach(v => { idx = (idx << 1) | env[v]; });
+    return "m" + idx;
+  }
+
+  // Step 1: Identify cells
+  const oneCells = [], dcCells = [], zeroCells = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const label = cellLabel(r, c);
+      if (kmap.grid[r][c] === 1) oneCells.push(label);
+      else if (kmap.grid[r][c] === "X") dcCells.push(label);
+      else zeroCells.push(label);
+    }
+  }
+
+  let body = '<ul>';
+  body += '<li><strong>1-cells:</strong> ' + (oneCells.length > 0 ? oneCells.join(', ') : 'none') + '</li>';
+  if (dcCells.length > 0) body += '<li><strong>Don\'t-care cells:</strong> ' + dcCells.join(', ') + '</li>';
+  body += '<li><strong>0-cells:</strong> ' + (zeroCells.length > 0 ? zeroCells.join(', ') : 'none') + '</li>';
+  body += '</ul>';
+  steps.push({ title: 'Identify cells from input', body });
+
+  if (oneGroups.length === 0) {
+    steps.push({ title: 'No 1-cells found', body: 'The function is identically 0. F = 0.' });
+    return steps;
+  }
+
+  // Step 2+: Each group
+  const groupTerms = [];
+  oneGroups.forEach((group, gi) => {
+    const gCells = group.cells.map(([r, c]) => cellLabel(r, c));
+    const size = group.cells.length;
+
+    // Determine adjacency / wraparound info
+    const wraps = [];
+    if (group.rSize > 1) {
+      const rEnd = (group.rStart + group.rSize - 1) % rows;
+      if (group.rStart + group.rSize > rows) wraps.push('rows (top\u2194bottom)');
+    }
+    if (group.cSize > 1) {
+      const cEnd = (group.cStart + group.cSize - 1) % cols;
+      if (group.cStart + group.cSize > cols) wraps.push('columns (left\u2194right)');
+    }
+
+    // Find which variables are eliminated vs kept
+    const kept = [], eliminated = [];
+    for (let vi = 0; vi < allVars.length; vi++) {
+      const vals = new Set();
+      group.cells.forEach(([r, c]) => {
+        const code = vi < kmap.rowVars.length ? kmap.rowCodes[r][vi] : kmap.colCodes[c][vi - kmap.rowVars.length];
+        vals.add(code);
+      });
+      if (vals.size === 1) {
+        const val = [...vals][0];
+        kept.push({ var: allVars[vi], val, literal: val === "1" ? allVars[vi] : allVars[vi] + "'" });
+      } else {
+        eliminated.push(allVars[vi]);
+      }
+    }
+
+    const term = kept.length === 0 ? "1" : kept.map(k => k.literal).join("\u00b7");
+    groupTerms.push(term);
+
+    let b = '<ul>';
+    b += '<li><strong>Cells covered:</strong> ' + gCells.join(', ') + ' (group of ' + size + ')</li>';
+    if (wraps.length > 0) b += '<li><strong>Wraparound:</strong> wraps across ' + wraps.join(' and ') + '</li>';
+    if (eliminated.length > 0) b += '<li><strong>Eliminated:</strong> ' + eliminated.join(', ') + ' (changes 0\u21921 within group)</li>';
+    b += '<li><strong>Kept literals:</strong> ' + (kept.length > 0 ? kept.map(k => k.literal + ' (' + k.var + '=' + k.val + ')').join(', ') : 'none (tautology)') + '</li>';
+    b += '<li><strong>Product term:</strong> <code>' + term + '</code></li>';
+    b += '</ul>';
+    steps.push({ title: 'Group ' + (gi + 1) + ': ' + size + '-cell group \u2192 <code>' + term + '</code>', body: b });
+  });
+
+  // Combine step
+  const rawSop = groupTerms.join(' + ');
+  let combBody = '<ul>';
+  combBody += '<li><strong>OR all product terms:</strong> <code>' + rawSop + '</code></li>';
+  if (sopExpr && sopExpr !== rawSop) {
+    combBody += '<li><strong>After algebraic simplification:</strong> <code>' + sopExpr + '</code></li>';
+  }
+  combBody += '</ul>';
+  steps.push({ title: 'Combine into SOP expression', body: combBody });
+
+  // XOR step
+  if (xorDetected) {
+    let xBody = '<ul>';
+    xBody += '<li>Scanned product terms for XOR/XNOR patterns (pairs differing in exactly 2 variable polarities)</li>';
+    xBody += '<li><strong>Result:</strong> <code>' + xorDetected.expr + '</code></li>';
+    xBody += '<li>Verified against truth table \u2714</li>';
+    xBody += '</ul>';
+    steps.push({ title: 'XOR simplification applied', body: xBody });
+  }
+
+  return steps;
+}
+
 function render() {
   const effectiveResult = getEffectiveResult();
 
   if (!effectiveResult?.kmap) {
     kmapPanel.style.display = 'none';
     truthPanel.style.display = 'none';
+    stepsPanel.style.display = 'none';
     return;
   }
 
@@ -1509,12 +1853,12 @@ function render() {
       </div>`;
   }
 
-  const xorDetected = detectXOR(truthTable, varNames);
+  const xorDetected = detectXORFromSOP(sopExpr, truthTable, varNames);
   if (xorDetected) {
-    html += `<div class="result-label">Simplified Form<span class="tag xor">${xorDetected.type} Detected</span></div>
+    html += `<div class="result-label">Simplified Form<span class="tag xor">XOR Simplified</span></div>
       <div class="expr-box">
         <span class="expr-text">${xorDetected.expr}</span>
-        <button class="btn-copy" data-copy="${encodeURIComponent(xorDetected.expr)}" data-label="${xorDetected.type}">Copy</button>
+        <button class="btn-copy" data-copy="${encodeURIComponent(xorDetected.expr)}" data-label="XOR">Copy</button>
       </div>`;
   }
 
@@ -1626,6 +1970,20 @@ function render() {
   } else {
     truthPanel.style.display = 'none';
   }
+
+  if (state.showSteps) {
+    const steps = generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetected);
+    let sHtml = '<div class="result-label" style="margin-top: 0;">Minimization Steps<span class="tag">Learning Aid</span></div>';
+    sHtml += '<div class="steps-box">';
+    steps.forEach((s, i) => {
+      sHtml += `<div class="step"><span class="step-num">Step ${i + 1}.</span> <span class="step-title">${s.title}</span><div class="step-body">${s.body}</div></div>`;
+    });
+    sHtml += '</div>';
+    stepsPanel.innerHTML = sHtml;
+    stepsPanel.style.display = 'block';
+  } else {
+    stepsPanel.style.display = 'none';
+  }
 }
 
 /* ═══════════════════════ EVENT LISTENERS ═══════════════════════ */
@@ -1667,6 +2025,12 @@ verilogBtn.addEventListener('click', () => {
 vhdlBtn.addEventListener('click', () => {
   state.showVHDL = !state.showVHDL;
   vhdlBtn.classList.toggle('on', state.showVHDL);
+  render();
+});
+
+stepsBtn.addEventListener('click', () => {
+  state.showSteps = !state.showSteps;
+  stepsBtn.classList.toggle('on', state.showSteps);
   render();
 });
 
