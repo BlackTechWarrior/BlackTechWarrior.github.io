@@ -597,6 +597,42 @@
     }
     body.dark .chain-arrow { color: #555555; }
 
+    .how-to {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    body.dark .how-to { border-color: #444444; }
+    .how-to summary {
+      cursor: pointer;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #555555;
+      user-select: none;
+      list-style: none;
+    }
+    .how-to summary::-webkit-details-marker { display: none; }
+    .how-to summary::before { content: "\25B6\00a0"; font-size: 10px; }
+    .how-to[open] summary::before { content: "\25BC\00a0"; }
+    body.dark .how-to summary { color: #aaaaaa; }
+    .how-to-body {
+      padding: 0 14px 12px;
+      line-height: 1.7;
+      color: #444444;
+    }
+    body.dark .how-to-body { color: #bbbbbb; }
+    .how-to-body code {
+      background: rgba(0,0,0,0.05);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+    body.dark .how-to-body code { background: rgba(255,255,255,0.08); }
+    .how-to-body ul { margin: 6px 0; padding-left: 20px; }
+    .how-to-body li { margin-bottom: 4px; }
+
     @media (max-width: 600px) {
       body { padding: 15px; font-size: 16px; }
       h1 { font-size: 1.5em; }
@@ -635,6 +671,23 @@
 
     <h1>Bit Manipulation Visualizer</h1>
     <p class="subtitle">Interactive bit operations with step-by-step evaluation</p>
+
+    <details class="how-to">
+      <summary>How to use</summary>
+      <div class="how-to-body">
+        <ul>
+          <li>Define variables in the <strong>variable bank</strong> (up to 6). Click any bit cell to toggle it, or type a value directly.</li>
+          <li>Enter expressions like <code>(A &gt;&gt; 4) &amp; 0xF</code> and press Enter to evaluate.</li>
+          <li><strong>Number literals</strong> work in decimal (<code>255</code>), hex (<code>0xFF</code>), binary (<code>0b11111111</code>), and octal (<code>0o377</code>).</li>
+          <li><strong>Shift operators use JS semantics:</strong> <code>&gt;&gt;</code> is arithmetic right shift (sign-extending), <code>&gt;&gt;&gt;</code> is logical right shift (zero-filling). This matters for negative values.</li>
+          <li><strong>Operator precedence</strong> (low to high): <code>|</code> &rarr; <code>^</code> &rarr; <code>&amp;</code> &rarr; <code>&lt;&lt; &gt;&gt; &gt;&gt;&gt;</code> &rarr; <code>+ -</code> &rarr; <code>* / %</code> &rarr; <code>~ -</code>(unary). Use parentheses to override.</li>
+          <li><strong>Chain mode:</strong> toggle it on to pipe results between expressions. Use <code>$</code> to reference the previous step's result, e.g. <code>A &gt;&gt; 4</code> then <code>$ &amp; 0xF</code>.</li>
+          <li>Arrow keys <strong>Up/Down</strong> in the expression input to cycle through history. Press <strong>Escape</strong> to clear.</li>
+          <li>Changing <strong>bit width</strong> resets all variable values to 0 and clears the chain.</li>
+          <li>The <strong>Bit Tricks</strong> section at the bottom auto-updates for the last focused variable.</li>
+        </ul>
+      </div>
+    </details>
 
     <!-- Section 1: Variable Bank -->
     <div class="section" id="varSection">

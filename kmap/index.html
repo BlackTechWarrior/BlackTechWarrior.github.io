@@ -428,6 +428,42 @@
     }
     body.dark .footer { color: #9a9a9a; }
 
+    .how-to {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    body.dark .how-to { border-color: #444444; }
+    .how-to summary {
+      cursor: pointer;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #555555;
+      user-select: none;
+      list-style: none;
+    }
+    .how-to summary::-webkit-details-marker { display: none; }
+    .how-to summary::before { content: "\25B6\00a0"; font-size: 10px; }
+    .how-to[open] summary::before { content: "\25BC\00a0"; }
+    body.dark .how-to summary { color: #aaaaaa; }
+    .how-to-body {
+      padding: 0 14px 12px;
+      line-height: 1.7;
+      color: #444444;
+    }
+    body.dark .how-to-body { color: #bbbbbb; }
+    .how-to-body code {
+      background: rgba(0,0,0,0.05);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 13px;
+    }
+    body.dark .how-to-body code { background: rgba(255,255,255,0.08); }
+    .how-to-body ul { margin: 6px 0; padding-left: 20px; }
+    .how-to-body li { margin-bottom: 4px; }
+
     @media (max-width: 600px) {
       body { padding: 15px; font-size: 16px; }
       .input-row { grid-template-columns: 1fr; }
@@ -458,6 +494,24 @@
 
     <h1>K-Map Generator</h1>
     <p class="subtitle">Karnaugh Map Solver &amp; Visualizer</p>
+
+    <details class="how-to">
+      <summary>How to use</summary>
+      <div class="how-to-body">
+        <ul>
+          <li>Supports <strong>2&ndash;6 variables</strong>. Enter them comma-separated (e.g. <code>A, B, C, D</code>).</li>
+          <li><strong>Operators are flexible</strong> &mdash; you can mix symbols and words freely:
+            <code>A * B + C'</code> and <code>A and B or not C</code> are both valid, even <code>A * B or !C</code>.</li>
+          <li>Multiple symbols per gate: NOT is <code>' ~ !</code>, AND is <code>. * &amp;</code>, OR is <code>+ |</code>, XOR is <code>^</code>, XNOR is <code>@</code>, NAND is <code>%</code>, NOR is <code>#</code>.</li>
+          <li><strong>Precedence:</strong> NOT &rarr; AND/NAND &rarr; XOR/XNOR &rarr; OR/NOR. Use parentheses to override.</li>
+          <li>Leave the expression blank and click Generate to enter <strong>manual mode</strong> &mdash; click cells directly to set 1, 0, or X.</li>
+          <li>Switch to <strong>Minterms/Maxterms</strong> mode to enter indices directly (e.g. <code>1, 3, 5, 7</code>).</li>
+          <li>Click any cell in the K-map to toggle between <strong>0, 1, and X</strong> (don't-care).</li>
+          <li>Toggle <strong>POS</strong>, <strong>Verilog</strong>, <strong>VHDL</strong>, and <strong>Steps</strong> with the buttons below Generate.</li>
+          <li>XOR/XNOR patterns are <strong>auto-detected</strong> when the SOP can be simplified using XOR gates.</li>
+        </ul>
+      </div>
+    </details>
 
     <!-- Input Section -->
     <div class="section">
@@ -1898,6 +1952,13 @@ function render() {
         <span class="expr-text">${posExpr}</span>
         <button class="btn-copy" data-copy="${encodeURIComponent(posExpr)}" data-label="POS">Copy</button>
       </div>`;
+    if (xorDetected) {
+      html += `<div class="result-label">POS Simplified<span class="tag xor">XOR/XNOR</span></div>
+        <div class="expr-box">
+          <span class="expr-text">${xorDetected.expr}</span>
+          <button class="btn-copy" data-copy="${encodeURIComponent(xorDetected.expr)}" data-label="POS XOR">Copy</button>
+        </div>`;
+    }
   }
 
   if (state.showVerilog) {
