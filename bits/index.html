@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive bit manipulation visualizer with step-by-step expression evaluation">
+  <title>Bits | p14m.com</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background-color: #ffffff;
+      color: #000000;
+      transition: background-color 0.3s, color 0.3s;
+      font-size: 18px;
+    }
+
+    body.dark {
+      background-color: #1a1a1a;
+      color: #e0e0e0;
+    }
+
+    body.dark a { color: #87ceeb; }
+    body.dark a:visited { color: #dda0dd; }
+
+    a { color: #0066cc; }
+    a:visited { color: #551a8b; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #cccccc;
+    }
+    body.dark .nav-row { border-bottom-color: #444444; }
+
+    .back-link {
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    .theme-toggle {
+      background-color: #f5f5f5;
+      border: 1px solid #cccccc;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.95em;
+      font-family: inherit;
+    }
+    .theme-toggle:hover { background-color: #e0e0e0; }
+    body.dark .theme-toggle {
+      background-color: #333333;
+      color: #e0e0e0;
+      border-color: #555555;
+    }
+    body.dark .theme-toggle:hover { background-color: #404040; }
+
+    h1 {
+      font-size: 1.8em;
+      margin: 0 0 5px 0;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      font-size: 0.9em;
+      color: #666666;
+      margin: 0 0 20px 0;
+    }
+    body.dark .subtitle { color: #888888; }
+
+    .section {
+      border: 1px solid #cccccc;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+    body.dark .section { border-color: #444444; }
+
+    .lbl {
+      font-size: 12px;
+      font-weight: 600;
+      color: #555555;
+      margin-bottom: 6px;
+      display: block;
+    }
+    body.dark .lbl { color: #aaaaaa; }
+    .lbl-hint {
+      font-weight: 400;
+      color: #999999;
+      font-size: 11px;
+    }
+
+    .inp {
+      width: 100%;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      color: #000000;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .inp:focus { border-color: #0066cc; }
+    .inp::placeholder { color: #aaaaaa; }
+    body.dark .inp {
+      background: #2a2a2a;
+      border-color: #444444;
+      color: #e0e0e0;
+    }
+    body.dark .inp:focus { border-color: #87ceeb; }
+    body.dark .inp::placeholder { color: #666666; }
+
+    .btn-go {
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 24px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-go:hover { background: #0052a3; }
+    body.dark .btn-go { background: #87ceeb; color: #1a1a1a; }
+    body.dark .btn-go:hover { background: #6bb8d9; }
+
+    .btn-t {
+      background: transparent;
+      border: 1px solid #cccccc;
+      color: #666666;
+      border-radius: 5px;
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-t:hover { border-color: #999999; color: #333333; }
+    .btn-t.on { border-color: #0066cc; color: #0066cc; background: rgba(0, 102, 204, 0.05); }
+    body.dark .btn-t { border-color: #444444; color: #888888; }
+    body.dark .btn-t:hover { border-color: #666666; color: #cccccc; }
+    body.dark .btn-t.on { border-color: #87ceeb; color: #87ceeb; background: rgba(135, 206, 235, 0.1); }
+
+    .btn-copy {
+      background: transparent;
+      border: 1px solid #cccccc;
+      color: #666666;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-copy:hover { border-color: #999999; color: #333333; }
+    body.dark .btn-copy { border-color: #444444; color: #888888; }
+    body.dark .btn-copy:hover { border-color: #666666; color: #cccccc; }
+
+    .mode-selector {
+      display: inline-flex;
+      border: 1px solid #cccccc;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    body.dark .mode-selector { border-color: #444444; }
+
+    .mode-btn {
+      background: transparent;
+      border: none;
+      color: #666666;
+      padding: 6px 14px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      border-right: 1px solid #cccccc;
+    }
+    .mode-btn:last-child { border-right: none; }
+    .mode-btn:hover { background: rgba(0, 102, 204, 0.05); color: #333333; }
+    .mode-btn.on { background: #0066cc; color: white; }
+    body.dark .mode-btn { color: #888888; border-right-color: #444444; }
+    body.dark .mode-btn:hover { background: rgba(135, 206, 235, 0.1); color: #cccccc; }
+    body.dark .mode-btn.on { background: #87ceeb; color: #1a1a1a; }
+
+    .err {
+      background: rgba(220, 53, 69, 0.1);
+      border: 1px solid rgba(220, 53, 69, 0.3);
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: #dc3545;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    body.dark .err { background: rgba(220, 53, 69, 0.15); }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #333333;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      z-index: 999;
+      animation: toastIn 0.2s ease;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #555555;
+      margin: 15px 0 6px 0;
+    }
+    body.dark .result-label { color: #aaaaaa; }
+
+    .footer {
+      text-align: center;
+      padding: 30px 0 10px;
+      font-size: 12px;
+      color: #999999;
+    }
+    body.dark .footer { color: #666666; }
+
+    /* ── Variable Bank ── */
+    .var-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    .var-row {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #eeeeee;
+    }
+    .var-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    body.dark .var-row { border-bottom-color: #333333; }
+
+    .var-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .var-name-input {
+      width: 40px;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      color: #000000;
+      font-family: monospace;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 6px 8px;
+      outline: none;
+      transition: border-color 0.2s;
+      text-align: center;
+    }
+    .var-name-input:focus { border-color: #0066cc; }
+    body.dark .var-name-input {
+      background: #2a2a2a;
+      border-color: #444444;
+      color: #e0e0e0;
+    }
+    body.dark .var-name-input:focus { border-color: #87ceeb; }
+
+    .var-value-input {
+      flex: 1;
+      max-width: 180px;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      color: #000000;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 6px 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .var-value-input:focus { border-color: #0066cc; }
+    .var-value-input::placeholder { color: #aaaaaa; }
+    body.dark .var-value-input {
+      background: #2a2a2a;
+      border-color: #444444;
+      color: #e0e0e0;
+    }
+    body.dark .var-value-input:focus { border-color: #87ceeb; }
+    body.dark .var-value-input::placeholder { color: #666666; }
+
+    /* ── Bit Cells ── */
+    .bit-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 1px;
+      flex-wrap: wrap;
+    }
+
+    .nibble-gap { width: 8px; flex-shrink: 0; }
+
+    .bit-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .bit-idx {
+      font-size: 10px;
+      color: #999999;
+      font-family: monospace;
+      margin-bottom: 2px;
+      height: 14px;
+      line-height: 14px;
+    }
+    body.dark .bit-idx { color: #666666; }
+
+    .bit-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      font-weight: 600;
+      border: 1px solid #cccccc;
+      transition: all 0.12s;
+      user-select: none;
+    }
+    body.dark .bit-cell { border-color: #444444; }
+
+    .bit-cell.b1 { color: #0066cc; }
+    .bit-cell.b0 { color: #cccccc; }
+    body.dark .bit-cell.b1 { color: #87ceeb; }
+    body.dark .bit-cell.b0 { color: #444444; }
+
+    .bit-cell.click { cursor: pointer; }
+    .bit-cell.click:hover { border-color: #0066cc; background: rgba(0, 102, 204, 0.05); }
+    body.dark .bit-cell.click:hover { border-color: #87ceeb; background: rgba(135, 206, 235, 0.1); }
+
+    .bit-cell.highlight { background: rgba(230, 126, 34, 0.15); }
+    body.dark .bit-cell.highlight { background: rgba(230, 126, 34, 0.15); }
+
+    .bit-8 { width: 28px; height: 28px; font-size: 13px; }
+    .bit-16 { width: 24px; height: 24px; font-size: 12px; }
+    .bit-32 { width: 20px; height: 20px; font-size: 10px; }
+
+    .bit-small { width: 20px; height: 20px; font-size: 10px; }
+
+    .format-line {
+      font-family: monospace;
+      font-size: 12px;
+      color: #666666;
+      margin-top: 6px;
+      word-break: break-all;
+    }
+    body.dark .format-line { color: #888888; }
+
+    /* ── Expression Input ── */
+    .expr-input {
+      width: 100%;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      border: 1px solid #444444;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-family: monospace;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .expr-input:focus { border-color: #87ceeb; }
+    .expr-input::placeholder { color: #666666; }
+
+    /* ── Step Rows ── */
+    .step-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      font-family: monospace;
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+    .step-row:nth-child(even) { background: rgba(0, 0, 0, 0.02); }
+    body.dark .step-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+
+    .step-label {
+      font-weight: 600;
+      min-width: 55px;
+      flex-shrink: 0;
+    }
+
+    .step-expr {
+      min-width: 120px;
+      flex-shrink: 0;
+    }
+
+    .step-eq { color: #999999; flex-shrink: 0; }
+
+    .step-vals {
+      font-size: 12px;
+      color: #666666;
+      flex-shrink: 0;
+    }
+    body.dark .step-vals { color: #888888; }
+
+    .step-desc {
+      font-style: italic;
+      color: #999999;
+      font-size: 12px;
+      margin-left: auto;
+    }
+    body.dark .step-desc { color: #666666; }
+
+    /* ── Result Box ── */
+    .result-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* ── History ── */
+    .history-list {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .history-item {
+      font-family: monospace;
+      font-size: 13px;
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.15s;
+      color: #666666;
+    }
+    .history-item:hover { background: rgba(0, 102, 204, 0.05); color: #000000; }
+    body.dark .history-item { color: #888888; }
+    body.dark .history-item:hover { background: rgba(135, 206, 235, 0.1); color: #e0e0e0; }
+
+    /* ── Bit Tricks ── */
+    .trick-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      font-family: monospace;
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+    .trick-row:nth-child(even) { background: rgba(0, 0, 0, 0.02); }
+    body.dark .trick-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+
+    .trick-name {
+      min-width: 140px;
+      flex-shrink: 0;
+      font-weight: 500;
+      color: #555555;
+    }
+    body.dark .trick-name { color: #aaaaaa; }
+
+    .trick-expr {
+      min-width: 120px;
+      flex-shrink: 0;
+      color: #999999;
+    }
+    body.dark .trick-expr { color: #666666; }
+
+    .trick-vals {
+      font-size: 12px;
+      color: #666666;
+    }
+    body.dark .trick-vals { color: #888888; }
+
+    @media (max-width: 600px) {
+      body { padding: 15px; font-size: 16px; }
+      h1 { font-size: 1.5em; }
+      .bit-8 { width: 24px; height: 24px; font-size: 12px; }
+      .bit-16 { width: 20px; height: 20px; font-size: 10px; }
+      .bit-32 { width: 16px; height: 16px; font-size: 9px; }
+      .bit-small { width: 16px; height: 16px; font-size: 9px; }
+      .var-top { flex-wrap: wrap; }
+      .var-value-input { max-width: 140px; }
+      .step-row, .trick-row { font-size: 11px; gap: 6px; padding: 6px 6px; }
+      .step-label { min-width: 45px; }
+      .step-expr { min-width: 80px; }
+      .trick-name { min-width: 100px; }
+      .trick-expr { min-width: 80px; }
+      .mode-selector { width: 100%; display: flex; }
+      .mode-btn { flex: 1; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+  <div class="container">
+    <div class="nav-row">
+      <a href="/" class="back-link">&larr; Back to p14m.com</a>
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-text">&#9790;</span>
+      </button>
+    </div>
+
+    <h1>Bit Manipulation Visualizer</h1>
+    <p class="subtitle">Interactive bit operations with step-by-step evaluation</p>
+
+    <!-- Section 1: Variable Bank -->
+    <div class="section" id="varSection">
+      <div class="var-controls">
+        <div class="mode-selector" id="bitWidthSelector">
+          <button class="mode-btn on" data-bits="8">8-bit</button>
+          <button class="mode-btn" data-bits="16">16-bit</button>
+          <button class="mode-btn" data-bits="32">32-bit</button>
+        </div>
+        <button class="btn-t" id="addVarBtn">+ Add</button>
+        <button class="btn-t" id="rmVarBtn">&minus; Remove</button>
+      </div>
+      <div id="varBank"></div>
+    </div>
+
+    <!-- Section 2: Expression Evaluator -->
+    <div class="section" id="exprSection">
+      <label class="lbl">Expression</label>
+      <input class="expr-input" id="exprInput" placeholder="e.g. (A >> 4) & 0xF" spellcheck="false" autocomplete="off">
+      <div id="exprError" class="err" style="display:none;"></div>
+      <div id="exprResult"></div>
+      <div id="exprSteps"></div>
+      <div id="historyContainer" style="display:none;">
+        <div class="result-label" style="margin-top:15px;">History</div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+    </div>
+
+    <!-- Section 3: Bit Tricks -->
+    <div class="section" id="tricksSection">
+      <div class="result-label" style="margin-top:0;">Bit Tricks <span class="lbl-hint" id="tricksActiveVar">(applied to A)</span></div>
+      <div id="tricksBody"></div>
+    </div>
+
+    <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
+  </div>
+
+  <div id="toast" class="toast" style="display:none;"></div>
+
+<script>
+/* ═══════════════════════ Theme ═══════════════════════ */
+
+function toggleTheme() {
+  const body = document.body;
+  const themeText = document.getElementById('theme-text');
+  if (body.classList.contains('dark')) {
+    body.classList.remove('dark');
+    themeText.innerHTML = '&#9790;';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark');
+    themeText.innerHTML = '&#9788;';
+    localStorage.setItem('theme', 'dark');
+  }
+  renderAll();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const themeText = document.getElementById('theme-text');
+  if (document.body.classList.contains('dark')) {
+    themeText.innerHTML = '&#9788;';
+  }
+});
+
+/* ═══════════════════════ State ═══════════════════════ */
+
+let bitWidth = 8;
+let variables = [
+  { name: 'A', value: 0 },
+  { name: 'B', value: 0 },
+];
+let activeVarIndex = 0;
+let history = [];
+let historyIndex = -1;
+
+/* ═══════════════════════ Helpers ═══════════════════════ */
+
+const toast = document.getElementById('toast');
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 1800);
+}
+
+function copyText(text, label) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => showToast('Copied ' + label + '!'));
+  }
+}
+
+function mask() {
+  if (bitWidth === 8) return 0xFF;
+  if (bitWidth === 16) return 0xFFFF;
+  return 0xFFFFFFFF;
+}
+
+function applyMask(v) {
+  if (bitWidth === 8) return v & 0xFF;
+  if (bitWidth === 16) return v & 0xFFFF;
+  return v | 0; // force 32-bit signed
+}
+
+function toSigned(v) {
+  v = applyMask(v);
+  if (bitWidth === 8) return v >= 128 ? v - 256 : v;
+  if (bitWidth === 16) return v >= 32768 ? v - 65536 : v;
+  return v | 0; // already 32-bit signed
+}
+
+function toUnsigned(v) {
+  v = applyMask(v);
+  if (bitWidth === 32) return v >>> 0;
+  return v;
+}
+
+function parseValue(str) {
+  str = str.trim().replace(/[uU][lL]{0,2}$/, '').replace(/[lL]{1,2}$/, '');
+  if (!str) return 0;
+
+  let neg = false;
+  if (str[0] === '-') { neg = true; str = str.substring(1).trim(); }
+
+  let val;
+  if (/^0[xX]/.test(str)) val = parseInt(str.substring(2), 16);
+  else if (/^0[bB]/.test(str)) val = parseInt(str.substring(2), 2);
+  else if (/^0[oO]/.test(str)) val = parseInt(str.substring(2), 8);
+  else val = parseInt(str, 10);
+
+  if (isNaN(val)) return 0;
+  if (neg) val = -val;
+
+  return applyMask(val);
+}
+
+function fmtHex(v) {
+  v = toUnsigned(v);
+  let h = v.toString(16).toUpperCase();
+  let pad = bitWidth / 4;
+  return '0x' + h.padStart(pad, '0');
+}
+
+function fmtOct(v) {
+  return '0o' + toUnsigned(v).toString(8);
+}
+
+function fmtBin(v) {
+  v = toUnsigned(v);
+  return '0b' + v.toString(2).padStart(bitWidth, '0');
+}
+
+function fmtDec(v) {
+  return toSigned(v).toString();
+}
+
+function fmtUnsigned(v) {
+  return toUnsigned(v).toString();
+}
+
+function formatLine(v) {
+  let s = toSigned(v);
+  let u = toUnsigned(v);
+  let parts = [];
+  if (s !== u) {
+    parts.push('Dec: ' + s);
+    parts.push('Unsigned: ' + u);
+  } else {
+    parts.push('Dec: ' + s);
+    parts.push('Unsigned: ' + u);
+  }
+  parts.push('Hex: ' + fmtHex(v));
+  parts.push('Oct: ' + fmtOct(v));
+  parts.push('Bin: ' + fmtBin(v));
+  return parts.join(' | ');
+}
+
+/* ═══════════════════════ Bit Cell Rendering ═══════════════════════ */
+
+function bitSizeClass() {
+  return 'bit-' + bitWidth;
+}
+
+function renderBitCells(value, clickable, prevValue) {
+  let v = toUnsigned(value);
+  let pv = prevValue !== undefined ? toUnsigned(prevValue) : null;
+  let html = '<div class="bit-row">';
+  for (let i = bitWidth - 1; i >= 0; i--) {
+    // Nibble gap
+    if (i < bitWidth - 1 && (i + 1) % 4 === 0) {
+      html += '<div class="nibble-gap"></div>';
+    }
+    let bit = (v >>> i) & 1;
+    let changed = pv !== null && (((v >>> i) & 1) !== ((pv >>> i) & 1));
+    let cls = bitSizeClass() + (bit ? ' b1' : ' b0') + (clickable ? ' click' : '') + (changed ? ' highlight' : '');
+    // Index label: show every 4th
+    let idxHtml = (i % 4 === 0) ? i.toString() : '';
+    html += '<div class="bit-col">';
+    html += '<div class="bit-idx">' + idxHtml + '</div>';
+    html += '<div class="bit-cell ' + cls + '" data-bit="' + i + '">' + bit + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderSmallBitCells(value, prevValue) {
+  let v = toUnsigned(value);
+  let pv = prevValue !== undefined ? toUnsigned(prevValue) : null;
+  let html = '<div class="bit-row">';
+  for (let i = bitWidth - 1; i >= 0; i--) {
+    if (i < bitWidth - 1 && (i + 1) % 4 === 0) {
+      html += '<div class="nibble-gap"></div>';
+    }
+    let bit = (v >>> i) & 1;
+    let changed = pv !== null && (((v >>> i) & 1) !== ((pv >>> i) & 1));
+    let cls = 'bit-small' + (bit ? ' b1' : ' b0') + (changed ? ' highlight' : '');
+    html += '<div class="bit-cell ' + cls + '">' + bit + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+/* ═══════════════════════ Variable Bank ═══════════════════════ */
+
+function renderVarBank() {
+  let container = document.getElementById('varBank');
+  let html = '';
+  variables.forEach((v, i) => {
+    html += '<div class="var-row" data-var-idx="' + i + '">';
+    html += '<div class="var-top">';
+    html += '<input class="var-name-input" value="' + escHtml(v.name) + '" data-var-idx="' + i + '" data-field="name" maxlength="4" spellcheck="false">';
+    html += '<span style="color:#999999;font-size:12px;">=</span>';
+    html += '<input class="var-value-input" value="' + escHtml(toSigned(v.value).toString()) + '" data-var-idx="' + i + '" data-field="value" placeholder="0" spellcheck="false">';
+    html += '</div>';
+    html += '<div class="var-bits" data-var-idx="' + i + '">';
+    html += renderBitCells(v.value, true);
+    html += '</div>';
+    html += '<div class="format-line">' + escHtml(formatLine(v.value)) + '</div>';
+    html += '</div>';
+  });
+  container.innerHTML = html;
+
+  // Attach click handlers for bit cells
+  container.querySelectorAll('.bit-cell.click').forEach(cell => {
+    cell.addEventListener('click', function() {
+      let idx = parseInt(this.closest('.var-row').dataset.varIdx);
+      let bit = parseInt(this.dataset.bit);
+      variables[idx].value = applyMask(toUnsigned(variables[idx].value) ^ (1 << bit));
+      activeVarIndex = idx;
+      renderAll();
+    });
+  });
+
+  // Attach input handlers
+  container.querySelectorAll('.var-value-input').forEach(inp => {
+    inp.addEventListener('input', function() {
+      let idx = parseInt(this.dataset.varIdx);
+      variables[idx].value = parseValue(this.value);
+      activeVarIndex = idx;
+      // Re-render bits and format but not the input itself
+      renderVarBitsAndFormat(idx);
+      renderTricks();
+    });
+    inp.addEventListener('focus', function() {
+      activeVarIndex = parseInt(this.dataset.varIdx);
+      renderTricks();
+    });
+  });
+
+  container.querySelectorAll('.var-name-input').forEach(inp => {
+    inp.addEventListener('input', function() {
+      let idx = parseInt(this.dataset.varIdx);
+      variables[idx].name = this.value || String.fromCharCode(65 + idx);
+      renderTricks();
+    });
+    inp.addEventListener('focus', function() {
+      activeVarIndex = parseInt(this.dataset.varIdx);
+      renderTricks();
+    });
+  });
+}
+
+function renderVarBitsAndFormat(idx) {
+  let row = document.querySelector('.var-row[data-var-idx="' + idx + '"]');
+  if (!row) return;
+  let bitsDiv = row.querySelector('.var-bits');
+  bitsDiv.innerHTML = renderBitCells(variables[idx].value, true);
+  row.querySelector('.format-line').textContent = formatLine(variables[idx].value);
+
+  // Re-attach bit click handlers
+  bitsDiv.querySelectorAll('.bit-cell.click').forEach(cell => {
+    cell.addEventListener('click', function() {
+      let bit = parseInt(this.dataset.bit);
+      variables[idx].value = applyMask(toUnsigned(variables[idx].value) ^ (1 << bit));
+      activeVarIndex = idx;
+      renderAll();
+    });
+  });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* ═══════════════════════ Expression Parser ═══════════════════════ */
+
+// Tokenizer
+const TK = {
+  NUM: 'NUM', VAR: 'VAR', OP: 'OP', LPAREN: '(', RPAREN: ')',
+  UNARY: 'UNARY', EOF: 'EOF'
+};
+
+function tokenize(expr) {
+  let tokens = [];
+  let i = 0;
+  let s = expr;
+
+  while (i < s.length) {
+    if (s[i] === ' ' || s[i] === '\t') { i++; continue; }
+
+    // Multi-char operators
+    if (s[i] === '>' && s[i+1] === '>' && s[i+2] === '>') {
+      tokens.push({ type: TK.OP, value: '>>>' }); i += 3; continue;
+    }
+    if (s[i] === '>' && s[i+1] === '>') {
+      tokens.push({ type: TK.OP, value: '>>' }); i += 2; continue;
+    }
+    if (s[i] === '<' && s[i+1] === '<') {
+      tokens.push({ type: TK.OP, value: '<<' }); i += 2; continue;
+    }
+
+    // Parentheses
+    if (s[i] === '(') { tokens.push({ type: TK.LPAREN }); i++; continue; }
+    if (s[i] === ')') { tokens.push({ type: TK.RPAREN }); i++; continue; }
+
+    // Single-char operators
+    if ('~&^|*/%'.indexOf(s[i]) >= 0) {
+      tokens.push({ type: TK.OP, value: s[i] }); i++; continue;
+    }
+
+    // Plus and minus: could be unary or binary
+    if (s[i] === '+' || s[i] === '-') {
+      // Unary if: first token, or after operator, or after LPAREN
+      let prev = tokens.length > 0 ? tokens[tokens.length - 1] : null;
+      if (!prev || prev.type === TK.OP || prev.type === TK.LPAREN || prev.type === TK.UNARY) {
+        if (s[i] === '-') {
+          tokens.push({ type: TK.UNARY, value: '-' });
+        }
+        // Unary + is a no-op, skip
+        i++;
+        continue;
+      }
+      tokens.push({ type: TK.OP, value: s[i] }); i++; continue;
+    }
+
+    // Numbers: hex, binary, octal, decimal
+    if (s[i] >= '0' && s[i] <= '9') {
+      let start = i;
+      if (s[i] === '0' && i + 1 < s.length) {
+        if (s[i+1] === 'x' || s[i+1] === 'X') {
+          i += 2;
+          while (i < s.length && /[0-9a-fA-F]/.test(s[i])) i++;
+          tokens.push({ type: TK.NUM, value: parseInt(s.substring(start, i), 16), raw: s.substring(start, i) });
+          continue;
+        }
+        if (s[i+1] === 'b' || s[i+1] === 'B') {
+          i += 2;
+          while (i < s.length && (s[i] === '0' || s[i] === '1')) i++;
+          tokens.push({ type: TK.NUM, value: parseInt(s.substring(start + 2, i), 2), raw: s.substring(start, i) });
+          continue;
+        }
+        if (s[i+1] === 'o' || s[i+1] === 'O') {
+          i += 2;
+          while (i < s.length && s[i] >= '0' && s[i] <= '7') i++;
+          tokens.push({ type: TK.NUM, value: parseInt(s.substring(start + 2, i), 8), raw: s.substring(start, i) });
+          continue;
+        }
+      }
+      while (i < s.length && s[i] >= '0' && s[i] <= '9') i++;
+      tokens.push({ type: TK.NUM, value: parseInt(s.substring(start, i), 10), raw: s.substring(start, i) });
+      continue;
+    }
+
+    // Variable names
+    if (/[a-zA-Z_]/.test(s[i])) {
+      let start = i;
+      while (i < s.length && /[a-zA-Z0-9_]/.test(s[i])) i++;
+      let name = s.substring(start, i);
+      tokens.push({ type: TK.VAR, value: name });
+      continue;
+    }
+
+    throw new Error('Unexpected character: "' + s[i] + '"');
+  }
+
+  tokens.push({ type: TK.EOF });
+  return tokens;
+}
+
+// AST node types
+function numNode(val, raw) { return { type: 'num', value: val, raw: raw || val.toString() }; }
+function varNode(name) { return { type: 'var', name: name }; }
+function binNode(op, left, right) { return { type: 'bin', op: op, left: left, right: right }; }
+function unaryNode(op, operand) { return { type: 'unary', op: op, operand: operand }; }
+
+// Recursive descent parser
+function parseExpr(tokens) {
+  let pos = 0;
+  function peek() { return tokens[pos]; }
+  function advance() { return tokens[pos++]; }
+
+  function parseOr() {
+    let left = parseXor();
+    while (peek().type === TK.OP && peek().value === '|') {
+      advance();
+      left = binNode('|', left, parseXor());
+    }
+    return left;
+  }
+
+  function parseXor() {
+    let left = parseAnd();
+    while (peek().type === TK.OP && peek().value === '^') {
+      advance();
+      left = binNode('^', left, parseAnd());
+    }
+    return left;
+  }
+
+  function parseAnd() {
+    let left = parseShift();
+    while (peek().type === TK.OP && peek().value === '&') {
+      advance();
+      left = binNode('&', left, parseShift());
+    }
+    return left;
+  }
+
+  function parseShift() {
+    let left = parseAdd();
+    while (peek().type === TK.OP && (peek().value === '<<' || peek().value === '>>' || peek().value === '>>>')) {
+      let op = advance().value;
+      left = binNode(op, left, parseAdd());
+    }
+    return left;
+  }
+
+  function parseAdd() {
+    let left = parseMul();
+    while (peek().type === TK.OP && (peek().value === '+' || peek().value === '-')) {
+      let op = advance().value;
+      left = binNode(op, left, parseMul());
+    }
+    return left;
+  }
+
+  function parseMul() {
+    let left = parseUnary();
+    while (peek().type === TK.OP && (peek().value === '*' || peek().value === '/' || peek().value === '%')) {
+      let op = advance().value;
+      left = binNode(op, left, parseUnary());
+    }
+    return left;
+  }
+
+  function parseUnary() {
+    if (peek().type === TK.OP && peek().value === '~') {
+      advance();
+      return unaryNode('~', parseUnary());
+    }
+    if (peek().type === TK.UNARY && peek().value === '-') {
+      advance();
+      return unaryNode('-', parseUnary());
+    }
+    return parseAtom();
+  }
+
+  function parseAtom() {
+    let t = peek();
+    if (t.type === TK.NUM) {
+      advance();
+      return numNode(t.value, t.raw);
+    }
+    if (t.type === TK.VAR) {
+      advance();
+      return varNode(t.value);
+    }
+    if (t.type === TK.LPAREN) {
+      advance();
+      let node = parseOr();
+      if (peek().type !== TK.RPAREN) throw new Error('Missing closing parenthesis');
+      advance();
+      return node;
+    }
+    throw new Error('Unexpected token: ' + (t.value || t.type));
+  }
+
+  let ast = parseOr();
+  if (peek().type !== TK.EOF) throw new Error('Unexpected token: ' + (peek().value || peek().type));
+  return ast;
+}
+
+// Evaluator with step collection
+function evalAST(node, env) {
+  let steps = [];
+
+  function ev(n) {
+    if (n.type === 'num') {
+      let v = applyMask(n.value);
+      steps.push({ expr: n.raw, value: v, operation: 'literal' });
+      return v;
+    }
+    if (n.type === 'var') {
+      let name = n.name;
+      if (env[name] === undefined) {
+        let valid = Object.keys(env).join(', ');
+        throw new Error('Unknown variable "' + name + '". Valid: ' + valid);
+      }
+      let v = applyMask(env[name]);
+      steps.push({ expr: name, value: v, operation: 'variable' });
+      return v;
+    }
+    if (n.type === 'unary') {
+      let val = ev(n.operand);
+      let result;
+      let desc;
+      if (n.op === '~') {
+        result = applyMask(~val);
+        desc = 'NOT applied';
+      } else if (n.op === '-') {
+        result = applyMask(-val);
+        desc = 'negation';
+      }
+      let exprStr = n.op + '(' + steps[steps.length - 1].expr + ')';
+      steps.push({ expr: exprStr, value: result, operation: desc });
+      return result;
+    }
+    if (n.type === 'bin') {
+      let leftVal = ev(n.left);
+      let leftStep = steps[steps.length - 1];
+      let rightVal = ev(n.right);
+      let rightStep = steps[steps.length - 1];
+      let result;
+      let desc;
+      switch (n.op) {
+        case '+': result = applyMask(leftVal + rightVal); desc = 'addition'; break;
+        case '-': result = applyMask(leftVal - rightVal); desc = 'subtraction'; break;
+        case '*': result = applyMask(Math.imul(leftVal, rightVal)); desc = 'multiplication'; break;
+        case '/':
+          if (rightVal === 0) throw new Error('Division by zero');
+          result = applyMask(Math.trunc(toSigned(leftVal) / toSigned(rightVal)));
+          desc = 'division'; break;
+        case '%':
+          if (rightVal === 0) throw new Error('Division by zero');
+          result = applyMask(toSigned(leftVal) % toSigned(rightVal));
+          desc = 'modulo'; break;
+        case '<<': result = applyMask(leftVal << (rightVal & 31)); desc = 'shifted left ' + (rightVal & 31); break;
+        case '>>':
+          // Arithmetic right shift
+          result = applyMask(toSigned(leftVal) >> (rightVal & 31));
+          desc = 'arithmetic shift right ' + (rightVal & 31);
+          break;
+        case '>>>':
+          // Logical right shift
+          result = applyMask(toUnsigned(leftVal) >>> (rightVal & 31));
+          desc = 'logical shift right ' + (rightVal & 31);
+          break;
+        case '&': result = applyMask(leftVal & rightVal); desc = 'AND applied'; break;
+        case '^': result = applyMask(leftVal ^ rightVal); desc = 'XOR applied'; break;
+        case '|': result = applyMask(leftVal | rightVal); desc = 'OR applied'; break;
+      }
+      let exprStr = leftStep.expr + ' ' + n.op + ' ' + rightStep.expr;
+      steps.push({ expr: exprStr, value: result, operation: desc });
+      return result;
+    }
+  }
+
+  let result = ev(node);
+  return { result: result, steps: steps };
+}
+
+/* ═══════════════════════ Expression Evaluator ═══════════════════════ */
+
+function evaluate() {
+  let input = document.getElementById('exprInput');
+  let errBox = document.getElementById('exprError');
+  let resultDiv = document.getElementById('exprResult');
+  let stepsDiv = document.getElementById('exprSteps');
+  let expr = input.value.trim();
+
+  errBox.style.display = 'none';
+  resultDiv.innerHTML = '';
+  stepsDiv.innerHTML = '';
+
+  if (!expr) return;
+
+  try {
+    // Build env from variables
+    let env = {};
+    variables.forEach(v => { env[v.name] = v.value; });
+
+    let tokens = tokenize(expr);
+    let ast = parseExpr(tokens);
+    let evalResult = evalAST(ast, env);
+
+    // Add to history
+    history = history.filter(h => h !== expr);
+    history.unshift(expr);
+    if (history.length > 50) history.pop();
+    historyIndex = -1;
+
+    // Render result
+    let rv = evalResult.result;
+    let html = '<div class="result-label">Result</div>';
+    html += '<div class="result-box">';
+    html += renderSmallBitCells(rv);
+    html += '<span style="font-family:monospace;font-size:14px;font-weight:600;">' + escHtml(fmtDec(rv)) + '</span>';
+    html += '<span style="font-family:monospace;font-size:12px;color:#666666;">' + escHtml(fmtHex(rv)) + '</span>';
+    html += '<button class="btn-copy" onclick="copyText(\'' + escHtml(fmtDec(rv)) + '\', \'result\')">Copy</button>';
+    html += '</div>';
+    html += '<div class="format-line">' + escHtml(formatLine(rv)) + '</div>';
+    resultDiv.innerHTML = html;
+
+    // Render steps
+    let steps = evalResult.steps;
+    if (steps.length > 1) {
+      let sHtml = '<div class="result-label">Steps</div>';
+      for (let i = 0; i < steps.length; i++) {
+        let step = steps[i];
+        let prevVal = i > 0 ? steps[i - 1].value : undefined;
+        let label = i === steps.length - 1 ? 'Result:' : 'Step ' + (i + 1) + ':';
+        let isResult = i === steps.length - 1;
+
+        sHtml += '<div class="step-row">';
+        sHtml += '<span class="step-label">' + label + '</span>';
+        sHtml += '<span class="step-expr">' + escHtml(step.expr) + '</span>';
+        sHtml += '<span class="step-eq">=</span>';
+        sHtml += renderSmallBitCells(step.value, prevVal);
+        sHtml += '<span class="step-vals">' + escHtml(toSigned(step.value).toString()) + '&nbsp;&nbsp;' + escHtml(fmtHex(step.value)) + '</span>';
+        if (step.operation !== 'literal' && step.operation !== 'variable') {
+          sHtml += '<span class="step-desc">' + escHtml(step.operation) + '</span>';
+        }
+        sHtml += '</div>';
+      }
+      stepsDiv.innerHTML = sHtml;
+    }
+
+    renderHistory();
+  } catch (e) {
+    errBox.textContent = e.message;
+    errBox.style.display = 'block';
+  }
+}
+
+function renderHistory() {
+  let container = document.getElementById('historyContainer');
+  let list = document.getElementById('historyList');
+  if (history.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+
+  // Build env for quick display
+  let env = {};
+  variables.forEach(v => { env[v.name] = v.value; });
+
+  let html = '';
+  history.forEach((expr, i) => {
+    let resultStr = '';
+    try {
+      let tokens = tokenize(expr);
+      let ast = parseExpr(tokens);
+      let r = evalAST(ast, env);
+      resultStr = ' = ' + toSigned(r.result);
+    } catch(e) {
+      resultStr = ' = ?';
+    }
+    html += '<div class="history-item" data-expr="' + escHtml(expr) + '">' + escHtml(expr) + resultStr + '</div>';
+  });
+  list.innerHTML = html;
+
+  list.querySelectorAll('.history-item').forEach(item => {
+    item.addEventListener('click', function() {
+      document.getElementById('exprInput').value = this.dataset.expr;
+      evaluate();
+    });
+  });
+}
+
+/* ═══════════════════════ Bit Tricks ═══════════════════════ */
+
+function popcount(v) {
+  v = toUnsigned(v);
+  let c = 0;
+  while (v) { c += v & 1; v >>>= 1; }
+  return c;
+}
+
+function clz(v) {
+  v = toUnsigned(v);
+  if (v === 0) return bitWidth;
+  let c = 0;
+  for (let i = bitWidth - 1; i >= 0; i--) {
+    if ((v >>> i) & 1) break;
+    c++;
+  }
+  return c;
+}
+
+function ctz(v) {
+  v = toUnsigned(v);
+  if (v === 0) return bitWidth;
+  let c = 0;
+  while ((v & 1) === 0) { v >>>= 1; c++; }
+  return c;
+}
+
+function nextPow2(v) {
+  v = toUnsigned(v);
+  if (v === 0) return 1;
+  if ((v & (v - 1)) === 0) return v;
+  // Use bit manipulation to find next power of 2
+  let n = v - 1;
+  n |= n >>> 1;
+  n |= n >>> 2;
+  n |= n >>> 4;
+  n |= n >>> 8;
+  n |= n >>> 16;
+  n = (n + 1) >>> 0;
+  if (bitWidth < 32 && n > mask()) return null;
+  if (bitWidth === 32 && n === 0) return null; // overflow
+  return n;
+}
+
+function renderTricks() {
+  let activeVar = variables[activeVarIndex] || variables[0];
+  if (!activeVar) return;
+
+  document.getElementById('tricksActiveVar').textContent = '(applied to ' + activeVar.name + ')';
+
+  let A = activeVar.value;
+  let uA = toUnsigned(A);
+  let body = document.getElementById('tricksBody');
+
+  let tricks = [];
+
+  // Lowest set bit: A & (-A)
+  let lsb = applyMask(uA & applyMask(-toSigned(A)));
+  tricks.push({ name: 'Lowest set bit', expr: activeVar.name + ' & (-' + activeVar.name + ')', value: lsb, show: true });
+
+  // Clear lowest bit: A & (A-1)
+  let clrLow = applyMask(uA & applyMask(uA - 1));
+  tricks.push({ name: 'Clear lowest bit', expr: activeVar.name + ' & (' + activeVar.name + '-1)', value: clrLow, show: true });
+
+  // Is power of 2
+  let isPow2 = uA !== 0 && (uA & (uA - 1)) === 0;
+  tricks.push({ name: 'Is power of 2', expr: activeVar.name + ' & (' + activeVar.name + '-1)==0', value: isPow2, isBool: true });
+
+  // Population count
+  let pc = popcount(A);
+  tricks.push({ name: 'Population count', expr: 'popcount', value: pc, isNum: true });
+
+  // Leading zeros
+  let lzc = clz(A);
+  tricks.push({ name: 'Leading zeros', expr: 'clz', value: lzc, isNum: true });
+
+  // Trailing zeros
+  let tzc = ctz(A);
+  tricks.push({ name: 'Trailing zeros', expr: 'ctz', value: tzc, isNum: true });
+
+  // Next power of 2
+  let np2 = nextPow2(uA);
+  if (np2 !== null && np2 <= mask()) {
+    tricks.push({ name: 'Next power of 2', expr: '', value: applyMask(np2), show: true });
+  } else {
+    tricks.push({ name: 'Next power of 2', expr: '', value: null, dash: true });
+  }
+
+  // Two's complement: ~A + 1
+  let tc = applyMask(~A + 1);
+  tricks.push({ name: "Two's complement", expr: '~' + activeVar.name + ' + 1', value: tc, show: true });
+
+  let html = '';
+  tricks.forEach(t => {
+    html += '<div class="trick-row">';
+    html += '<span class="trick-name">' + escHtml(t.name) + '</span>';
+    html += '<span class="trick-expr">' + escHtml(t.expr) + '</span>';
+    if (t.isBool) {
+      html += '<span class="trick-vals">' + (t.value ? 'true' : 'false') + '</span>';
+    } else if (t.isNum) {
+      html += '<span class="trick-vals">' + t.value + '</span>';
+    } else if (t.dash) {
+      html += '<span class="trick-vals">&mdash;</span>';
+    } else {
+      html += renderSmallBitCells(t.value);
+      html += '<span class="trick-vals">' + toUnsigned(t.value) + '&nbsp;&nbsp;' + fmtHex(t.value) + '</span>';
+    }
+    html += '</div>';
+  });
+
+  body.innerHTML = html;
+}
+
+/* ═══════════════════════ Bit Width ═══════════════════════ */
+
+document.getElementById('bitWidthSelector').addEventListener('click', function(e) {
+  let btn = e.target.closest('.mode-btn');
+  if (!btn) return;
+  let bits = parseInt(btn.dataset.bits);
+  if (bits === bitWidth) return;
+  bitWidth = bits;
+  this.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('on', parseInt(b.dataset.bits) === bits));
+  // Reset all variables to 0
+  variables.forEach(v => { v.value = 0; });
+  renderAll();
+});
+
+/* ═══════════════════════ Add/Remove Variables ═══════════════════════ */
+
+document.getElementById('addVarBtn').addEventListener('click', function() {
+  if (variables.length >= 6) return;
+  let names = 'ABCDEF';
+  let usedNames = new Set(variables.map(v => v.name));
+  let newName = '';
+  for (let i = 0; i < names.length; i++) {
+    if (!usedNames.has(names[i])) { newName = names[i]; break; }
+  }
+  if (!newName) newName = 'V' + variables.length;
+  variables.push({ name: newName, value: 0 });
+  renderAll();
+});
+
+document.getElementById('rmVarBtn').addEventListener('click', function() {
+  if (variables.length <= 1) return;
+  variables.pop();
+  if (activeVarIndex >= variables.length) activeVarIndex = variables.length - 1;
+  renderAll();
+});
+
+/* ═══════════════════════ Expression Input Events ═══════════════════════ */
+
+document.getElementById('exprInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    evaluate();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (history.length === 0) return;
+    if (historyIndex < history.length - 1) {
+      historyIndex++;
+      this.value = history[historyIndex];
+    }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (historyIndex > 0) {
+      historyIndex--;
+      this.value = history[historyIndex];
+    } else if (historyIndex === 0) {
+      historyIndex = -1;
+      this.value = '';
+    }
+  } else if (e.key === 'Escape') {
+    this.value = '';
+    historyIndex = -1;
+    document.getElementById('exprError').style.display = 'none';
+    document.getElementById('exprResult').innerHTML = '';
+    document.getElementById('exprSteps').innerHTML = '';
+  }
+});
+
+/* ═══════════════════════ Render All ═══════════════════════ */
+
+function renderAll() {
+  renderVarBank();
+  renderTricks();
+  // Re-evaluate current expression if any
+  let expr = document.getElementById('exprInput').value.trim();
+  if (expr) evaluate();
+  else renderHistory();
+}
+
+/* ═══════════════════════ Init ═══════════════════════ */
+
+renderAll();
+</script>
+</body>
+</html>
