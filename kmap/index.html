@@ -506,7 +506,7 @@
           <li><strong>Precedence:</strong> NOT &rarr; AND/NAND &rarr; XOR/XNOR &rarr; OR/NOR. Use parentheses to override.</li>
           <li>Leave the expression blank and click Generate to enter <strong>manual mode</strong> &mdash; click cells directly to set 1, 0, or X.</li>
           <li>Switch to <strong>Minterms/Maxterms</strong> mode to enter indices directly (e.g. <code>1, 3, 5, 7</code>).</li>
-          <li>Click any cell in the K-map to toggle between <strong>0, 1, and X</strong> (don't-care).</li>
+          <li>Click any cell in the K-map to toggle between <strong>0, 1, and X</strong> (don't-care) &mdash; works in <strong>all modes</strong>. Click <strong>Revert to input</strong> or re-click Generate to restore the original values.</li>
           <li>Toggle <strong>POS</strong>, <strong>Verilog</strong>, <strong>VHDL</strong>, and <strong>Steps</strong> with the buttons below Generate.</li>
           <li>XOR/XNOR patterns are <strong>auto-detected</strong> when the SOP can be simplified using XOR gates.</li>
         </ul>
@@ -1082,7 +1082,7 @@ function parseTermList(input, maxVal, termType) {
 
 function getEffectiveResult() {
   if (!state.result) return null;
-  if (!state.manualMode || Object.keys(state.manualOverrides).length === 0) return state.result;
+  if (Object.keys(state.manualOverrides).length === 0) return state.result;
   const tt = state.result.truthTable.map((row, i) => ({
     ...row,
     result: state.manualOverrides[i] !== undefined ? state.manualOverrides[i] : row.result,
@@ -1734,7 +1734,7 @@ function generate() {
 
 function handleCellClick(r, c) {
   const effectiveResult = getEffectiveResult();
-  if (!effectiveResult?.kmap || !state.manualMode) return;
+  if (!effectiveResult?.kmap) return;
 
   const { varNames, kmap } = effectiveResult;
   const env = {};
@@ -1894,6 +1894,7 @@ function render() {
   let html = `<div class="kmap-header">
     <div class="result-label" style="margin: 0;">Karnaugh Map</div>
     ${state.manualMode ? '<span class="manual-indicator">MANUAL - click cells to cycle 0 &rarr; 1 &rarr; X</span>' : ''}
+    ${!state.manualMode && Object.keys(state.manualOverrides).length > 0 ? '<span class="manual-indicator">EDITED - click cells to cycle 0 &rarr; 1 &rarr; X &nbsp; <button class="btn-copy" onclick="state.manualOverrides={};render();">Revert to input</button></span>' : ''}
   </div>`;
 
   html += '<div style="overflow-x: auto; padding: 2px 0;"><table class="km-tbl"><thead><tr>';
@@ -1912,7 +1913,7 @@ function render() {
       const bg = state.showGroups && gIdxs.length > 0 ? GROUP_COLORS[gIdxs[0] % GROUP_COLORS.length] : 'transparent';
       const border = state.showGroups && gIdxs.length > 0 ? `2px solid ${GROUP_BORDERS[gIdxs[0] % GROUP_BORDERS.length]}` : '';
       const cls = val === 1 ? 'v1' : val === 'X' ? 'vx' : 'v0';
-      const clickCls = state.manualMode ? 'click' : '';
+      const clickCls = 'click';
       const borderStyle = border ? `border: ${border};` : '';
       html += `<td class="km-cell ${cls} ${clickCls}" data-r="${ri}" data-c="${ci}" style="background: ${bg}; ${borderStyle}">
         <span>${val === 'X' ? 'X' : val}</span>
