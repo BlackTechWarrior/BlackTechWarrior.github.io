@@ -1336,6 +1336,15 @@ function parseExpr(tokens) {
   return ast;
 }
 
+function checkOverflow(fullResult, maskedResult) {
+  if (fullResult === undefined) return null;
+  let half = Math.pow(2, bitWidth);
+  let signedMin = -(half / 2);
+  let signedMax = (half / 2) - 1;
+  if (fullResult >= signedMin && fullResult <= signedMax) return null;
+  return { full: fullResult, truncated: toUnsigned(maskedResult) };
+}
+
 // Evaluator with hierarchical step collection and overflow detection
 function evalAST(node, env) {
   let steps = [];
@@ -1343,7 +1352,7 @@ function evalAST(node, env) {
   function ev(n) {
     if (n.type === 'num') {
       let v = applyMask(n.value);
-      return { value: v, expr: n.raw };
+      return { value: v, expr: n.raw, fullValue: n.value };
     }
     if (n.type === 'var') {
       let name = n.name;
@@ -1352,20 +1361,19 @@ function evalAST(node, env) {
         throw new Error('Unknown variable "' + name + '". Valid: ' + valid);
       }
       let v = applyMask(env[name]);
-      return { value: v, expr: name };
+      return { value: v, expr: name, fullValue: toSigned(v) };
     }
     if (n.type === 'unary') {
       let operand = ev(n.operand);
-      let result, desc, overflow = null;
+      let result, fullResult, desc, overflow = null;
       if (n.op === '~') {
         result = applyMask(~operand.value);
+        fullResult = toSigned(result);
         desc = 'NOT applied';
       } else if (n.op === '-') {
-        let fullResult = -toUnsigned(operand.value);
+        fullResult = -operand.fullValue;
         result = applyMask(-operand.value);
-        if (fullResult < 0 || fullResult > mask()) {
-          overflow = { full: fullResult, truncated: toUnsigned(result) };
-        }
+        overflow = checkOverflow(fullResult, result);
         desc = 'negation';
       }
       let exprStr = n.op + '(' + operand.expr + ')';
@@ -1377,88 +1385,86 @@ function evalAST(node, env) {
         overflow: overflow
       };
       steps.push(step);
-      return { value: result, expr: exprStr, stepRef: steps.length };
+      return { value: result, expr: exprStr, stepRef: steps.length, fullValue: fullResult };
     }
     if (n.type === 'bin') {
       let left = ev(n.left);
       let right = ev(n.right);
       let leftVal = left.value;
       let rightVal = right.value;
-      let result, desc, overflow = null, fullResult;
+      let result, fullResult, desc, overflow = null;
 
       switch (n.op) {
         case '+':
-          fullResult = toUnsigned(leftVal) + toUnsigned(rightVal);
+          fullResult = left.fullValue + right.fullValue;
           result = applyMask(leftVal + rightVal);
           desc = 'addition';
           break;
         case '-':
-          fullResult = toUnsigned(leftVal) - toUnsigned(rightVal);
+          fullResult = left.fullValue - right.fullValue;
           result = applyMask(leftVal - rightVal);
           desc = 'subtraction';
           break;
         case '*':
-          fullResult = toUnsigned(leftVal) * toUnsigned(rightVal);
+          fullResult = left.fullValue * right.fullValue;
           result = applyMask(Math.imul(leftVal, rightVal));
           desc = 'multiplication';
           break;
         case '/':
           if (rightVal === 0) throw new Error('Division by zero');
+          fullResult = Math.trunc(left.fullValue / right.fullValue);
           result = applyMask(Math.trunc(toSigned(leftVal) / toSigned(rightVal)));
-          fullResult = toUnsigned(result);
           desc = 'division';
           break;
         case '%':
           if (rightVal === 0) throw new Error('Division by zero');
+          fullResult = left.fullValue % right.fullValue;
           result = applyMask(toSigned(leftVal) % toSigned(rightVal));
-          fullResult = toUnsigned(result);
           desc = 'modulo';
           break;
         case '<<':
-          fullResult = toUnsigned(leftVal) * Math.pow(2, rightVal & 31);
+          fullResult = left.fullValue * Math.pow(2, rightVal & 31);
           result = applyMask(leftVal << (rightVal & 31));
           desc = 'shifted left ' + (rightVal & 31);
           break;
         case '>>':
           result = applyMask(toSigned(leftVal) >> (rightVal & 31));
-          fullResult = toUnsigned(result);
+          fullResult = toSigned(result);
           desc = 'arithmetic shift right ' + (rightVal & 31);
           break;
         case '>>>':
           result = applyMask(toUnsigned(leftVal) >>> (rightVal & 31));
-          fullResult = toUnsigned(result);
+          fullResult = toSigned(result);
           desc = 'logical shift right ' + (rightVal & 31);
           break;
         case '&':
           result = applyMask(leftVal & rightVal);
-          fullResult = toUnsigned(result);
+          fullResult = toSigned(result);
           desc = 'AND applied';
           break;
         case '^':
           result = applyMask(leftVal ^ rightVal);
-          fullResult = toUnsigned(result);
+          fullResult = toSigned(result);
           desc = 'XOR applied';
           break;
         case '|':
           result = applyMask(leftVal | rightVal);
-          fullResult = toUnsigned(result);
+          fullResult = toSigned(result);
           desc = 'OR applied';
           break;
         case '==':
           result = (toUnsigned(leftVal) === toUnsigned(rightVal)) ? 1 : 0;
-          fullResult = toUnsigned(result);
+          fullResult = result;
           desc = 'equal';
           break;
         case '!=':
           result = (toUnsigned(leftVal) !== toUnsigned(rightVal)) ? 1 : 0;
-          fullResult = toUnsigned(result);
+          fullResult = result;
           desc = 'not equal';
           break;
       }
 
-      if (fullResult !== toUnsigned(result)) {
-        overflow = { full: fullResult, truncated: toUnsigned(result) };
-      }
+      overflow = checkOverflow(fullResult, result);
 
       let exprStr = left.expr + ' ' + n.op + ' ' + right.expr;
       let step = {
@@ -1472,7 +1478,7 @@ function evalAST(node, env) {
         overflow: overflow
       };
       steps.push(step);
-      return { value: result, expr: exprStr, stepRef: steps.length };
+      return { value: result, expr: exprStr, stepRef: steps.length, fullValue: fullResult };
     }
   }
 
