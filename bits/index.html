@@ -755,10 +755,11 @@
       <div class="how-to-body">
         <ul>
           <li>Define variables in the <strong>variable bank</strong> (up to 6). Click any bit cell to toggle it, or type a value directly.</li>
-          <li>Enter expressions like <code>(A &gt;&gt; 4) &amp; 0xF</code> and press Enter to evaluate.</li>
+          <li>Enter expressions like <code>(A &gt;&gt; 4) &amp; 0xF</code> and press Enter to evaluate. You can also use numbers directly without variables &mdash; <code>255 + 1</code> or <code>0xFF &amp; 0x0F</code> work on their own.</li>
           <li><strong>Number literals</strong> work in decimal (<code>255</code>), hex (<code>0xFF</code>), binary (<code>0b11111111</code>), and octal (<code>0o377</code>).</li>
+          <li><strong>Equality:</strong> <code>==</code> and <code>!=</code> compare two expressions and return 1 (true) or 0 (false), e.g. <code>A &amp; 1 == 0</code>.</li>
           <li><strong>Shift operators use JS semantics:</strong> <code>&gt;&gt;</code> is arithmetic right shift (sign-extending), <code>&gt;&gt;&gt;</code> is logical right shift (zero-filling). This matters for negative values.</li>
-          <li><strong>Operator precedence</strong> (low to high): <code>|</code> &rarr; <code>^</code> &rarr; <code>&amp;</code> &rarr; <code>&lt;&lt; &gt;&gt; &gt;&gt;&gt;</code> &rarr; <code>+ -</code> &rarr; <code>* / %</code> &rarr; <code>~ -</code>(unary). Use parentheses to override.</li>
+          <li><strong>Operator precedence</strong> (low to high): <code>== !=</code> &rarr; <code>|</code> &rarr; <code>^</code> &rarr; <code>&amp;</code> &rarr; <code>&lt;&lt; &gt;&gt; &gt;&gt;&gt;</code> &rarr; <code>+ -</code> &rarr; <code>* / %</code> &rarr; <code>~ -</code>(unary). Use parentheses to override.</li>
           <li><strong>Chain mode:</strong> toggle it on to pipe results between expressions. Use <code>$</code> to reference the previous step's result, e.g. <code>A &gt;&gt; 4</code> then <code>$ &amp; 0xF</code>.</li>
           <li>Arrow keys <strong>Up/Down</strong> in the expression input to cycle through history. Press <strong>Escape</strong> to clear.</li>
           <li>Changing <strong>bit width</strong> resets all variable values to 0 and clears the chain.</li>
@@ -793,8 +794,8 @@
       </div>
       <div id="chainPipeline"></div>
       <div class="ref-section" style="margin-top:10px;">
-        <strong>Operators:</strong> ~ (NOT) &middot; * / % (Mul) &middot; + - (Add) &middot; &lt;&lt; &gt;&gt; &gt;&gt;&gt; (Shift) &middot; &amp; (AND) &middot; ^ (XOR) &middot; | (OR)<br>
-        <strong>Literals:</strong> 255 &middot; 0xFF &middot; 0b11111111 &middot; 0o377 &middot; <strong>Precedence:</strong> ~ &rarr; * / % &rarr; + - &rarr; Shift &rarr; &amp; &rarr; ^ &rarr; |
+        <strong>Operators:</strong> ~ (NOT) &middot; * / % (Mul) &middot; + - (Add) &middot; &lt;&lt; &gt;&gt; &gt;&gt;&gt; (Shift) &middot; &amp; (AND) &middot; ^ (XOR) &middot; | (OR) &middot; == != (Eq)<br>
+        <strong>Literals:</strong> 255 &middot; 0xFF &middot; 0b11111111 &middot; 0o377 &middot; <strong>Precedence:</strong> ~ &rarr; * / % &rarr; + - &rarr; Shift &rarr; &amp; &rarr; ^ &rarr; | &rarr; == !=
       </div>
       <div id="exprError" class="err" style="display:none;"></div>
       <div id="exprResult"></div>
@@ -1138,6 +1139,15 @@ function tokenize(expr) {
     if (s[i] === '<' && s[i+1] === '<') {
       tokens.push({ type: TK.OP, value: '<<' }); i += 2; continue;
     }
+    if (s[i] === '=' && s[i+1] === '=') {
+      tokens.push({ type: TK.OP, value: '==' }); i += 2; continue;
+    }
+    if (s[i] === '!' && s[i+1] === '=') {
+      tokens.push({ type: TK.OP, value: '!=' }); i += 2; continue;
+    }
+    if (s[i] === '=') {
+      throw new Error('Use == for equality comparison (single = is not supported)');
+    }
 
     // Parentheses
     if (s[i] === '(') { tokens.push({ type: TK.LPAREN }); i++; continue; }
@@ -1226,6 +1236,15 @@ function parseExpr(tokens) {
   function peek() { return tokens[pos]; }
   function advance() { return tokens[pos++]; }
 
+  function parseEquality() {
+    let left = parseOr();
+    while (peek().type === TK.OP && (peek().value === '==' || peek().value === '!=')) {
+      let op = advance().value;
+      left = binNode(op, left, parseOr());
+    }
+    return left;
+  }
+
   function parseOr() {
     let left = parseXor();
     while (peek().type === TK.OP && peek().value === '|') {
@@ -1312,7 +1331,7 @@ function parseExpr(tokens) {
     throw new Error('Unexpected token: ' + (t.value || t.type));
   }
 
-  let ast = parseOr();
+  let ast = parseEquality();
   if (peek().type !== TK.EOF) throw new Error('Unexpected token: ' + (peek().value || peek().type));
   return ast;
 }
@@ -1425,6 +1444,16 @@ function evalAST(node, env) {
           fullResult = toUnsigned(result);
           desc = 'OR applied';
           break;
+        case '==':
+          result = (toUnsigned(leftVal) === toUnsigned(rightVal)) ? 1 : 0;
+          fullResult = toUnsigned(result);
+          desc = 'equal';
+          break;
+        case '!=':
+          result = (toUnsigned(leftVal) !== toUnsigned(rightVal)) ? 1 : 0;
+          fullResult = toUnsigned(result);
+          desc = 'not equal';
+          break;
       }
 
       if (fullResult !== toUnsigned(result)) {
@@ -1496,13 +1525,18 @@ function evaluate() {
       input.value = '';
     }
 
-    // Add to history (skip chain expressions — $ has no meaning outside the chain)
-    if (!chainMode) {
-      history = history.filter(h => h !== expr);
-      history.unshift(expr);
-      if (history.length > 50) history.pop();
-      historyIndex = -1;
+    // Add to history — in chain mode, substitute $ with its concrete value
+    let historyExpr = expr;
+    if (chainMode && chainSteps.length > 0) {
+      let dollarVal = chainSteps[chainSteps.length - 1].result;
+      let uv = toUnsigned(dollarVal);
+      let formatted = uv > 255 ? fmtHex(dollarVal) : uv.toString();
+      historyExpr = expr.replace(/\$/g, formatted);
     }
+    history = history.filter(h => h !== historyExpr);
+    history.unshift(historyExpr);
+    if (history.length > 50) history.pop();
+    historyIndex = -1;
 
     // Check for overflow on final step
     let steps = evalResult.steps;
@@ -1584,7 +1618,7 @@ function normalizeExprSpacing(expr) {
   // Ensure single spaces around binary operators
   // Process multi-char operators first to avoid partial matches
   let s = expr;
-  s = s.replace(/\s*(>>>|>>|<<)\s*/g, ' $1 ');
+  s = s.replace(/\s*(>>>|>>|<<|==|!=)\s*/g, ' $1 ');
   // For single-char binary ops, use lookbehind to avoid unary -/+
   // A binary op follows a value (digit, letter, or close paren)
   s = s.replace(/([a-zA-Z0-9_)])\s*([&|^*/%])\s*/g, '$1 $2 ');
