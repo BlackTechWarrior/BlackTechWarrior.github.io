@@ -758,8 +758,9 @@
           <li>Enter expressions like <code>(A &gt;&gt; 4) &amp; 0xF</code> and press Enter to evaluate. You can also use numbers directly without variables &mdash; <code>255 + 1</code> or <code>0xFF &amp; 0x0F</code> work on their own.</li>
           <li><strong>Number literals</strong> work in decimal (<code>255</code>), hex (<code>0xFF</code>), binary (<code>0b11111111</code>), and octal (<code>0o377</code>).</li>
           <li><strong>Equality:</strong> <code>==</code> and <code>!=</code> compare two expressions and return 1 (true) or 0 (false), e.g. <code>A &amp; 1 == 0</code>.</li>
+          <li><strong>Functions:</strong> <code>rol(val, n)</code> and <code>ror(val, n)</code> for bitwise rotate left/right. <code>popcount(val)</code> counts set bits, <code>clz(val)</code> counts leading zeros, <code>ctz(val)</code> counts trailing zeros.</li>
           <li><strong>Shift operators use JS semantics:</strong> <code>&gt;&gt;</code> is arithmetic right shift (sign-extending), <code>&gt;&gt;&gt;</code> is logical right shift (zero-filling). This matters for negative values.</li>
-          <li><strong>Operator precedence</strong> (low to high): <code>== !=</code> &rarr; <code>|</code> &rarr; <code>^</code> &rarr; <code>&amp;</code> &rarr; <code>&lt;&lt; &gt;&gt; &gt;&gt;&gt;</code> &rarr; <code>+ -</code> &rarr; <code>* / %</code> &rarr; <code>~ -</code>(unary). Use parentheses to override.</li>
+          <li><strong>Operator precedence</strong> (low to high): <code>== !=</code> &rarr; <code>|</code> &rarr; <code>^</code> &rarr; <code>&amp;</code> &rarr; <code>&lt;&lt; &gt;&gt; &gt;&gt;&gt;</code> &rarr; <code>+ -</code> &rarr; <code>* / %</code> &rarr; <code>~ -</code>(unary) &rarr; functions. Use parentheses to override.</li>
           <li><strong>Chain mode:</strong> toggle it on to pipe results between expressions. Use <code>$</code> to reference the previous step's result, e.g. <code>A &gt;&gt; 4</code> then <code>$ &amp; 0xF</code>.</li>
           <li>Arrow keys <strong>Up/Down</strong> in the expression input to cycle through history. Press <strong>Escape</strong> to clear.</li>
           <li>Changing <strong>bit width</strong> resets all variable values to 0 and clears the chain.</li>
@@ -795,6 +796,7 @@
       <div id="chainPipeline"></div>
       <div class="ref-section" style="margin-top:10px;">
         <strong>Operators:</strong> ~ (NOT) &middot; * / % (Mul) &middot; + - (Add) &middot; &lt;&lt; &gt;&gt; &gt;&gt;&gt; (Shift) &middot; &amp; (AND) &middot; ^ (XOR) &middot; | (OR) &middot; == != (Eq)<br>
+        <strong>Functions:</strong> rol(v,n) &middot; ror(v,n) &middot; popcount(v) &middot; clz(v) &middot; ctz(v)<br>
         <strong>Literals:</strong> 255 &middot; 0xFF &middot; 0b11111111 &middot; 0o377 &middot; <strong>Precedence:</strong> ~ &rarr; * / % &rarr; + - &rarr; Shift &rarr; &amp; &rarr; ^ &rarr; | &rarr; == !=
       </div>
       <div id="exprError" class="err" style="display:none;"></div>
@@ -1154,7 +1156,7 @@ function tokenize(expr) {
     if (s[i] === ')') { tokens.push({ type: TK.RPAREN }); i++; continue; }
 
     // Single-char operators
-    if ('~&^|*/%'.indexOf(s[i]) >= 0) {
+    if ('~&^|*/%,'.indexOf(s[i]) >= 0) {
       tokens.push({ type: TK.OP, value: s[i] }); i++; continue;
     }
 
@@ -1229,6 +1231,7 @@ function numNode(val, raw) { return { type: 'num', value: val, raw: raw || val.t
 function varNode(name) { return { type: 'var', name: name }; }
 function binNode(op, left, right) { return { type: 'bin', op: op, left: left, right: right }; }
 function unaryNode(op, operand) { return { type: 'unary', op: op, operand: operand }; }
+function funcNode(name, args) { return { type: 'func', name: name, args: args }; }
 
 // Recursive descent parser
 function parseExpr(tokens) {
@@ -1319,6 +1322,22 @@ function parseExpr(tokens) {
     }
     if (t.type === TK.VAR) {
       advance();
+      // Check for function call: name(
+      if (peek().type === TK.LPAREN) {
+        let fname = t.value;
+        advance(); // consume (
+        let args = [];
+        if (peek().type !== TK.RPAREN) {
+          args.push(parseEquality());
+          while (peek().type === TK.OP && peek().value === ',') {
+            advance();
+            args.push(parseEquality());
+          }
+        }
+        if (peek().type !== TK.RPAREN) throw new Error('Missing closing parenthesis in ' + fname + '()');
+        advance(); // consume )
+        return funcNode(fname, args);
+      }
       return varNode(t.value);
     }
     if (t.type === TK.LPAREN) {
@@ -1386,6 +1405,39 @@ function evalAST(node, env) {
       };
       steps.push(step);
       return { value: result, expr: exprStr, stepRef: steps.length, fullValue: fullResult };
+    }
+    if (n.type === 'func') {
+      let builtins = {
+        rol:      { arity: 2, desc: 'rotate left' },
+        ror:      { arity: 2, desc: 'rotate right' },
+        popcount: { arity: 1, desc: 'population count' },
+        clz:      { arity: 1, desc: 'count leading zeros' },
+        ctz:      { arity: 1, desc: 'count trailing zeros' }
+      };
+      let fn = builtins[n.name];
+      if (!fn) throw new Error('Unknown function "' + n.name + '". Available: ' + Object.keys(builtins).join(', '));
+      if (n.args.length !== fn.arity) throw new Error(n.name + '() expects ' + fn.arity + ' argument' + (fn.arity > 1 ? 's' : '') + ', got ' + n.args.length);
+
+      let args = n.args.map(a => ev(a));
+      let result;
+      switch (n.name) {
+        case 'rol':      result = rol(args[0].value, args[1].value); break;
+        case 'ror':      result = ror(args[0].value, args[1].value); break;
+        case 'popcount': result = popcount(args[0].value); break;
+        case 'clz':      result = clz(args[0].value); break;
+        case 'ctz':      result = ctz(args[0].value); break;
+      }
+      let exprStr = n.name + '(' + args.map(a => a.expr).join(', ') + ')';
+      let operands = args.map(a => ({ expr: a.expr, value: a.value, fromStep: a.stepRef || null }));
+      let step = {
+        expr: exprStr,
+        result: result,
+        operands: operands,
+        operation: fn.desc,
+        overflow: null
+      };
+      steps.push(step);
+      return { value: result, expr: exprStr, stepRef: steps.length, fullValue: toSigned(result) };
     }
     if (n.type === 'bin') {
       let left = ev(n.left);
@@ -1673,6 +1725,20 @@ function renderHistory() {
 }
 
 /* ═══════════════════════ Bit Tricks ═══════════════════════ */
+
+function rol(v, n) {
+  v = toUnsigned(v);
+  n = ((n % bitWidth) + bitWidth) % bitWidth;
+  if (n === 0) return v;
+  return applyMask((v << n) | (v >>> (bitWidth - n)));
+}
+
+function ror(v, n) {
+  v = toUnsigned(v);
+  n = ((n % bitWidth) + bitWidth) % bitWidth;
+  if (n === 0) return v;
+  return applyMask((v >>> n) | (v << (bitWidth - n)));
+}
 
 function popcount(v) {
   v = toUnsigned(v);
