@@ -375,6 +375,7 @@
     .bit-cell.highlight { background: rgba(230, 126, 34, 0.15); }
     body.dark .bit-cell.highlight { background: rgba(230, 126, 34, 0.15); }
 
+    .bit-4 { width: 32px; height: 32px; font-size: 14px; }
     .bit-8 { width: 28px; height: 28px; font-size: 13px; }
     .bit-16 { width: 24px; height: 24px; font-size: 12px; }
     .bit-32 { width: 20px; height: 20px; font-size: 10px; }
@@ -446,6 +447,82 @@
       margin-left: auto;
     }
     body.dark .step-desc { color: #9a9a9a; }
+
+    /* ── Overflow ── */
+    .bit-cell.overflow {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+    body.dark .bit-cell.overflow {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+
+    .overflow-badge {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc3545;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      font-family: monospace;
+    }
+
+    .overflow-note {
+      font-size: 12px;
+      color: #dc3545;
+      margin-top: 4px;
+    }
+
+    /* ── Hierarchical Steps ── */
+    .step-group {
+      margin-bottom: 2px;
+      border-bottom: 1px solid #f0f0f0;
+      padding-bottom: 6px;
+    }
+    .step-group:last-child { border-bottom: none; }
+    body.dark .step-group { border-bottom-color: #333333; }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px 4px;
+      font-family: monospace;
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+
+    .step-operand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 3px 10px 3px 32px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #595959;
+      flex-wrap: wrap;
+    }
+    body.dark .step-operand { color: #888888; }
+
+    .step-operand-expr { min-width: 80px; flex-shrink: 0; }
+
+    .step-applied {
+      padding: 2px 10px 6px 32px;
+      font-family: monospace;
+      font-size: 11px;
+      font-style: italic;
+      color: #767676;
+    }
+    body.dark .step-applied { color: #9a9a9a; }
+
+    .step-from-ref {
+      font-size: 10px;
+      color: #999999;
+    }
+    body.dark .step-from-ref { color: #666666; }
 
     /* ── Result Box ── */
     .result-box {
@@ -636,6 +713,7 @@
     @media (max-width: 600px) {
       body { padding: 15px; font-size: 16px; }
       h1 { font-size: 1.5em; }
+      .bit-4 { width: 28px; height: 28px; font-size: 13px; }
       .bit-8 { width: 24px; height: 24px; font-size: 12px; }
       .bit-16 { width: 20px; height: 20px; font-size: 10px; }
       .bit-32 { width: 16px; height: 16px; font-size: 9px; }
@@ -693,6 +771,7 @@
     <div class="section" id="varSection">
       <div class="var-controls">
         <div class="mode-selector" id="bitWidthSelector">
+          <button class="mode-btn" data-bits="4">4-bit</button>
           <button class="mode-btn on" data-bits="8">8-bit</button>
           <button class="mode-btn" data-bits="16">16-bit</button>
           <button class="mode-btn" data-bits="32">32-bit</button>
@@ -792,12 +871,14 @@ function copyText(text, label) {
 }
 
 function mask() {
+  if (bitWidth === 4) return 0xF;
   if (bitWidth === 8) return 0xFF;
   if (bitWidth === 16) return 0xFFFF;
   return 0xFFFFFFFF;
 }
 
 function applyMask(v) {
+  if (bitWidth === 4) return v & 0xF;
   if (bitWidth === 8) return v & 0xFF;
   if (bitWidth === 16) return v & 0xFFFF;
   return v | 0; // force 32-bit signed
@@ -805,6 +886,7 @@ function applyMask(v) {
 
 function toSigned(v) {
   v = applyMask(v);
+  if (bitWidth === 4) return v >= 8 ? v - 16 : v;
   if (bitWidth === 8) return v >= 128 ? v - 256 : v;
   if (bitWidth === 16) return v >= 32768 ? v - 65536 : v;
   return v | 0; // already 32-bit signed
@@ -906,7 +988,7 @@ function renderBitCells(value, clickable, prevValue) {
   return html;
 }
 
-function renderSmallBitCells(value, prevValue) {
+function renderSmallBitCells(value, prevValue, isOverflow) {
   let v = toUnsigned(value);
   let pv = prevValue !== undefined ? toUnsigned(prevValue) : null;
   let html = '<div class="bit-row">';
@@ -916,7 +998,7 @@ function renderSmallBitCells(value, prevValue) {
     }
     let bit = (v >>> i) & 1;
     let changed = pv !== null && (((v >>> i) & 1) !== ((pv >>> i) & 1));
-    let cls = 'bit-small' + (bit ? ' b1' : ' b0') + (changed ? ' highlight' : '');
+    let cls = 'bit-small' + (bit ? ' b1' : ' b0') + (changed ? ' highlight' : '') + (isOverflow ? ' overflow' : '');
     html += '<div class="bit-cell ' + cls + '">' + bit + '</div>';
   }
   html += '</div>';
@@ -1235,15 +1317,14 @@ function parseExpr(tokens) {
   return ast;
 }
 
-// Evaluator with step collection
+// Evaluator with hierarchical step collection and overflow detection
 function evalAST(node, env) {
   let steps = [];
 
   function ev(n) {
     if (n.type === 'num') {
       let v = applyMask(n.value);
-      steps.push({ expr: n.raw, value: v, operation: 'literal' });
-      return v;
+      return { value: v, expr: n.raw };
     }
     if (n.type === 'var') {
       let name = n.name;
@@ -1252,66 +1333,122 @@ function evalAST(node, env) {
         throw new Error('Unknown variable "' + name + '". Valid: ' + valid);
       }
       let v = applyMask(env[name]);
-      steps.push({ expr: name, value: v, operation: 'variable' });
-      return v;
+      return { value: v, expr: name };
     }
     if (n.type === 'unary') {
-      let val = ev(n.operand);
-      let result;
-      let desc;
+      let operand = ev(n.operand);
+      let result, desc, overflow = null;
       if (n.op === '~') {
-        result = applyMask(~val);
+        result = applyMask(~operand.value);
         desc = 'NOT applied';
       } else if (n.op === '-') {
-        result = applyMask(-val);
+        let fullResult = -toUnsigned(operand.value);
+        result = applyMask(-operand.value);
+        if (fullResult < 0 || fullResult > mask()) {
+          overflow = { full: fullResult, truncated: toUnsigned(result) };
+        }
         desc = 'negation';
       }
-      let exprStr = n.op + '(' + steps[steps.length - 1].expr + ')';
-      steps.push({ expr: exprStr, value: result, operation: desc });
-      return result;
+      let exprStr = n.op + '(' + operand.expr + ')';
+      let step = {
+        expr: exprStr,
+        result: result,
+        operands: [{ expr: operand.expr, value: operand.value, fromStep: operand.stepRef || null }],
+        operation: desc,
+        overflow: overflow
+      };
+      steps.push(step);
+      return { value: result, expr: exprStr, stepRef: steps.length };
     }
     if (n.type === 'bin') {
-      let leftVal = ev(n.left);
-      let leftStep = steps[steps.length - 1];
-      let rightVal = ev(n.right);
-      let rightStep = steps[steps.length - 1];
-      let result;
-      let desc;
+      let left = ev(n.left);
+      let right = ev(n.right);
+      let leftVal = left.value;
+      let rightVal = right.value;
+      let result, desc, overflow = null, fullResult;
+
       switch (n.op) {
-        case '+': result = applyMask(leftVal + rightVal); desc = 'addition'; break;
-        case '-': result = applyMask(leftVal - rightVal); desc = 'subtraction'; break;
-        case '*': result = applyMask(Math.imul(leftVal, rightVal)); desc = 'multiplication'; break;
+        case '+':
+          fullResult = toUnsigned(leftVal) + toUnsigned(rightVal);
+          result = applyMask(leftVal + rightVal);
+          desc = 'addition';
+          break;
+        case '-':
+          fullResult = toUnsigned(leftVal) - toUnsigned(rightVal);
+          result = applyMask(leftVal - rightVal);
+          desc = 'subtraction';
+          break;
+        case '*':
+          fullResult = toUnsigned(leftVal) * toUnsigned(rightVal);
+          result = applyMask(Math.imul(leftVal, rightVal));
+          desc = 'multiplication';
+          break;
         case '/':
           if (rightVal === 0) throw new Error('Division by zero');
           result = applyMask(Math.trunc(toSigned(leftVal) / toSigned(rightVal)));
-          desc = 'division'; break;
+          fullResult = toUnsigned(result);
+          desc = 'division';
+          break;
         case '%':
           if (rightVal === 0) throw new Error('Division by zero');
           result = applyMask(toSigned(leftVal) % toSigned(rightVal));
-          desc = 'modulo'; break;
-        case '<<': result = applyMask(leftVal << (rightVal & 31)); desc = 'shifted left ' + (rightVal & 31); break;
+          fullResult = toUnsigned(result);
+          desc = 'modulo';
+          break;
+        case '<<':
+          fullResult = toUnsigned(leftVal) * Math.pow(2, rightVal & 31);
+          result = applyMask(leftVal << (rightVal & 31));
+          desc = 'shifted left ' + (rightVal & 31);
+          break;
         case '>>':
-          // Arithmetic right shift
           result = applyMask(toSigned(leftVal) >> (rightVal & 31));
+          fullResult = toUnsigned(result);
           desc = 'arithmetic shift right ' + (rightVal & 31);
           break;
         case '>>>':
-          // Logical right shift
           result = applyMask(toUnsigned(leftVal) >>> (rightVal & 31));
+          fullResult = toUnsigned(result);
           desc = 'logical shift right ' + (rightVal & 31);
           break;
-        case '&': result = applyMask(leftVal & rightVal); desc = 'AND applied'; break;
-        case '^': result = applyMask(leftVal ^ rightVal); desc = 'XOR applied'; break;
-        case '|': result = applyMask(leftVal | rightVal); desc = 'OR applied'; break;
+        case '&':
+          result = applyMask(leftVal & rightVal);
+          fullResult = toUnsigned(result);
+          desc = 'AND applied';
+          break;
+        case '^':
+          result = applyMask(leftVal ^ rightVal);
+          fullResult = toUnsigned(result);
+          desc = 'XOR applied';
+          break;
+        case '|':
+          result = applyMask(leftVal | rightVal);
+          fullResult = toUnsigned(result);
+          desc = 'OR applied';
+          break;
       }
-      let exprStr = leftStep.expr + ' ' + n.op + ' ' + rightStep.expr;
-      steps.push({ expr: exprStr, value: result, operation: desc });
-      return result;
+
+      if (fullResult !== toUnsigned(result)) {
+        overflow = { full: fullResult, truncated: toUnsigned(result) };
+      }
+
+      let exprStr = left.expr + ' ' + n.op + ' ' + right.expr;
+      let step = {
+        expr: exprStr,
+        result: result,
+        operands: [
+          { expr: left.expr, value: left.value, fromStep: left.stepRef || null },
+          { expr: right.expr, value: right.value, fromStep: right.stepRef || null }
+        ],
+        operation: desc,
+        overflow: overflow
+      };
+      steps.push(step);
+      return { value: result, expr: exprStr, stepRef: steps.length };
     }
   }
 
-  let result = ev(node);
-  return { result: result, steps: steps };
+  let final = ev(node);
+  return { result: final.value, steps: steps };
 }
 
 /* ═══════════════════════ Expression Evaluator ═══════════════════════ */
@@ -1367,42 +1504,70 @@ function evaluate() {
       historyIndex = -1;
     }
 
+    // Check for overflow on final step
+    let steps = evalResult.steps;
+    let finalOverflow = steps.length > 0 ? steps[steps.length - 1].overflow : null;
+
     // Render result
     let rv = evalResult.result;
     let html = '<div class="result-label">Result</div>';
     html += '<div class="result-box">';
-    html += renderSmallBitCells(rv);
+    html += renderSmallBitCells(rv, undefined, !!finalOverflow);
     html += '<span style="font-family:monospace;font-size:14px;font-weight:600;">' + escHtml(fmtDec(rv)) + '</span>';
     html += '<span style="font-family:monospace;font-size:12px;color:#666666;">' + escHtml(fmtHex(rv)) + '</span>';
+    if (finalOverflow) {
+      html += '<span class="overflow-badge">OVERFLOW</span>';
+    }
     html += '<button class="btn-copy" onclick="copyText(\'' + escHtml(fmtDec(rv)) + '\', \'result\')">Copy</button>';
     html += '</div>';
+    if (finalOverflow) {
+      html += '<div class="overflow-note">Result truncated from ' + finalOverflow.full + ' to ' + finalOverflow.truncated + ' (' + bitWidth + '-bit)</div>';
+    }
     html += '<div class="format-line">' + escHtml(formatLine(rv)) + '</div>';
     resultDiv.innerHTML = html;
 
-    // Render steps — deduplicate consecutive identical leaf nodes
-    let steps = evalResult.steps;
-    let dedupedSteps = [];
-    for (let i = 0; i < steps.length; i++) {
-      if (i > 0 && steps[i].expr === steps[i - 1].expr && steps[i].value === steps[i - 1].value) continue;
-      dedupedSteps.push(steps[i]);
-    }
-    if (dedupedSteps.length > 1) {
+    // Render hierarchical steps
+    if (steps.length > 0) {
       let sHtml = '<div class="result-label">Steps</div>';
-      let stepNum = 1;
-      for (let i = 0; i < dedupedSteps.length; i++) {
-        let step = dedupedSteps[i];
-        let prevVal = i > 0 ? dedupedSteps[i - 1].value : undefined;
-        let label = i === dedupedSteps.length - 1 ? 'Result:' : 'Step ' + stepNum++ + ':';
+      for (let i = 0; i < steps.length; i++) {
+        let step = steps[i];
+        let prevVal = i > 0 ? steps[i - 1].result : undefined;
 
-        sHtml += '<div class="step-row">';
-        sHtml += '<span class="step-label">' + label + '</span>';
+        sHtml += '<div class="step-group">';
+
+        // Step header
+        sHtml += '<div class="step-header">';
+        sHtml += '<span class="step-label">Step ' + (i + 1) + ':</span>';
         sHtml += '<span class="step-expr">' + escHtml(step.expr) + '</span>';
-        sHtml += '<span class="step-eq">=</span>';
-        sHtml += renderSmallBitCells(step.value, prevVal);
-        sHtml += '<span class="step-vals">' + escHtml(toSigned(step.value).toString()) + '&nbsp;&nbsp;' + escHtml(fmtHex(step.value)) + '</span>';
-        if (step.operation !== 'literal' && step.operation !== 'variable') {
-          sHtml += '<span class="step-desc">' + escHtml(step.operation) + '</span>';
+        sHtml += '<span class="step-eq">&rarr;</span>';
+        sHtml += renderSmallBitCells(step.result, prevVal, !!step.overflow);
+        sHtml += '<span class="step-vals">' + escHtml(toSigned(step.result).toString()) + '&nbsp;&nbsp;' + escHtml(fmtHex(step.result)) + '</span>';
+        if (step.overflow) {
+          sHtml += '<span class="overflow-badge">OVERFLOW</span>';
         }
+        sHtml += '</div>';
+
+        // Operand rows
+        for (let j = 0; j < step.operands.length; j++) {
+          let op = step.operands[j];
+          sHtml += '<div class="step-operand">';
+          sHtml += '<span class="step-operand-expr">' + escHtml(op.expr) + '</span>';
+          sHtml += '<span class="step-eq">=</span>';
+          sHtml += renderSmallBitCells(op.value);
+          sHtml += '<span class="step-vals">' + escHtml(toSigned(op.value).toString()) + '&nbsp;&nbsp;' + escHtml(fmtHex(op.value)) + '</span>';
+          if (op.fromStep) {
+            sHtml += '<span class="step-from-ref">(from Step ' + op.fromStep + ')</span>';
+          }
+          sHtml += '</div>';
+        }
+
+        // Operation description
+        sHtml += '<div class="step-applied">' + escHtml(step.operation) + '</div>';
+
+        if (step.overflow) {
+          sHtml += '<div class="overflow-note" style="padding-left:32px;padding-bottom:4px;">Result truncated from ' + step.overflow.full + ' to ' + step.overflow.truncated + ' (' + bitWidth + '-bit)</div>';
+        }
+
         sHtml += '</div>';
       }
       stepsDiv.innerHTML = sHtml;
