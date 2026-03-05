@@ -449,31 +449,15 @@
     body.dark .step-desc { color: #9a9a9a; }
 
     /* ── Overflow ── */
-    .bit-cell.overflow {
-      background: rgba(239, 68, 68, 0.15);
-      border-color: rgba(239, 68, 68, 0.4);
-    }
-    body.dark .bit-cell.overflow {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: rgba(239, 68, 68, 0.5);
-    }
-
-    .overflow-badge {
-      display: inline-block;
-      background: rgba(239, 68, 68, 0.15);
+    .overflow-val {
       color: #dc3545;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 4px;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      font-family: monospace;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 3px;
+      padding: 0 3px;
     }
-
-    .overflow-note {
-      font-size: 12px;
-      color: #dc3545;
-      margin-top: 4px;
+    body.dark .overflow-val {
+      color: #ff6b6b;
+      background: rgba(239, 68, 68, 0.15);
     }
 
     /* ── Hierarchical Steps ── */
@@ -764,6 +748,7 @@
           <li><strong>Chain mode:</strong> toggle it on to pipe results between expressions. Use <code>$</code> to reference the previous step's result, e.g. <code>A &gt;&gt; 4</code> then <code>$ &amp; 0xF</code>.</li>
           <li>Arrow keys <strong>Up/Down</strong> in the expression input to cycle through history. Press <strong>Escape</strong> to clear.</li>
           <li>Changing <strong>bit width</strong> resets all variable values to 0 and clears the chain.</li>
+          <li>A <span style="color:#dc3545;">red Dec value</span> means signed overflow (the sign flipped from the true mathematical result). A <span style="color:#dc3545;">red Unsigned value</span> means the true result exceeded the bit width's unsigned range.</li>
           <li>The <strong>Bit Tricks</strong> section at the bottom auto-updates for the last focused variable.</li>
         </ul>
       </div>
@@ -944,20 +929,12 @@ function fmtUnsigned(v) {
   return toUnsigned(v).toString();
 }
 
-function formatLine(v) {
+function formatLine(v, overflow) {
   let s = toSigned(v);
   let u = toUnsigned(v);
-  let parts = [];
-  if (s !== u) {
-    parts.push('Dec: ' + s);
-    parts.push('Unsigned: ' + u);
-  } else {
-    parts.push('Dec: ' + s);
-    parts.push('Unsigned: ' + u);
-  }
-  parts.push('Hex: ' + fmtHex(v));
-  parts.push('Oct: ' + fmtOct(v));
-  parts.push('Bin: ' + fmtBin(v));
+  let decStr = 'Dec: ' + (overflow && overflow.signedOverflow ? '<span class="overflow-val">' + escHtml(s.toString()) + '</span>' : escHtml(s.toString()));
+  let unsStr = 'Unsigned: ' + (overflow && overflow.unsignedOverflow ? '<span class="overflow-val">' + escHtml(u.toString()) + '</span>' : escHtml(u.toString()));
+  let parts = [decStr, unsStr, 'Hex: ' + escHtml(fmtHex(v)), 'Oct: ' + escHtml(fmtOct(v)), 'Bin: ' + escHtml(fmtBin(v))];
   return parts.join(' | ');
 }
 
@@ -991,7 +968,7 @@ function renderBitCells(value, clickable, prevValue) {
   return html;
 }
 
-function renderSmallBitCells(value, prevValue, isOverflow) {
+function renderSmallBitCells(value, prevValue) {
   let v = toUnsigned(value);
   let pv = prevValue !== undefined ? toUnsigned(prevValue) : null;
   let html = '<div class="bit-row">';
@@ -1001,7 +978,7 @@ function renderSmallBitCells(value, prevValue, isOverflow) {
     }
     let bit = (v >>> i) & 1;
     let changed = pv !== null && (((v >>> i) & 1) !== ((pv >>> i) & 1));
-    let cls = 'bit-small' + (bit ? ' b1' : ' b0') + (changed ? ' highlight' : '') + (isOverflow ? ' overflow' : '');
+    let cls = 'bit-small' + (bit ? ' b1' : ' b0') + (changed ? ' highlight' : '');
     html += '<div class="bit-cell ' + cls + '">' + bit + '</div>';
   }
   html += '</div>';
@@ -1046,7 +1023,7 @@ function renderVarBank() {
     html += '<div class="var-bits" data-var-idx="' + i + '">';
     html += renderBitCells(v.value, true);
     html += '</div>';
-    html += '<div class="format-line">' + escHtml(formatLine(v.value)) + '</div>';
+    html += '<div class="format-line">' + formatLine(v.value) + '</div>';
     html += '</div>';
   });
   container.innerHTML = html;
@@ -1098,7 +1075,7 @@ function renderVarBitsAndFormat(idx) {
   if (!row) return;
   let bitsDiv = row.querySelector('.var-bits');
   bitsDiv.innerHTML = renderBitCells(variables[idx].value, true);
-  row.querySelector('.format-line').textContent = formatLine(variables[idx].value);
+  row.querySelector('.format-line').innerHTML = formatLine(variables[idx].value);
 
   // Re-attach bit click handlers
   bitsDiv.querySelectorAll('.bit-cell.click').forEach(cell => {
@@ -1360,8 +1337,21 @@ function checkOverflow(fullResult, maskedResult) {
   let half = Math.pow(2, bitWidth);
   let signedMin = -(half / 2);
   let signedMax = (half / 2) - 1;
-  if (fullResult >= signedMin && fullResult <= signedMax) return null;
-  return { full: fullResult, truncated: toUnsigned(maskedResult) };
+  let unsignedMax = half - 1;
+
+  // Signed overflow: sign of true result differs from sign of stored value
+  let storedSigned = toSigned(maskedResult);
+  let signedFlag = false;
+  if (fullResult > 0 && storedSigned < 0) signedFlag = true;
+  else if (fullResult < 0 && storedSigned > 0) signedFlag = true;
+  else if (fullResult !== 0 && storedSigned === 0) signedFlag = true;
+  else if (fullResult === 0 && storedSigned !== 0) signedFlag = true;
+
+  // Unsigned overflow: true result doesn't fit in the bit width at all
+  let unsignedFlag = fullResult < signedMin || fullResult > unsignedMax;
+
+  if (!signedFlag && !unsignedFlag) return null;
+  return { signedOverflow: signedFlag, unsignedOverflow: unsignedFlag };
 }
 
 // Evaluator with hierarchical step collection and overflow detection
@@ -1604,18 +1594,12 @@ function evaluate() {
     let rv = evalResult.result;
     let html = '<div class="result-label">Result</div>';
     html += '<div class="result-box">';
-    html += renderSmallBitCells(rv, undefined, !!finalOverflow);
+    html += renderSmallBitCells(rv);
     html += '<span style="font-family:monospace;font-size:14px;font-weight:600;">' + escHtml(fmtDec(rv)) + '</span>';
     html += '<span style="font-family:monospace;font-size:12px;color:#666666;">' + escHtml(fmtHex(rv)) + '</span>';
-    if (finalOverflow) {
-      html += '<span class="overflow-badge">OVERFLOW</span>';
-    }
     html += '<button class="btn-copy" onclick="copyText(\'' + escHtml(fmtDec(rv)) + '\', \'result\')">Copy</button>';
     html += '</div>';
-    if (finalOverflow) {
-      html += '<div class="overflow-note">Result truncated from ' + finalOverflow.full + ' to ' + finalOverflow.truncated + ' (' + bitWidth + '-bit)</div>';
-    }
-    html += '<div class="format-line">' + escHtml(formatLine(rv)) + '</div>';
+    html += '<div class="format-line">' + formatLine(rv, finalOverflow) + '</div>';
     resultDiv.innerHTML = html;
 
     // Render hierarchical steps
@@ -1632,11 +1616,8 @@ function evaluate() {
         sHtml += '<span class="step-label">Step ' + (i + 1) + ':</span>';
         sHtml += '<span class="step-expr">' + escHtml(step.expr) + '</span>';
         sHtml += '<span class="step-eq">&rarr;</span>';
-        sHtml += renderSmallBitCells(step.result, prevVal, !!step.overflow);
+        sHtml += renderSmallBitCells(step.result, prevVal);
         sHtml += '<span class="step-vals">' + escHtml(toSigned(step.result).toString()) + '&nbsp;&nbsp;' + escHtml(fmtHex(step.result)) + '</span>';
-        if (step.overflow) {
-          sHtml += '<span class="overflow-badge">OVERFLOW</span>';
-        }
         sHtml += '</div>';
 
         // Operand rows
@@ -1656,8 +1637,9 @@ function evaluate() {
         // Operation description
         sHtml += '<div class="step-applied">' + escHtml(step.operation) + '</div>';
 
+        // Format line with overflow indicators for this step
         if (step.overflow) {
-          sHtml += '<div class="overflow-note" style="padding-left:32px;padding-bottom:4px;">Result truncated from ' + step.overflow.full + ' to ' + step.overflow.truncated + ' (' + bitWidth + '-bit)</div>';
+          sHtml += '<div class="format-line" style="padding-left:32px;padding-bottom:4px;font-size:12px;">' + formatLine(step.result, step.overflow) + '</div>';
         }
 
         sHtml += '</div>';
