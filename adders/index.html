@@ -527,7 +527,7 @@
       <summary>How to use</summary>
       <div class="how-to-body">
         <ul>
-          <li>Enter two operands (A and B) in <strong>decimal or hex</strong> (<code>0xFF</code>). For Carry Save, a third operand C appears.</li>
+          <li>Enter two operands (A and B) in <strong>decimal, bin (<code>0b1010</code>), octal (<code>0o200</code>) or hex</strong> (<code>0xFF</code>). For Carry Save, a third operand C appears.</li>
           <li>Select <strong>bit width</strong> (4, 8, 16, or 32) and check which <strong>architectures</strong> to compare.</li>
           <li>Click <strong>Compute</strong> to calculate the result, then use the playback controls to <strong>animate</strong> carry propagation.</li>
           <li>The <strong>race view</strong> shows all selected architectures simultaneously &mdash; watch CLA finish while RCA is still rippling.</li>
@@ -553,16 +553,16 @@
         </div>
         <div>
           <label class="lbl" for="inputA">Operand A</label>
-          <input class="operand-input" id="inputA" value="107" placeholder="decimal or 0xFF" spellcheck="false">
+          <input class="operand-input" id="inputA" value="107" placeholder="0" spellcheck="false">
         </div>
         <div>
           <label class="lbl" for="inputB">Operand B</label>
-          <input class="operand-input" id="inputB" value="53" placeholder="decimal or 0xFF" spellcheck="false">
+          <input class="operand-input" id="inputB" value="53" placeholder="0" spellcheck="false">
         </div>
       </div>
       <div id="operandCWrap" class="hidden" style="margin-bottom:15px;">
         <label class="lbl" for="inputC">Operand C <span class="lbl-hint">(Carry Save)</span></label>
-        <input class="operand-input" id="inputC" value="0" placeholder="decimal or 0xFF" spellcheck="false" style="max-width:200px;">
+        <input class="operand-input" id="inputC" value="0" placeholder="0" spellcheck="false" style="max-width:200px;">
       </div>
 
       <div style="margin-bottom:15px;">

@@ -448,7 +448,7 @@
       <summary>How to use</summary>
       <div class="how-to-body">
         <ul>
-          <li>Enter two operands (A and B) in <strong>decimal or hex</strong> (<code>0xFF</code>).</li>
+          <li>Enter two operands (A and B) in <strong>decimal, bin (<code>0b1010</code>), octal (<code>0o200</code>) or hex</strong> (<code>0xFF</code>).</li>
           <li>Select <strong>bit width</strong> (4, 8, 12, or 16) and check which <strong>architectures</strong> to compare.</li>
           <li>Click <strong>Compute</strong> to see the result, then use playback controls to <strong>animate</strong> partial product reduction.</li>
           <li>The <strong>race view</strong> shows all selected architectures simultaneously &mdash; each finishes proportional to its actual gate delay.</li>
@@ -475,11 +475,11 @@
         </div>
         <div>
           <label class="lbl" for="inputA">Operand A</label>
-          <input class="operand-input" id="inputA" value="13" placeholder="decimal or 0xFF" spellcheck="false">
+          <input class="operand-input" id="inputA" value="13" placeholder="0" spellcheck="false">
         </div>
         <div>
           <label class="lbl" for="inputB">Operand B</label>
-          <input class="operand-input" id="inputB" value="11" placeholder="decimal or 0xFF" spellcheck="false">
+          <input class="operand-input" id="inputB" value="11" placeholder="0" spellcheck="false">
         </div>
       </div>
 
