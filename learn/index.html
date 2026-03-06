@@ -451,6 +451,11 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 
 const CATEGORIES = {
+  foundations: {
+    name: 'Building Blocks',
+    order: 0,
+    intro: 'The fundamental components and conventions used throughout these topics. Start here if terms like "full adder", "gate delay", or "FA-eq" are unfamiliar.',
+  },
   multipliers: {
     name: 'Multiplier Architectures',
     order: 1,
@@ -464,6 +469,110 @@ const CATEGORIES = {
 };
 
 const TOPICS = [
+  /* ── Building Blocks ── */
+  {
+    id: 'logic-gates',
+    title: 'Logic Gates',
+    shortDescription: 'AND, OR, XOR, NOT \u2014 the atomic units of digital hardware.',
+    type: 'concept',
+    tags: ['fundamentals'],
+    category: 'foundations',
+    content: {
+      problem: 'How does hardware compute? Every digital circuit is built from a small set of Boolean logic gates.',
+      howItWorks: '<strong>AND</strong> \u2014 output is 1 only when <em>all</em> inputs are 1. Written A\u00B7B.<br>'
+        + '<strong>OR</strong> \u2014 output is 1 when <em>any</em> input is 1. Written A+B.<br>'
+        + '<strong>XOR</strong> (exclusive OR) \u2014 output is 1 when inputs <em>differ</em>. Written A\u2295B. This is the "addition without carry" gate.<br>'
+        + '<strong>NOT</strong> (inverter) \u2014 flips 0\u21921, 1\u21920. Written \u00ACA or A\u0304.<br>'
+        + '<strong>NAND / NOR</strong> \u2014 AND/OR followed by NOT. NAND is "universal" \u2014 any circuit can be built from NAND gates alone.',
+      keyInsight: 'Every circuit \u2014 adders, multipliers, CPUs \u2014 is just a composition of these gates. A single gate switching is the smallest unit of time in our delay models.',
+    },
+    relatedTopics: ['full-adder', 'conventions'],
+    order: 1,
+  },
+  {
+    id: 'full-adder',
+    title: 'Full Adder (FA)',
+    shortDescription: 'Adds three 1-bit inputs (A, B, carry-in) producing a sum and carry-out.',
+    type: 'concept',
+    tags: ['fundamentals'],
+    category: 'foundations',
+    content: {
+      problem: 'How do you add binary numbers one column at a time, including a carry from the previous column?',
+      howItWorks: 'A full adder takes three 1-bit inputs: A, B, and C<sub>in</sub> (carry-in from the previous bit position). It produces two outputs:<br><br>'
+        + '<strong>Sum</strong> = A \u2295 B \u2295 C<sub>in</sub> (XOR of all three)<br>'
+        + '<strong>C<sub>out</sub></strong> = A\u00B7B + C<sub>in</sub>\u00B7(A \u2295 B) (carry-out to the next bit position)<br><br>'
+        + 'Internally it uses 2 XOR gates, 2 AND gates, and 1 OR gate. The critical path from C<sub>in</sub> to C<sub>out</sub> passes through 2 gate levels, which is why one FA contributes <strong>2 gate delays</strong> to the carry chain.<br><br>'
+        + 'A <strong>half adder</strong> is simpler: only 2 inputs (A, B), no carry-in. Sum = A\u2295B, Carry = A\u00B7B. Used for the least-significant bit where there is no incoming carry.',
+      keyInsight: 'The full adder is the universal building block of binary arithmetic. Every adder architecture chains or arranges FAs differently \u2014 but they all use the same FA at the core.',
+    },
+    relatedTopics: ['logic-gates', 'conventions', 'rca'],
+    order: 2,
+  },
+  {
+    id: 'conventions',
+    title: 'Measurement Conventions',
+    shortDescription: 'What FA-eq, gate delays, and other notation in these topics mean.',
+    type: 'concept',
+    tags: ['fundamentals', 'notation'],
+    category: 'foundations',
+    content: {
+      problem: 'How do we compare hardware architectures fairly? We need standard units for area (size) and delay (speed).',
+      howItWorks: '<strong>Gate delay</strong> \u2014 the time for one logic gate (AND, OR, etc.) to switch its output. This is the fundamental unit of speed. A circuit with "10 gate delays" means a signal must pass through 10 gates in sequence on the critical path. Real gate delays are ~10\u2013100 picoseconds depending on technology, but the <em>count</em> lets us compare architectures independent of manufacturing process.<br><br>'
+        + '<strong>FA-eq</strong> (full adder equivalent) \u2014 a normalized unit of area. One FA-eq equals the silicon area of one full adder (~5 gates). Not every component is a full adder, but we can express any circuit\'s area in terms of "how many FAs worth of silicon." For example, a CLA\'s lookahead logic is AND/OR gates, not FAs, but we convert its gate count to FA-eq for comparison.<br><br>'
+        + '<strong>n</strong> \u2014 the bit width of the operands (e.g., n=8 means 8-bit inputs).<br>'
+        + '<strong>MSB / LSB</strong> \u2014 Most / Least Significant Bit. MSB is the leftmost (highest-value) bit; LSB is the rightmost (bit 0).<br>'
+        + '<strong>CPA</strong> \u2014 Carry-Propagate Adder. A generic term for any adder that produces a final sum (RCA, CLA, etc.). Used in Wallace Tree context: the tree reduces to 2 rows, then a CPA finishes.<br>'
+        + '<strong>MUX</strong> (multiplexer) \u2014 a selector switch. Given multiple inputs and a select signal, it outputs the chosen input. Used in Carry Select adders to pick between the carry=0 and carry=1 result.',
+      keyInsight: 'FA-eq measures how much silicon you need (area/cost). Gate delays measure how fast the critical path is (speed). The core tradeoff in hardware design: spending more area (FA-eq) to reduce delay (gate delays).',
+    },
+    relatedTopics: ['full-adder', 'logic-gates'],
+    order: 3,
+  },
+  {
+    id: 'twos-complement',
+    title: "Two's Complement",
+    shortDescription: 'The standard way hardware represents negative integers.',
+    type: 'concept',
+    tags: ['fundamentals', 'signed'],
+    category: 'foundations',
+    content: {
+      problem: 'How does hardware represent negative numbers using only 0s and 1s?',
+      howItWorks: 'In an n-bit two\'s complement system, the MSB has a <em>negative</em> weight: \u2212(2<sup>n\u22121</sup>) instead of +(2<sup>n\u22121</sup>). The remaining bits have normal positive weights.<br><br>'
+        + 'For example, in 8-bit: <code>11111011</code> = \u2212128 + 64 + 32 + 16 + 8 + 0 + 2 + 1 = <strong>\u22125</strong>.<br><br>'
+        + 'To negate a number: flip all bits, then add 1. So \u22125 = NOT(00000101) + 1 = 11111010 + 1 = 11111011.<br><br>'
+        + '<strong>Range:</strong> n bits represent \u2212(2<sup>n\u22121</sup>) to +(2<sup>n\u22121</sup> \u2212 1). For 8-bit: \u2212128 to +127.<br><br>'
+        + 'The key advantage: addition works identically for signed and unsigned numbers \u2014 the same adder hardware handles both. Subtraction is just addition of the negated value.',
+      keyInsight: 'Two\'s complement makes the adder "sign-blind" \u2014 one circuit handles both signed and unsigned addition. This is why Booth\'s algorithm gets signed multiplication "for free."',
+    },
+    relatedTopics: ['booth-algorithm', 'full-adder'],
+    order: 4,
+  },
+  {
+    id: 'partial-products',
+    title: 'Partial Products',
+    shortDescription: 'The intermediate terms generated during binary multiplication.',
+    type: 'concept',
+    tags: ['fundamentals', 'multipliers'],
+    category: 'foundations',
+    content: {
+      problem: 'What are partial products and why do they matter?',
+      howItWorks: 'Multiplying A \u00D7 B works the same in binary as long multiplication in decimal. Each bit of B is ANDed with every bit of A, producing a row of partial products shifted by the bit position.<br><br>'
+        + 'For example, 1011 \u00D7 1101:<br>'
+        + '<code>&nbsp;&nbsp;&nbsp;&nbsp;1011</code> (A)<br>'
+        + '<code>&nbsp;&nbsp;\u00D7 1101</code> (B)<br>'
+        + '<code>&nbsp;&nbsp;\u2500\u2500\u2500\u2500\u2500\u2500</code><br>'
+        + '<code>&nbsp;&nbsp;&nbsp;&nbsp;1011</code> (B[0]=1 \u2192 A\u00AB0)<br>'
+        + '<code>&nbsp;&nbsp;&nbsp;0000&nbsp;</code> (B[1]=0 \u2192 skip)<br>'
+        + '<code>&nbsp;&nbsp;1011&nbsp;&nbsp;</code> (B[2]=1 \u2192 A\u00AB2)<br>'
+        + '<code>&nbsp;1011&nbsp;&nbsp;&nbsp;</code> (B[3]=1 \u2192 A\u00AB3)<br><br>'
+        + 'Each row is a <strong>partial product</strong>: the multiplicand ANDed with one multiplier bit, shifted left. An n\u00D7n multiplication produces n partial products that must be summed to get the final 2n-bit product.<br><br>'
+        + 'The <strong>3:2 counter</strong> (used in Wallace Trees) is just a full adder repurposed: it takes 3 partial product bits at the same column position and reduces them to 2 output bits (sum + carry into the next column). This is why FAs appear everywhere in multiplier reduction.',
+      keyInsight: 'All multiplier architectures solve the same problem: how to sum n partial products efficiently. The choice is sequential (one at a time), array (row by row), or tree (all at once).',
+    },
+    relatedTopics: ['shift-and-add', 'array-multiplier', 'wallace-tree', 'full-adder'],
+    order: 5,
+  },
+
   /* ── Multiplier Architectures ── */
   {
     id: 'shift-and-add',
@@ -484,7 +593,7 @@ const TOPICS = [
       },
     },
     tryItLink: '/multipliers/',
-    relatedTopics: ['booth-algorithm', 'array-multiplier'],
+    relatedTopics: ['booth-algorithm', 'array-multiplier', 'partial-products'],
     order: 1,
   },
   {
@@ -507,7 +616,7 @@ const TOPICS = [
     },
     interactive: boothWidget,
     tryItLink: '/multipliers/',
-    relatedTopics: ['shift-and-add', 'array-multiplier'],
+    relatedTopics: ['shift-and-add', 'array-multiplier', 'twos-complement'],
     order: 2,
   },
   {
@@ -575,7 +684,7 @@ const TOPICS = [
       },
     },
     tryItLink: '/adders/',
-    relatedTopics: ['cla', 'carry-select', 'wallace-tree'],
+    relatedTopics: ['cla', 'carry-select', 'full-adder'],
     order: 1,
   },
   {
