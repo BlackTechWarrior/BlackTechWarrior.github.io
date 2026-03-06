@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Interactive multiplier architecture visualizer comparing Shift-and-Add, Array, and Wallace Tree multipliers with animated partial product reduction.">
+  <meta name="description" content="Interactive multiplier architecture visualizer comparing Shift-and-Add, Booth's Radix-2, Array, and Wallace Tree multipliers with animated partial product reduction.">
   <meta property="og:title" content="Multiplier Visualizer | p14m.com">
   <meta property="og:description" content="Compare binary multiplier architectures side-by-side with animated partial product reduction and area-speed tradeoffs.">
   <meta property="og:type" content="website">
@@ -229,6 +229,40 @@
       color: #4caf50;
       border-color: #4caf50;
     }
+    .pp-dot.neg {
+      background: rgba(220,53,69,0.1);
+      color: #dc3545;
+      border-color: #dc3545;
+    }
+    body.dark .pp-dot.neg {
+      background: rgba(220,53,69,0.15);
+      color: #ff6b6b;
+      border-color: #ff6b6b;
+    }
+    .pp-dot.neg-done {
+      background: rgba(220,53,69,0.15);
+      color: #dc3545;
+      border-color: #28a745;
+      font-weight: 600;
+    }
+    body.dark .pp-dot.neg-done {
+      background: rgba(220,53,69,0.15);
+      color: #ff6b6b;
+      border-color: #4caf50;
+    }
+
+    .booth-encoding {
+      font-size: 11px;
+      font-family: monospace;
+      color: #595959;
+      margin: 6px 0;
+    }
+    body.dark .booth-encoding { color: #888888; }
+    .booth-encoding .booth-neg { color: #dc3545; font-weight: 600; }
+    .booth-encoding .booth-pos { color: #28a745; font-weight: 600; }
+    .booth-encoding .booth-zero { color: #999999; }
+    body.dark .booth-encoding .booth-neg { color: #ff6b6b; }
+    body.dark .booth-encoding .booth-pos { color: #4caf50; }
 
     .result-dots {
       display: flex;
@@ -416,6 +450,7 @@
           <li>The <strong>race view</strong> shows all selected architectures simultaneously &mdash; watch Wallace Tree finish before Array Multiplier.</li>
           <li><strong>Step</strong> (&#9654;|) advances one step at a time. The description below each diagram explains the current step.</li>
           <li>The <strong>summary table</strong> compares area (full-adder equivalents), delay (gate delays), and area&times;delay product.</li>
+          <li><strong>Booth's (Radix-2)</strong> encodes the multiplier into {&minus;1, 0, +1} digits, skipping runs of 1s. Partial products shown in <span style="color:#dc3545;">red</span> are subtracted. Handles signed multiplication natively.</li>
           <li><strong>Wallace Tree</strong> uses a selectable final carry-propagation adder (RCA or CLA).</li>
           <li>Toggle <strong>Signed (2's complement)</strong> to interpret operands and the 2n-bit result as signed integers.</li>
         </ul>
@@ -454,6 +489,7 @@
 
       <div class="arch-checks">
         <label><input type="checkbox" checked data-arch="saa"> Shift-and-Add</label>
+        <label><input type="checkbox" data-arch="booth"> Booth's (Radix-2)</label>
         <label><input type="checkbox" checked data-arch="array"> Array Multiplier</label>
         <label>
           <input type="checkbox" checked data-arch="wallace"> Wallace Tree
@@ -568,6 +604,14 @@ const MULTIPLIERS = {
     delay: n => 4 * (n - 1),
     areaFormula: 'n\u00B2',
     delayFormula: '4(n\u22121)',
+  },
+  booth: {
+    name: "Booth's (Radix-2)",
+    short: 'Booth',
+    area: n => 2 * n,
+    delay: n => 4 * n * n,
+    areaFormula: '2n',
+    delayFormula: '4n\u00B2',
   },
   wallace: {
     name: 'Wallace Tree',
@@ -778,6 +822,108 @@ function simulateSAA(a, b, n) {
   return { steps, result, pp };
 }
 
+function boothEncode(b, n) {
+  // Radix-2 Booth encoding: digit[i] = b[i-1] - b[i], where b[-1] = 0
+  const digits = [];
+  for (let i = 0; i < n; i++) {
+    const prev = i === 0 ? 0 : bitAt(b, i - 1);
+    const curr = bitAt(b, i);
+    digits.push(prev - curr); // -1, 0, or +1
+  }
+  return digits;
+}
+
+function generateBoothPP(a, b, n) {
+  const digits = boothEncode(b, n);
+  const pp = [];
+  for (let i = 0; i < n; i++) {
+    const row = [];
+    if (digits[i] === 1) {
+      // +A
+      for (let j = 0; j < n; j++) row.push(bitAt(a, j));
+    } else if (digits[i] === -1) {
+      // -A (two's complement bits shown as inverted)
+      for (let j = 0; j < n; j++) row.push(bitAt(a, j));
+    } else {
+      // 0
+      for (let j = 0; j < n; j++) row.push(0);
+    }
+    pp.push(row);
+  }
+  return { pp, digits };
+}
+
+function simulateBooth(a, b, n) {
+  const steps = [];
+  const { pp, digits } = generateBoothPP(a, b, n);
+  const resultWidth = 2 * n;
+  const result = multiply(a, b, n);
+
+  // Step 0: show Booth encoding
+  const ppState0 = {};
+  for (let i = 0; i < n; i++) {
+    ppState0[i] = {};
+    for (let j = 0; j < n; j++) ppState0[i][j] = 'idle';
+  }
+  steps.push({
+    stepIdx: 0,
+    desc: 'Booth encoding of B: [' + digits.map((d,i) => (d === -1 ? '\u20131' : d === 1 ? '+1' : ' 0')).join(', ') + '] (b[i\u22121] \u2212 b[i])',
+    ppState: JSON.parse(JSON.stringify(ppState0)),
+    resultBits: {},
+    boothDigits: digits,
+  });
+
+  // Each iteration: process one Booth digit
+  let accumulator = 0;
+  for (let i = 0; i < n; i++) {
+    const ppS = JSON.parse(JSON.stringify(ppState0));
+    for (let r = 0; r < i; r++) {
+      for (let j = 0; j < n; j++) ppS[r][j] = digits[r] < 0 ? 'neg-done' : 'done';
+    }
+    for (let j = 0; j < n; j++) ppS[i][j] = digits[i] < 0 ? 'neg' : 'active';
+
+    // Compute accumulator
+    if (digits[i] === 1) {
+      accumulator += a * Math.pow(2, i);
+    } else if (digits[i] === -1) {
+      accumulator -= a * Math.pow(2, i);
+    }
+
+    const action = digits[i] === 1 ? 'ADD (+A)' : digits[i] === -1 ? 'SUB (\u2212A)' : 'SKIP (0)';
+
+    const rBits = {};
+    if (i < n - 1) {
+      for (let b2 = 0; b2 <= i; b2++) rBits[b2] = true;
+    } else {
+      for (let b2 = 0; b2 < resultWidth; b2++) rBits[b2] = true;
+    }
+
+    steps.push({
+      stepIdx: i + 1,
+      desc: `Digit ${i}: ${action}, shift \u2190 ${i}. Accumulator = ${accumulator}`,
+      ppState: ppS,
+      resultBits: rBits,
+      boothDigits: digits,
+    });
+  }
+
+  // Final step
+  const ppFinal = {};
+  for (let i = 0; i < n; i++) {
+    ppFinal[i] = {};
+    for (let j = 0; j < n; j++) ppFinal[i][j] = digits[i] < 0 ? 'neg-done' : 'done';
+  }
+  steps.push({
+    stepIdx: n + 1,
+    desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
+    ppState: ppFinal,
+    resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
+    boothDigits: digits,
+  });
+
+  return { steps, result, pp, boothDigits: digits };
+}
+
 function simulateArray(a, b, n) {
   const steps = [];
   const pp = generatePartialProducts(a, b, n);
@@ -913,8 +1059,22 @@ function simulateWallace(a, b, n, finalType) {
 
 /* ═══════════════════════ PP Matrix Rendering ═══════════════════════ */
 
-function renderPPMatrix(pp, n, resultWidth) {
-  let html = '<div class="pp-matrix">';
+function renderPPMatrix(pp, n, resultWidth, boothDigits) {
+  let html = '';
+
+  // Show Booth encoding if applicable
+  if (boothDigits) {
+    html += '<div class="booth-encoding">Booth encoding: ';
+    for (let i = n - 1; i >= 0; i--) {
+      const d = boothDigits[i];
+      if (d === -1) html += '<span class="booth-neg">\u20131</span> ';
+      else if (d === 1) html += '<span class="booth-pos">+1</span> ';
+      else html += '<span class="booth-zero">&nbsp;0</span> ';
+    }
+    html += '</div>';
+  }
+
+  html += '<div class="pp-matrix">';
 
   // Each row is shifted by its index (row i starts at column i)
   for (let i = 0; i < n; i++) {
@@ -924,6 +1084,14 @@ function renderPPMatrix(pp, n, resultWidth) {
     const leftSpacers = resultWidth - n - i;
     for (let s = 0; s < leftSpacers; s++) {
       html += '<div class="pp-spacer"></div>';
+    }
+    // Sign indicator for Booth
+    if (boothDigits) {
+      const d = boothDigits[i];
+      const sign = d === -1 ? '\u2212' : d === 1 ? '+' : '';
+      if (sign) {
+        html += `<div class="pp-dot" style="font-size:11px;font-weight:600;border:none;background:none;color:inherit;">${sign}</div>`;
+      }
     }
     // PP dots
     for (let j = n - 1; j >= 0; j--) {
@@ -954,7 +1122,7 @@ function updatePPForStep(container, step, sim, n) {
   container.querySelectorAll('.pp-dot[data-row]').forEach(el => {
     const row = parseInt(el.dataset.row);
     const col = parseInt(el.dataset.col);
-    el.classList.remove('active', 'done');
+    el.classList.remove('active', 'done', 'neg', 'neg-done');
     if (step.ppState && step.ppState[row] && step.ppState[row][col]) {
       const s = step.ppState[row][col];
       if (s !== 'idle') el.classList.add(s);
@@ -997,7 +1165,7 @@ function buildRaceLanes() {
         <span class="lane-title">${info.name}${key === 'wallace' ? ' + ' + state.wtFinal.toUpperCase() : ''}</span>
         <span class="lane-stats">Area: ${areaVal} FA &middot; Delay: ${delayVal}&Delta; &middot; Steps: ${sim.steps.length}</span>
       </div>
-      ${renderPPMatrix(sim.pp, n, resultWidth)}
+      ${renderPPMatrix(sim.pp, n, resultWidth, sim.boothDigits)}
       <div class="progress-bar"><div class="progress-fill" data-pf="${key}" style="width:0%"></div></div>
       <div class="lane-step" data-desc="${key}">Ready</div>
     `;
@@ -1191,6 +1359,7 @@ function compute() {
   state.simulations = {};
   for (const key of state.selected) {
     if (key === 'saa') state.simulations.saa = simulateSAA(a, b, n);
+    else if (key === 'booth') state.simulations.booth = simulateBooth(a, b, n);
     else if (key === 'array') state.simulations.array = simulateArray(a, b, n);
     else if (key === 'wallace') state.simulations.wallace = simulateWallace(a, b, n, state.wtFinal);
   }
