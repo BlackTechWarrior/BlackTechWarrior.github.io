@@ -568,8 +568,25 @@ const TOPICS = [
         + 'The <strong>3:2 counter</strong> (used in Wallace Trees) is just a full adder repurposed: it takes 3 partial product bits at the same column position and reduces them to 2 output bits (sum + carry into the next column). This is why FAs appear everywhere in multiplier reduction.',
       keyInsight: 'All multiplier architectures solve the same problem: how to sum n partial products efficiently. The choice is sequential (one at a time), array (row by row), or tree (all at once).',
     },
-    relatedTopics: ['shift-and-add', 'array-multiplier', 'wallace-tree', 'full-adder'],
+    relatedTopics: ['shift-and-add', 'array-multiplier', 'wallace-tree', 'full-adder', 'carry-save'],
     order: 5,
+  },
+  {
+    id: 'carry-save',
+    title: 'Carry Save Adder (CSA)',
+    shortDescription: 'Adds three numbers producing two (sum + carry) with zero propagation delay.',
+    type: 'concept',
+    tags: ['fundamentals', 'multipliers'],
+    category: 'foundations',
+    content: {
+      problem: 'How do you add three binary numbers without waiting for carries to ripple?',
+      howItWorks: 'A carry save adder is a row of n independent full adders with <em>no carry chain between them</em>. Each FA takes one bit from each of the three input numbers and produces a sum bit and a carry bit independently. The result is two numbers (a sum row and a carry row) instead of one.<br><br>'
+        + 'This is the same hardware as a single level of a ripple carry adder, but with the horizontal carry wires removed. Because no FA waits on another, the entire row completes in just <strong>2 gate delays</strong> regardless of width.<br><br>'
+        + 'The tradeoff: you started with 3 numbers and now have 2. To get a final answer, you eventually need a carry-propagate adder (RCA, CLA, etc.) to combine the last two rows.',
+      keyInsight: 'A CSA doesn\'t finish the addition \u2014 it just reduces the problem from 3 numbers to 2, instantly. Stack multiple CSA layers and you get a Wallace Tree.',
+    },
+    relatedTopics: ['wallace-tree', 'array-multiplier', 'full-adder', 'partial-products'],
+    order: 6,
   },
 
   /* ── Multiplier Architectures ── */
@@ -637,7 +654,7 @@ const TOPICS = [
       },
     },
     tryItLink: '/multipliers/',
-    relatedTopics: ['wallace-tree', 'shift-and-add', 'rca'],
+    relatedTopics: ['wallace-tree', 'shift-and-add', 'carry-save', 'rca'],
     order: 3,
   },
   {
@@ -659,7 +676,7 @@ const TOPICS = [
       },
     },
     tryItLink: '/multipliers/',
-    relatedTopics: ['array-multiplier', 'cla', 'rca'],
+    relatedTopics: ['array-multiplier', 'carry-save', 'cla', 'rca'],
     order: 4,
   },
 
