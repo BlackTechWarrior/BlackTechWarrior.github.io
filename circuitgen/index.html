@@ -12,183 +12,49 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/shared.css">
   <style>
-    /* ── CircuitGen-specific styles ── */
-
     .controls-row {
-      display: flex;
-      gap: 10px;
-      align-items: end;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
+      display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin-bottom: 10px;
     }
-    .controls-row .input-group {
-      flex: 1;
-      min-width: 200px;
-    }
+    .controls-row .input-group { flex: 1; min-width: 200px; }
     .controls-row label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: #595959;
-      margin-bottom: 4px;
+      display: block; font-size: 12px; font-weight: 600; color: #595959; margin-bottom: 4px;
     }
     body.dark .controls-row label { color: #888888; }
 
     .expr-input {
-      width: 100%;
-      background: #f9f9f9;
-      border: 1px solid #cccccc;
-      border-radius: 6px;
-      color: #000000;
-      font-family: monospace;
-      font-size: 14px;
-      padding: 8px 10px;
-      outline: none;
-      transition: border-color 0.2s;
+      width: 100%; background: #f9f9f9; border: 1px solid #cccccc; border-radius: 6px;
+      color: #000000; font-family: monospace; font-size: 14px; padding: 8px 10px;
+      outline: none; transition: border-color 0.2s;
     }
     .expr-input:focus { border-color: #0066cc; }
     .expr-input::placeholder { color: #999999; }
-    body.dark .expr-input {
-      background: #2a2a2a;
-      border-color: #444444;
-      color: #e0e0e0;
-    }
+    body.dark .expr-input { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
     body.dark .expr-input:focus { border-color: #87ceeb; }
 
-    /* ── Diagram Container ── */
     .diagram-wrap {
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
-      background: #fafafa;
-      min-height: 200px;
-      position: relative;
-      touch-action: pan-x pan-y pinch-zoom;
+      overflow: auto; -webkit-overflow-scrolling: touch;
+      border: 1px solid #e0e0e0; border-radius: 6px; background: #fafafa;
+      min-height: 200px; position: relative; touch-action: pan-x pan-y pinch-zoom;
     }
-    body.dark .diagram-wrap {
-      border-color: #444444;
-      background: #1e1e1e;
-    }
-    .diagram-wrap svg {
-      display: block;
-      min-width: 100%;
-      min-height: 200px;
-    }
+    body.dark .diagram-wrap { border-color: #444444; background: #1e1e1e; }
+    .diagram-wrap svg { display: block; min-width: 100%; min-height: 200px; }
     .diagram-empty {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 200px;
-      color: #999999;
-      font-size: 13px;
-      font-style: italic;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 200px; color: #999999; font-size: 13px; font-style: italic;
     }
     body.dark .diagram-empty { color: #666666; }
 
-    /* ── SVG Styles ── */
-    .gate-body { fill: none; stroke-width: 2; stroke-linejoin: round; }
-    .gate-and .gate-body { stroke: #2d6abf; }
-    .gate-or .gate-body { stroke: #2d8f4e; }
-    .gate-not .gate-body { stroke: #b85c2f; }
-    .gate-nand .gate-body { stroke: #7b4fbf; }
-    .gate-nor .gate-body { stroke: #bf4f6e; }
-    .gate-xor .gate-body { stroke: #2fa5a5; }
-    .gate-xnor .gate-body { stroke: #8f6b2d; }
-    .gate-buf .gate-body { stroke: #888888; }
-
-    body.dark .gate-and .gate-body { stroke: #6ba3e8; }
-    body.dark .gate-or .gate-body { stroke: #5fc47e; }
-    body.dark .gate-not .gate-body { stroke: #e08050; }
-    body.dark .gate-nand .gate-body { stroke: #a87ee0; }
-    body.dark .gate-nor .gate-body { stroke: #e07090; }
-    body.dark .gate-xor .gate-body { stroke: #50d0d0; }
-    body.dark .gate-xnor .gate-body { stroke: #c09840; }
-    body.dark .gate-buf .gate-body { stroke: #aaaaaa; }
-
-    .wire { fill: none; stroke: #666666; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    body.dark .wire { stroke: #999999; }
-
-    .wire-highlight { stroke: #0066cc !important; stroke-width: 3 !important; }
-    body.dark .wire-highlight { stroke: #87ceeb !important; }
-
-    .gate-highlight .gate-body { stroke-width: 3 !important; }
-
-    .junction { fill: #666666; }
-    body.dark .junction { fill: #999999; }
-
-    .not-bubble { fill: #ffffff; stroke-width: 2; }
-    body.dark .not-bubble { fill: #1a1a1a; }
-
-    .gate-label, .io-label {
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 12px;
-      fill: #333333;
-      pointer-events: none;
-    }
-    body.dark .gate-label, body.dark .io-label { fill: #cccccc; }
-
-    .io-label { font-weight: 600; font-size: 13px; }
-
-    /* ── Tooltip ── */
-    .gate-tooltip {
-      position: absolute;
-      background: #ffffff;
-      border: 1px solid #cccccc;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 12px;
-      line-height: 1.5;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      pointer-events: none;
-      z-index: 10;
-      max-width: 280px;
-    }
-    body.dark .gate-tooltip {
-      background: #2a2a2a;
-      border-color: #555555;
-      color: #e0e0e0;
-    }
-    .gate-tooltip strong { display: block; margin-bottom: 2px; }
-
-    /* ── Truth Table Panel ── */
-    .tt-panel {
-      max-height: 300px;
-      overflow: auto;
-      margin-top: 10px;
-    }
-    .tt-table {
-      border-collapse: collapse;
-      font-family: monospace;
-      font-size: 12px;
-      width: 100%;
-    }
-    .tt-table th, .tt-table td {
-      padding: 3px 8px;
-      text-align: center;
-      border: 1px solid #e0e0e0;
-    }
+    .tt-panel { max-height: 300px; overflow: auto; margin-top: 10px; }
+    .tt-table { border-collapse: collapse; font-family: monospace; font-size: 12px; width: 100%; }
+    .tt-table th, .tt-table td { padding: 3px 8px; text-align: center; border: 1px solid #e0e0e0; }
     body.dark .tt-table th, body.dark .tt-table td { border-color: #444444; }
-    .tt-table th {
-      background: #f0f0f0;
-      font-weight: 600;
-      position: sticky;
-      top: 0;
-    }
+    .tt-table th { background: #f0f0f0; font-weight: 600; position: sticky; top: 0; }
     body.dark .tt-table th { background: #333333; }
-    .tt-out-col { font-weight: 600; }
     .tt-one { color: #0066cc; }
     body.dark .tt-one { color: #87ceeb; }
 
-    /* ── Export Buttons ── */
-    .export-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-      flex-wrap: wrap;
-    }
+    .export-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
-    /* ── Responsive ── */
     @media (max-width: 600px) {
       .controls-row { flex-direction: column; }
       .controls-row .input-group { min-width: 0; }
@@ -239,7 +105,7 @@
           <button class="mode-btn on" data-mode="natural">Natural fan-in</button>
           <button class="mode-btn" data-mode="two">2-input only</button>
         </div>
-        <a class="btn-t" id="kmapLink" href="/kmap/" style="font-size:12px;">Simplify with K-Map &rarr;</a>
+        <a class="btn-t" id="kmapLink" href="/kmap/" style="font-size:12px;opacity:0.4;pointer-events:none;">Simplify with K-Map &rarr;</a>
       </div>
       <div id="errorMsg" class="error-msg" style="display:none;"></div>
     </div>
@@ -248,7 +114,6 @@
       <div class="diagram-wrap" id="diagramWrap">
         <div class="diagram-empty">Enter an expression above</div>
       </div>
-      <div id="tooltip" class="gate-tooltip" style="display:none;"></div>
       <div class="export-row">
         <button class="btn-t" id="btnSvg">Export SVG</button>
         <button class="btn-t" id="btnPng">Export PNG</button>
@@ -260,7 +125,7 @@
     <div class="section" id="helpSection">
       <div class="ref-section" style="border-top:none; padding-top:0;">
         <strong>Operators</strong><br>
-        AND: <code>*</code> <code>&amp;</code> <code>·</code> &nbsp;
+        AND: <code>*</code> <code>&amp;</code> <code>&middot;</code> &nbsp;
         OR: <code>+</code> <code>|</code> &nbsp;
         NOT: <code>'</code> <code>!</code> <code>~</code> &nbsp;
         XOR: <code>^</code> <code>&#8853;</code> &nbsp;
@@ -274,41 +139,26 @@
     <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
   </main>
 
+<script src="/lib/circuit.js"></script>
 <script>
-/* ================================================================
-   Theme
-   ================================================================ */
-
+/* ── Theme ── */
 function toggleTheme() {
-  const body = document.body;
-  const themeText = document.getElementById('theme-text');
-  if (body.classList.contains('dark')) {
-    body.classList.remove('dark');
-    themeText.innerHTML = '&#9790;';
-    localStorage.setItem('theme', 'light');
-  } else {
-    body.classList.add('dark');
-    themeText.innerHTML = '&#9788;';
-    localStorage.setItem('theme', 'dark');
-  }
+  var body = document.body, t = document.getElementById('theme-text');
+  if (body.classList.contains('dark')) { body.classList.remove('dark'); t.innerHTML = '&#9790;'; localStorage.setItem('theme', 'light'); }
+  else { body.classList.add('dark'); t.innerHTML = '&#9788;'; localStorage.setItem('theme', 'dark'); }
 }
 document.addEventListener('DOMContentLoaded', function() {
-  const themeText = document.getElementById('theme-text');
-  if (document.body.classList.contains('dark')) themeText.innerHTML = '&#9788;';
+  if (document.body.classList.contains('dark')) document.getElementById('theme-text').innerHTML = '&#9788;';
 });
 
-/* ================================================================
-   Boolean Expression Parser (adapted from kmap tool)
-   ================================================================ */
-
-const TOKEN = {
+/* ── Parser (same as kmap) ── */
+var TOKEN = {
   LPAREN: '(', RPAREN: ')',
   NOT: 'NOT', AND: 'AND', OR: 'OR',
   NAND: 'NAND', NOR: 'NOR', XOR: 'XOR', XNOR: 'XNOR',
   VAR: 'VAR', LITERAL: 'LITERAL',
 };
-
-const SYMBOLS = {
+var SYMBOLS = {
   "'": TOKEN.NOT, '!': TOKEN.NOT, '~': TOKEN.NOT,
   '\u00B7': TOKEN.AND, '*': TOKEN.AND, '&': TOKEN.AND, '.': TOKEN.AND, '&&': TOKEN.AND,
   '+': TOKEN.OR, '|': TOKEN.OR, '||': TOKEN.OR,
@@ -317,181 +167,116 @@ const SYMBOLS = {
   '@': TOKEN.XNOR, '\u2299': TOKEN.XNOR,
   '#': TOKEN.NOR, '\u22BD': TOKEN.NOR,
 };
-
-const KEYWORDS = {
-  not: TOKEN.NOT, and: TOKEN.AND, or: TOKEN.OR,
-  nand: TOKEN.NAND, nor: TOKEN.NOR, xor: TOKEN.XOR, xnor: TOKEN.XNOR,
-};
+var KEYWORDS = { not: TOKEN.NOT, and: TOKEN.AND, or: TOKEN.OR, nand: TOKEN.NAND, nor: TOKEN.NOR, xor: TOKEN.XOR, xnor: TOKEN.XNOR };
 
 function isAlpha(ch) { return /[a-zA-Z_]/.test(ch); }
 function isAlnum(ch) { return /[a-zA-Z0-9_]/.test(ch); }
 
-/* Extract variable names from expression string */
 function extractVars(expr) {
-  const vars = new Set();
-  let i = 0;
+  var vars = new Set(), i = 0;
   while (i < expr.length) {
     if (expr[i] === ' ' || expr[i] === '\t') { i++; continue; }
-    // Skip operators and special chars
-    if (SYMBOLS[expr[i]] || expr[i] === '(' || expr[i] === ')' || expr[i] === "'" ||
-        (i + 1 < expr.length && SYMBOLS[expr[i] + expr[i + 1]])) {
-      if (i + 1 < expr.length && SYMBOLS[expr[i] + expr[i + 1]]) i += 2;
-      else i++;
+    if (SYMBOLS[expr[i]] || expr[i] === '(' || expr[i] === ')' || expr[i] === "'") {
+      if (i + 1 < expr.length && SYMBOLS[expr[i] + expr[i + 1]]) i += 2; else i++;
       continue;
     }
-    // Skip literals
-    if ((expr[i] === '0' || expr[i] === '1') && (i + 1 >= expr.length || !isAlpha(expr[i + 1]))) {
-      i++; continue;
-    }
-    // Check keywords
-    let kwMatch = false;
-    for (const kw of Object.keys(KEYWORDS)) {
-      if (expr.substring(i, i + kw.length).toLowerCase() === kw) {
-        const after = i + kw.length;
-        if (after >= expr.length || !isAlnum(expr[after])) {
-          i += kw.length;
-          kwMatch = true;
-          break;
-        }
+    if ((expr[i] === '0' || expr[i] === '1') && (i + 1 >= expr.length || !isAlpha(expr[i + 1]))) { i++; continue; }
+    var kwMatch = false;
+    for (var kw of Object.keys(KEYWORDS)) {
+      if (expr.substring(i, i + kw.length).toLowerCase() === kw && (i + kw.length >= expr.length || !isAlnum(expr[i + kw.length]))) {
+        i += kw.length; kwMatch = true; break;
       }
     }
     if (kwMatch) continue;
-    // Variable
-    if (isAlpha(expr[i])) {
-      let start = i;
-      while (i < expr.length && isAlnum(expr[i])) i++;
-      vars.add(expr.substring(start, i));
-      continue;
-    }
+    if (isAlpha(expr[i])) { var start = i; while (i < expr.length && isAlnum(expr[i])) i++; vars.add(expr.substring(start, i)); continue; }
     i++;
   }
   return [...vars].sort();
 }
 
 function tokenize(expr, varNames) {
-  const tokens = [];
-  let i = 0;
-  const s = expr;
-  const sortedVars = [...varNames].sort((a, b) => b.length - a.length);
-
+  var tokens = [], i = 0, s = expr;
+  var sortedVars = [...varNames].sort(function(a, b) { return b.length - a.length; });
   while (i < s.length) {
     if (s[i] === ' ' || s[i] === '\t') { i++; continue; }
     if (s[i] === '(') { tokens.push({ type: TOKEN.LPAREN }); i++; continue; }
     if (s[i] === ')') { tokens.push({ type: TOKEN.RPAREN }); i++; continue; }
     if (s[i] === "'") { tokens.push({ type: TOKEN.NOT, postfix: true }); i++; continue; }
-    if (i + 1 < s.length && SYMBOLS[s[i] + s[i + 1]]) {
-      tokens.push({ type: SYMBOLS[s[i] + s[i + 1]] }); i += 2; continue;
-    }
-    if (SYMBOLS[s[i]] && s[i] !== "'") {
-      tokens.push({ type: SYMBOLS[s[i]] }); i++; continue;
-    }
+    if (i + 1 < s.length && SYMBOLS[s[i] + s[i + 1]]) { tokens.push({ type: SYMBOLS[s[i] + s[i + 1]] }); i += 2; continue; }
+    if (SYMBOLS[s[i]] && s[i] !== "'") { tokens.push({ type: SYMBOLS[s[i]] }); i++; continue; }
     if ((s[i] === '0' || s[i] === '1') && (i + 1 >= s.length || !isAlpha(s[i + 1]))) {
       tokens.push({ type: TOKEN.LITERAL, value: parseInt(s[i]) }); i++; continue;
     }
-    let matched = false;
-    for (const v of sortedVars) {
-      if (s.substring(i, i + v.length) === v) {
-        const after = i + v.length;
-        if (after >= s.length || !isAlnum(s[after])) {
-          tokens.push({ type: TOKEN.VAR, name: v }); i += v.length; matched = true; break;
-        }
+    var matched = false;
+    for (var v of sortedVars) {
+      if (s.substring(i, i + v.length) === v && (i + v.length >= s.length || !isAlnum(s[i + v.length]))) {
+        tokens.push({ type: TOKEN.VAR, name: v }); i += v.length; matched = true; break;
       }
     }
     if (matched) continue;
-    let kwMatch = false;
-    for (const [kw, tt] of Object.entries(KEYWORDS)) {
-      if (s.substring(i, i + kw.length).toLowerCase() === kw) {
-        const after = i + kw.length;
-        if (after >= s.length || !isAlnum(s[after])) {
-          tokens.push({ type: tt }); i += kw.length; kwMatch = true; break;
-        }
+    var kwM = false;
+    for (var [kw, tt] of Object.entries(KEYWORDS)) {
+      if (s.substring(i, i + kw.length).toLowerCase() === kw && (i + kw.length >= s.length || !isAlnum(s[i + kw.length]))) {
+        tokens.push({ type: tt }); i += kw.length; kwM = true; break;
       }
     }
-    if (kwMatch) continue;
-    if (isAlpha(s[i])) {
-      let start = i;
-      while (i < s.length && isAlnum(s[i])) i++;
-      tokens.push({ type: TOKEN.VAR, name: s.substring(start, i) });
-      continue;
-    }
-    throw new Error(`Unexpected character "${s[i]}" at position ${i + 1}`);
+    if (kwM) continue;
+    if (isAlpha(s[i])) { var st = i; while (i < s.length && isAlnum(s[i])) i++; tokens.push({ type: TOKEN.VAR, name: s.substring(st, i) }); continue; }
+    throw new Error('Unexpected character "' + s[i] + '" at position ' + (i + 1));
   }
-
   return tokens;
 }
 
 function parse(tokens) {
-  let pos = 0;
+  var pos = 0;
   function peek() { return pos < tokens.length ? tokens[pos] : null; }
   function advance() { return tokens[pos++]; }
-
   function parseOr() {
-    let left = parseXor();
-    while (peek() && (peek().type === TOKEN.OR || peek().type === TOKEN.NOR)) {
-      const op = advance().type;
-      left = { op, left, right: parseXor() };
-    }
+    var left = parseXor();
+    while (peek() && (peek().type === TOKEN.OR || peek().type === TOKEN.NOR)) { var op = advance().type; left = { op: op, left: left, right: parseXor() }; }
     return left;
   }
   function parseXor() {
-    let left = parseAnd();
-    while (peek() && (peek().type === TOKEN.XOR || peek().type === TOKEN.XNOR)) {
-      const op = advance().type;
-      left = { op, left, right: parseAnd() };
-    }
+    var left = parseAnd();
+    while (peek() && (peek().type === TOKEN.XOR || peek().type === TOKEN.XNOR)) { var op = advance().type; left = { op: op, left: left, right: parseAnd() }; }
     return left;
   }
   function parseAnd() {
-    let left = parseUnary();
-    while (peek() && (peek().type === TOKEN.AND || peek().type === TOKEN.NAND)) {
-      const op = advance().type;
-      left = { op, left, right: parseUnary() };
-    }
+    var left = parseUnary();
+    while (peek() && (peek().type === TOKEN.AND || peek().type === TOKEN.NAND)) { var op = advance().type; left = { op: op, left: left, right: parseUnary() }; }
     return left;
   }
   function parseUnary() {
-    if (peek() && peek().type === TOKEN.NOT && !peek().postfix) {
-      advance();
-      return { op: TOKEN.NOT, operand: parseUnary() };
-    }
+    if (peek() && peek().type === TOKEN.NOT && !peek().postfix) { advance(); return { op: TOKEN.NOT, operand: parseUnary() }; }
     return parsePostfix();
   }
   function parsePostfix() {
-    let node = parseAtom();
-    while (peek() && peek().type === TOKEN.NOT && peek().postfix) {
-      advance();
-      node = { op: TOKEN.NOT, operand: node };
-    }
+    var node = parseAtom();
+    while (peek() && peek().type === TOKEN.NOT && peek().postfix) { advance(); node = { op: TOKEN.NOT, operand: node }; }
     return node;
   }
   function parseAtom() {
-    const t = peek();
+    var t = peek();
     if (!t) throw new Error('Unexpected end of expression');
     if (t.type === TOKEN.LPAREN) {
-      advance();
-      const node = parseOr();
+      advance(); var node = parseOr();
       if (!peek() || peek().type !== TOKEN.RPAREN) throw new Error('Missing closing parenthesis');
       advance();
-      let result = node;
-      while (peek() && peek().type === TOKEN.NOT && peek().postfix) {
-        advance();
-        result = { op: TOKEN.NOT, operand: result };
-      }
-      return result;
+      while (peek() && peek().type === TOKEN.NOT && peek().postfix) { advance(); node = { op: TOKEN.NOT, operand: node }; }
+      return node;
     }
     if (t.type === TOKEN.VAR) { advance(); return { op: TOKEN.VAR, name: t.name }; }
     if (t.type === TOKEN.LITERAL) { advance(); return { op: TOKEN.LITERAL, value: t.value }; }
-    throw new Error(`Unexpected token: ${JSON.stringify(t)}`);
+    throw new Error('Unexpected token: ' + JSON.stringify(t));
   }
-
-  const ast = parseOr();
-  if (pos < tokens.length) throw new Error(`Unexpected token at position ${pos + 1}`);
+  var ast = parseOr();
+  if (pos < tokens.length) throw new Error('Unexpected token at position ' + (pos + 1));
   return ast;
 }
 
 function evaluate(ast, env) {
   switch (ast.op) {
-    case TOKEN.VAR: return env[ast.name] ?? 0;
+    case TOKEN.VAR: return env[ast.name] || 0;
     case TOKEN.LITERAL: return ast.value;
     case TOKEN.NOT: return evaluate(ast.operand, env) ? 0 : 1;
     case TOKEN.AND: return evaluate(ast.left, env) & evaluate(ast.right, env);
@@ -500,838 +285,159 @@ function evaluate(ast, env) {
     case TOKEN.NAND: return (evaluate(ast.left, env) & evaluate(ast.right, env)) ? 0 : 1;
     case TOKEN.XOR: return evaluate(ast.left, env) ^ evaluate(ast.right, env);
     case TOKEN.XNOR: return (evaluate(ast.left, env) ^ evaluate(ast.right, env)) ? 0 : 1;
-    default: throw new Error(`Unknown op: ${ast.op}`);
+    default: throw new Error('Unknown op: ' + ast.op);
   }
 }
 
 function computeTruthTable(ast, varNames) {
-  const n = varNames.length;
-  const rows = 1 << n;
-  const table = [];
-  for (let i = 0; i < rows; i++) {
-    const env = {};
-    varNames.forEach((v, idx) => { env[v] = (i >> (n - 1 - idx)) & 1; });
-    table.push({ env, result: evaluate(ast, env) });
+  var n = varNames.length, rows = 1 << n, table = [];
+  for (var i = 0; i < rows; i++) {
+    var env = {};
+    varNames.forEach(function(v, idx) { env[v] = (i >> (n - 1 - idx)) & 1; });
+    table.push({ env: env, result: evaluate(ast, env) });
   }
   return table;
 }
 
-/* Convert AST node to expression string */
-function astToExpr(node) {
-  if (node.op === TOKEN.VAR) return node.name;
-  if (node.op === TOKEN.LITERAL) return String(node.value);
-  if (node.op === TOKEN.NOT) {
-    const inner = astToExpr(node.operand);
-    if (node.operand.op === TOKEN.VAR || node.operand.op === TOKEN.LITERAL) return inner + "'";
-    return '(' + inner + ")'";
-  }
-  const opSym = { AND: '*', OR: '+', NAND: '%', NOR: '#', XOR: '^', XNOR: '@' };
-  const l = astToExpr(node.left);
-  const r = astToExpr(node.right);
-  return '(' + l + ' ' + (opSym[node.op] || node.op) + ' ' + r + ')';
-}
+/* ── State ── */
+var currentAst = null, currentVars = [], currentCircuit = null, currentMode = 'natural';
 
-/* ================================================================
-   AST to Circuit Graph
-   ================================================================ */
-
-/* Flatten associative chains: (A AND (B AND C)) -> single AND gate with 3 inputs */
-function flattenAssoc(ast, op) {
-  const items = [];
-  function collect(node) {
-    if (node.op === op) { collect(node.left); collect(node.right); }
-    else items.push(node);
-  }
-  collect(ast);
-  return items;
-}
-
-const BINARY_OPS = new Set([TOKEN.AND, TOKEN.OR, TOKEN.NAND, TOKEN.NOR, TOKEN.XOR, TOKEN.XNOR]);
-const ASSOC_OPS = new Set([TOKEN.AND, TOKEN.OR, TOKEN.XOR, TOKEN.XNOR]);
-
-/* Build a circuit graph from AST.
-   Returns { gates: [...], wires: [...], inputs: [...], outputGate: id }
-   Each gate: { id, type, inputs: [gateId...], depth, label, expr }
-   Each input: { id, name, depth: 0 } */
-function buildCircuit(ast, mode) {
-  let nextId = 0;
-  const gates = [];
-  const inputs = {};  // name -> gate object
-  const wires = [];   // { from, to }
-
-  function getInput(name) {
-    if (!inputs[name]) {
-      inputs[name] = { id: nextId++, type: 'INPUT', name, inputs: [], depth: 0 };
-      gates.push(inputs[name]);
-    }
-    return inputs[name];
-  }
-
-  function getLiteral(val) {
-    const key = '__lit_' + val;
-    if (!inputs[key]) {
-      inputs[key] = { id: nextId++, type: 'LITERAL', name: String(val), inputs: [], depth: 0 };
-      gates.push(inputs[key]);
-    }
-    return inputs[key];
-  }
-
-  function makeGate(type, inputGates, expr) {
-    const depth = Math.max(...inputGates.map(g => g.depth)) + 1;
-    const g = { id: nextId++, type, inputs: inputGates.map(ig => ig.id), depth, expr };
-    gates.push(g);
-    inputGates.forEach(ig => wires.push({ from: ig.id, to: g.id }));
-    return g;
-  }
-
-  /* Build tree of 2-input gates for >2 inputs */
-  function buildTree2(type, items) {
-    if (items.length === 1) return items[0];
-    if (items.length === 2) return makeGate(type, items, null);
-    const mid = Math.ceil(items.length / 2);
-    const left = buildTree2(type, items.slice(0, mid));
-    const right = buildTree2(type, items.slice(mid));
-    return makeGate(type, [left, right], null);
-  }
-
-  function process(node) {
-    if (node.op === TOKEN.VAR) return getInput(node.name);
-    if (node.op === TOKEN.LITERAL) return getLiteral(node.value);
-
-    if (node.op === TOKEN.NOT) {
-      const child = process(node.operand);
-      return makeGate(TOKEN.NOT, [child], astToExpr(node));
-    }
-
-    if (BINARY_OPS.has(node.op)) {
-      if (mode === 'natural' && ASSOC_OPS.has(node.op)) {
-        const items = flattenAssoc(node, node.op).map(process);
-        const MAX_FAN = 5;
-        if (items.length <= MAX_FAN) {
-          return makeGate(node.op, items, astToExpr(node));
-        }
-        // Cascade into tree of MAX_FAN gates
-        function cascade(list) {
-          if (list.length <= MAX_FAN) return makeGate(node.op, list, null);
-          const chunks = [];
-          for (let i = 0; i < list.length; i += MAX_FAN) {
-            chunks.push(list.slice(i, i + MAX_FAN));
-          }
-          const reduced = chunks.map(ch => ch.length === 1 ? ch[0] : makeGate(node.op, ch, null));
-          return cascade(reduced);
-        }
-        const g = cascade(items);
-        g.expr = astToExpr(node);
-        return g;
-      }
-
-      if (mode === 'natural' && !ASSOC_OPS.has(node.op)) {
-        // NAND, NOR are not associative — keep as 2-input
-        const l = process(node.left);
-        const r = process(node.right);
-        return makeGate(node.op, [l, r], astToExpr(node));
-      }
-
-      // 2-input mode
-      if (ASSOC_OPS.has(node.op)) {
-        const items = flattenAssoc(node, node.op).map(process);
-        const g = buildTree2(node.op, items);
-        g.expr = astToExpr(node);
-        return g;
-      }
-
-      const l = process(node.left);
-      const r = process(node.right);
-      return makeGate(node.op, [l, r], astToExpr(node));
-    }
-
-    throw new Error('Unknown AST op: ' + node.op);
-  }
-
-  const outputGate = process(ast);
-  outputGate.isOutput = true;
-
-  // Count gates (excluding inputs)
-  const gateCount = gates.filter(g => g.type !== 'INPUT' && g.type !== 'LITERAL').length;
-  const varCount = Object.keys(inputs).filter(k => !k.startsWith('__lit_')).length;
-
-  return { gates, wires, inputs: Object.values(inputs).filter(g => g.type === 'INPUT' || g.type === 'LITERAL'), outputGate: outputGate.id, gateCount, varCount };
-}
-
-/* ================================================================
-   SVG Gate Drawing
-   ================================================================ */
-
-const GATE_W = 60;
-const GATE_H = 40;
-const PIN_LEN = 15;
-const COL_SPACING = 120;
-const ROW_SPACING = 60;
-const BUBBLE_R = 6;
-const WIRE_R = 8; // bend radius
-
-const GATE_COLORS = {
-  AND: 'gate-and', OR: 'gate-or', NOT: 'gate-not',
-  NAND: 'gate-nand', NOR: 'gate-nor',
-  XOR: 'gate-xor', XNOR: 'gate-xnor',
-  BUF: 'gate-buf',
-};
-
-const GATE_LABELS = {
-  AND: 'AND', OR: 'OR', NOT: 'NOT',
-  NAND: 'NAND', NOR: 'NOR',
-  XOR: 'XOR', XNOR: 'XNOR',
-};
-
-function svgEl(tag, attrs, children) {
-  const NS = 'http://www.w3.org/2000/svg';
-  const el = document.createElementNS(NS, tag);
-  if (attrs) Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-  if (children) {
-    if (typeof children === 'string') el.textContent = children;
-    else children.forEach(c => { if (c) el.appendChild(c); });
-  }
-  return el;
-}
-
-/* Draw a gate symbol centered at (cx, cy).
-   Returns { el, inputPins: [{x,y}], outputPin: {x,y} } */
-function drawGate(type, cx, cy, numInputs) {
-  const halfH = Math.max(GATE_H / 2, numInputs * 10);
-  const halfW = GATE_W / 2;
-  const hasNegOut = type === 'NAND' || type === 'NOR' || type === 'XNOR' || type === 'NOT';
-  const baseType = { NAND: 'AND', NOR: 'OR', XNOR: 'XOR' }[type] || type;
-
-  const group = svgEl('g', { class: GATE_COLORS[type] || 'gate-buf' });
-  let path;
-
-  if (baseType === 'AND' || type === 'NAND') {
-    // Flat left, curved right (D-shape)
-    const r = halfH;
-    path = `M${cx - halfW},${cy - halfH} L${cx},${cy - halfH} A${r},${r} 0 0,1 ${cx},${cy + halfH} L${cx - halfW},${cy + halfH} Z`;
-  } else if (baseType === 'OR' || type === 'NOR') {
-    // Curved left, pointed right
-    path = `M${cx - halfW},${cy - halfH} Q${cx - halfW + 20},${cy} ${cx - halfW},${cy + halfH} `
-         + `L${cx - 5},${cy + halfH} Q${cx + halfW - 10},${cy + halfH - 5} ${cx + halfW},${cy} `
-         + `Q${cx + halfW - 10},${cy - halfH + 5} ${cx - 5},${cy - halfH} Z`;
-  } else if (baseType === 'XOR' || type === 'XNOR') {
-    // OR shape + extra curve on input side
-    path = `M${cx - halfW},${cy - halfH} Q${cx - halfW + 20},${cy} ${cx - halfW},${cy + halfH} `
-         + `L${cx - 5},${cy + halfH} Q${cx + halfW - 10},${cy + halfH - 5} ${cx + halfW},${cy} `
-         + `Q${cx + halfW - 10},${cy - halfH + 5} ${cx - 5},${cy - halfH} Z`;
-    // Extra input curve
-    const extraPath = `M${cx - halfW - 6},${cy - halfH} Q${cx - halfW + 14},${cy} ${cx - halfW - 6},${cy + halfH}`;
-    group.appendChild(svgEl('path', { d: extraPath, class: 'gate-body', fill: 'none' }));
-  } else if (type === 'NOT') {
-    // Triangle
-    path = `M${cx - halfW},${cy - halfH} L${cx + halfW - BUBBLE_R},${cy} L${cx - halfW},${cy + halfH} Z`;
-  }
-
-  if (path) {
-    group.appendChild(svgEl('path', { d: path, class: 'gate-body' }));
-  }
-
-  // Negation bubble on output
-  let outX = cx + halfW;
-  if (hasNegOut) {
-    const bubbleStroke = type === 'NOT' ? '#b85c2f' : (GATE_COLORS[type] || '').replace('gate-', '');
-    group.appendChild(svgEl('circle', {
-      cx: outX + BUBBLE_R, cy, r: BUBBLE_R,
-      class: 'not-bubble gate-body'
-    }));
-    outX += BUBBLE_R * 2;
-  }
-
-  // Input pins
-  const inputPins = [];
-  if (numInputs === 1) {
-    inputPins.push({ x: cx - halfW, y: cy });
-  } else {
-    for (let i = 0; i < numInputs; i++) {
-      const pinY = cy - halfH + halfH * 2 * (i + 0.5) / numInputs;
-      inputPins.push({ x: cx - halfW, y: pinY });
-    }
-  }
-
-  return {
-    el: group,
-    inputPins,
-    outputPin: { x: outX, y: cy },
-    bounds: { x: cx - halfW, y: cy - halfH, w: GATE_W + (hasNegOut ? BUBBLE_R * 2 : 0), h: halfH * 2 },
-    cx, cy
-  };
-}
-
-/* ================================================================
-   Layout Engine
-   ================================================================ */
-
-function layoutCircuit(circuit) {
-  const { gates, wires, inputs, outputGate } = circuit;
-  const gateMap = {};
-  gates.forEach(g => gateMap[g.id] = g);
-
-  // Find max depth
-  const maxDepth = Math.max(...gates.map(g => g.depth));
-
-  // Group gates by depth
-  const columns = {};
-  gates.forEach(g => {
-    if (!columns[g.depth]) columns[g.depth] = [];
-    columns[g.depth].push(g);
-  });
-
-  // Sort gates within each column for consistent ordering
-  Object.values(columns).forEach(col => {
-    col.sort((a, b) => {
-      if (a.type === 'INPUT' && b.type === 'INPUT') return a.name.localeCompare(b.name);
-      return a.id - b.id;
-    });
-  });
-
-  // Assign positions
-  const positions = {};  // gateId -> { x, y, cx, cy }
-  const MARGIN_X = 80;
-  const MARGIN_Y = 40;
-
-  // Calculate total height needed
-  let maxColHeight = 0;
-  for (const [depth, col] of Object.entries(columns)) {
-    const d = parseInt(depth);
-    const isInputCol = d === 0;
-    const spacing = isInputCol ? ROW_SPACING * 0.7 : ROW_SPACING;
-    const colH = col.length * spacing;
-    if (colH > maxColHeight) maxColHeight = colH;
-  }
-  const totalH = Math.max(maxColHeight + MARGIN_Y * 2, 250);
-
-  for (const [depth, col] of Object.entries(columns)) {
-    const d = parseInt(depth);
-    const x = MARGIN_X + d * COL_SPACING;
-    const isInputCol = d === 0;
-    const spacing = isInputCol ? ROW_SPACING * 0.7 : ROW_SPACING;
-    const colH = col.length * spacing;
-    const startY = (totalH - colH) / 2 + spacing / 2;
-
-    col.forEach((g, i) => {
-      const y = startY + i * spacing;
-      positions[g.id] = { x, y: y, cx: x, cy: y };
-    });
-  }
-
-  const totalW = MARGIN_X * 2 + (maxDepth + 1) * COL_SPACING + 40;
-
-  return { positions, totalW, totalH, maxDepth, gateMap };
-}
-
-/* ================================================================
-   SVG Rendering
-   ================================================================ */
-
-function renderCircuit(circuit) {
-  const { gates, wires, inputs, outputGate, gateCount, varCount } = circuit;
-  const layout = layoutCircuit(circuit);
-  const { positions, totalW, totalH, gateMap } = layout;
-
-  const svg = svgEl('svg', {
-    viewBox: `0 0 ${totalW} ${totalH}`,
-    width: totalW,
-    height: totalH,
-    xmlns: 'http://www.w3.org/2000/svg',
-  });
-
-  // Defs for arrow marker
-  const defs = svgEl('defs');
-  svg.appendChild(defs);
-
-  // Draw groups by layer for z-ordering
-  const wireGroup = svgEl('g', { class: 'wires-layer' });
-  const gateGroup = svgEl('g', { class: 'gates-layer' });
-  const labelGroup = svgEl('g', { class: 'labels-layer' });
-  svg.appendChild(wireGroup);
-  svg.appendChild(gateGroup);
-  svg.appendChild(labelGroup);
-
-  // Track drawn gate elements and their pins
-  const drawnGates = {};  // gateId -> { el, inputPins, outputPin }
-
-  // Draw inputs (just labels + output pins)
-  gates.filter(g => g.type === 'INPUT' || g.type === 'LITERAL').forEach(g => {
-    const pos = positions[g.id];
-    const pinX = pos.cx + 20;
-    const pinY = pos.cy;
-
-    // Input label
-    const label = svgEl('text', {
-      x: pos.cx - 5, y: pos.cy + 4,
-      class: 'io-label',
-      'text-anchor': 'end',
-    }, g.name);
-    labelGroup.appendChild(label);
-
-    // Short wire from label to pin
-    const wire = svgEl('line', {
-      x1: pos.cx, y1: pinY, x2: pinX, y2: pinY,
-      class: 'wire',
-    });
-    wire.dataset.gateId = g.id;
-    wireGroup.appendChild(wire);
-
-    drawnGates[g.id] = {
-      el: null,
-      inputPins: [],
-      outputPin: { x: pinX, y: pinY },
-    };
-  });
-
-  // Draw gates
-  gates.filter(g => g.type !== 'INPUT' && g.type !== 'LITERAL').forEach(g => {
-    const pos = positions[g.id];
-    const numInputs = g.inputs.length;
-    const drawn = drawGate(g.type, pos.cx, pos.cy, numInputs);
-
-    drawn.el.dataset.gateId = g.id;
-    drawn.el.style.cursor = 'pointer';
-    gateGroup.appendChild(drawn.el);
-
-    // Gate label inside
-    const lbl = GATE_LABELS[g.type];
-    if (lbl && g.type !== 'NOT') {
-      const labelEl = svgEl('text', {
-        x: pos.cx - 8, y: pos.cy + 4,
-        class: 'gate-label',
-        'text-anchor': 'middle',
-      }, lbl);
-      labelGroup.appendChild(labelEl);
-    }
-
-    drawnGates[g.id] = drawn;
-  });
-
-  // Draw output label
-  const outGate = gateMap[outputGate];
-  const outDrawn = drawnGates[outputGate];
-  if (outDrawn) {
-    const outPin = outDrawn.outputPin;
-    const outLabelX = outPin.x + PIN_LEN + 5;
-
-    const outWire = svgEl('line', {
-      x1: outPin.x, y1: outPin.y, x2: outPin.x + PIN_LEN, y2: outPin.y,
-      class: 'wire',
-    });
-    wireGroup.appendChild(outWire);
-
-    const outLabel = svgEl('text', {
-      x: outLabelX, y: outPin.y + 4,
-      class: 'io-label',
-    }, 'Out');
-    labelGroup.appendChild(outLabel);
-  }
-
-  // Draw wires with Manhattan routing
-  const junctions = {};  // track fan-out points
-
-  // Count fan-out per gate output
-  const fanOutCount = {};
-  wires.forEach(w => {
-    fanOutCount[w.from] = (fanOutCount[w.from] || 0) + 1;
-  });
-
-  wires.forEach(w => {
-    const fromDrawn = drawnGates[w.from];
-    const toDrawn = drawnGates[w.to];
-    if (!fromDrawn || !toDrawn) return;
-
-    const fromPin = fromDrawn.outputPin;
-    const toGate = gateMap[w.to];
-
-    // Find which input index this wire connects to
-    const inputIdx = toGate.inputs.indexOf(w.from);
-    if (inputIdx === -1) return;
-    const toPin = toDrawn.inputPins[inputIdx];
-    if (!toPin) return;
-
-    // Manhattan routing: horizontal from source, vertical jog, horizontal to target
-    const midX = (fromPin.x + toPin.x) / 2;
-
-    let pathD;
-    if (Math.abs(fromPin.y - toPin.y) < 1) {
-      // Straight horizontal
-      pathD = `M${fromPin.x},${fromPin.y} L${toPin.x},${toPin.y}`;
-    } else {
-      // L-shaped or Z-shaped routing
-      pathD = `M${fromPin.x},${fromPin.y} L${midX},${fromPin.y} L${midX},${toPin.y} L${toPin.x},${toPin.y}`;
-    }
-
-    const wireEl = svgEl('path', {
-      d: pathD,
-      class: 'wire',
-    });
-    wireEl.dataset.fromGate = w.from;
-    wireEl.dataset.toGate = w.to;
-    wireGroup.appendChild(wireEl);
-
-    // Fan-out junction dot
-    if (fanOutCount[w.from] > 1) {
-      const jKey = `${fromPin.x},${fromPin.y}`;
-      if (!junctions[jKey]) {
-        junctions[jKey] = true;
-        const dot = svgEl('circle', {
-          cx: fromPin.x, cy: fromPin.y, r: 3.5,
-          class: 'junction',
-        });
-        wireGroup.appendChild(dot);
-      }
-    }
-  });
-
-  return svg;
-}
-
-/* ================================================================
-   Interaction
-   ================================================================ */
-
-let currentCircuit = null;
-let currentAst = null;
-let currentVars = [];
-let currentMode = 'natural';
-
-function showError(msg) {
-  const el = document.getElementById('errorMsg');
-  el.textContent = msg;
-  el.style.display = msg ? '' : 'none';
-}
-
-function hideTooltip() {
-  document.getElementById('tooltip').style.display = 'none';
-}
-
-function showTooltip(gateId, x, y) {
-  if (!currentCircuit) return;
-  const gate = currentCircuit.gates.find(g => g.id === parseInt(gateId));
-  if (!gate || gate.type === 'INPUT' || gate.type === 'LITERAL') return;
-
-  const tip = document.getElementById('tooltip');
-  const inputNames = gate.inputs.map(id => {
-    const ig = currentCircuit.gates.find(g => g.id === id);
-    return ig ? (ig.name || ig.expr || 'gate_' + ig.id) : '?';
-  });
-
-  tip.innerHTML = `<strong>${GATE_LABELS[gate.type] || gate.type} Gate</strong>`
-    + `Inputs: ${inputNames.join(', ')}<br>`
-    + (gate.expr ? `Expression: <code>${gate.expr}</code>` : '');
-  tip.style.display = '';
-  tip.style.left = x + 'px';
-  tip.style.top = (y - tip.offsetHeight - 10) + 'px';
-}
-
-function highlightGate(svg, gateId, on) {
-  // Highlight gate
-  svg.querySelectorAll(`g[data-gate-id="${gateId}"]`).forEach(el => {
-    el.classList.toggle('gate-highlight', on);
-  });
-  // Highlight connected wires
-  svg.querySelectorAll(`path.wire[data-from-gate="${gateId}"], path.wire[data-to-gate="${gateId}"]`).forEach(el => {
-    el.classList.toggle('wire-highlight', on);
-  });
-}
-
-function highlightWirePath(svg, fromId, toId, on) {
-  // Highlight full signal chain from input to output
-  if (!currentCircuit) return;
-  const visited = new Set();
-
-  // Trace backwards from toId to inputs
-  function traceBack(id) {
-    if (visited.has(id)) return;
-    visited.add(id);
-    const gate = currentCircuit.gates.find(g => g.id === id);
-    if (gate) gate.inputs.forEach(traceBack);
-  }
-
-  // Trace forwards from fromId to output
-  function traceFwd(id) {
-    if (visited.has(id)) return;
-    visited.add(id);
-    currentCircuit.wires.filter(w => w.from === id).forEach(w => traceFwd(w.to));
-  }
-
-  if (fromId !== undefined) traceFwd(parseInt(fromId));
-  if (toId !== undefined) traceBack(parseInt(toId));
-
-  // Highlight all wires touching visited gates
-  svg.querySelectorAll('path.wire').forEach(el => {
-    const f = parseInt(el.dataset.fromGate);
-    const t = parseInt(el.dataset.toGate);
-    if (visited.has(f) || visited.has(t)) {
-      el.classList.toggle('wire-highlight', on);
-    }
-  });
-}
-
-function setupInteraction(svg) {
-  const wrap = document.getElementById('diagramWrap');
-
-  svg.addEventListener('mouseover', e => {
-    const gateEl = e.target.closest('g[data-gate-id]');
-    const wireEl = e.target.closest('path.wire');
-
-    if (gateEl) {
-      const gid = gateEl.dataset.gateId;
-      highlightGate(svg, gid, true);
-    }
-    if (wireEl) {
-      highlightWirePath(svg, wireEl.dataset.fromGate, wireEl.dataset.toGate, true);
-    }
-  });
-
-  svg.addEventListener('mouseout', e => {
-    const gateEl = e.target.closest('g[data-gate-id]');
-    const wireEl = e.target.closest('path.wire');
-
-    if (gateEl) {
-      highlightGate(svg, gateEl.dataset.gateId, false);
-      hideTooltip();
-    }
-    if (wireEl) {
-      highlightWirePath(svg, wireEl.dataset.fromGate, wireEl.dataset.toGate, false);
-    }
-  });
-
-  svg.addEventListener('click', e => {
-    const gateEl = e.target.closest('g[data-gate-id]');
-    if (gateEl) {
-      const rect = wrap.getBoundingClientRect();
-      showTooltip(gateEl.dataset.gateId, e.clientX - rect.left, e.clientY - rect.top);
-    } else {
-      hideTooltip();
-    }
-  });
-}
-
-/* ================================================================
-   Main Render Pipeline
-   ================================================================ */
+function showError(msg) { var el = document.getElementById('errorMsg'); el.textContent = msg; el.style.display = msg ? '' : 'none'; }
 
 function generate() {
-  const expr = document.getElementById('exprInput').value.trim();
-  const wrap = document.getElementById('diagramWrap');
-  const section = document.getElementById('diagramSection');
-  const ttPanel = document.getElementById('ttPanel');
-  ttPanel.style.display = 'none';
+  var expr = document.getElementById('exprInput').value.trim();
+  var wrap = document.getElementById('diagramWrap');
+  var section = document.getElementById('diagramSection');
+  document.getElementById('ttPanel').style.display = 'none';
 
   if (!expr) {
     wrap.innerHTML = '<div class="diagram-empty">Enter an expression above</div>';
-    section.style.display = 'none';
-    showError('');
-    currentCircuit = null;
-    currentAst = null;
-    currentVars = [];
-    updateKmapLink();
-    return;
+    section.style.display = 'none'; showError(''); currentCircuit = null; currentAst = null; currentVars = [];
+    updateKmapLink(); return;
   }
 
   try {
     currentVars = extractVars(expr);
-    if (currentVars.length > 6) {
-      showError('Warning: Expressions with more than 6 variables may produce dense diagrams.');
-    } else {
-      showError('');
-    }
+    var warning = '';
+    if (currentVars.length > 6) warning = 'Circuits with 7+ variables may have dense wiring. Consider simplifying with K-Map first.';
 
-    const tokens = tokenize(expr, currentVars);
+    var tokens = tokenize(expr, currentVars);
     currentAst = parse(tokens);
-    currentCircuit = buildCircuit(currentAst, currentMode);
+    currentCircuit = Circuit.build(currentAst, currentMode);
 
-    if (currentCircuit.gateCount > 15) {
-      showError('Warning: ' + currentCircuit.gateCount + ' gates — diagram may be dense.');
-    }
+    if (!warning && currentCircuit.gateCount > 20) warning = currentCircuit.gateCount + ' gates — diagram may be dense.';
+    showError(warning);
 
-    const svg = renderCircuit(currentCircuit);
+    var svg = Circuit.render(currentCircuit);
     wrap.innerHTML = '';
     wrap.appendChild(svg);
     section.style.display = '';
-    setupInteraction(svg);
-    hideTooltip();
+    Circuit.interact(svg, currentCircuit, wrap);
     updateKmapLink();
   } catch (e) {
     showError(e.message);
     wrap.innerHTML = '<div class="diagram-empty">Fix the expression to see the circuit</div>';
     section.style.display = '';
-    currentCircuit = null;
-    currentAst = null;
+    currentCircuit = null; currentAst = null;
   }
 }
 
 function updateKmapLink() {
-  const link = document.getElementById('kmapLink');
-  const expr = document.getElementById('exprInput').value.trim();
+  var link = document.getElementById('kmapLink');
+  var expr = document.getElementById('exprInput').value.trim();
   if (expr && currentVars.length >= 2 && currentVars.length <= 6) {
     link.href = '/kmap/#expr=' + encodeURIComponent(expr) + '&vars=' + encodeURIComponent(currentVars.join(','));
-    link.style.opacity = '1';
-    link.style.pointerEvents = '';
+    link.style.opacity = '1'; link.style.pointerEvents = '';
   } else {
-    link.href = '/kmap/';
-    link.style.opacity = '0.4';
-    link.style.pointerEvents = 'none';
+    link.href = '/kmap/'; link.style.opacity = '0.4'; link.style.pointerEvents = 'none';
   }
 }
 
 /* ── Truth Table ── */
-
-function toggleTruthTable() {
-  const panel = document.getElementById('ttPanel');
-  if (panel.style.display !== 'none') {
-    panel.style.display = 'none';
-    return;
-  }
-  if (!currentAst || currentVars.length === 0) return;
-
-  const table = computeTruthTable(currentAst, currentVars);
-  let html = '<table class="tt-table"><thead><tr>';
-  currentVars.forEach(v => html += `<th>${v}</th>`);
+function toggleTT() {
+  var panel = document.getElementById('ttPanel');
+  if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+  if (!currentAst || !currentVars.length) return;
+  var table = computeTruthTable(currentAst, currentVars);
+  var html = '<table class="tt-table"><thead><tr>';
+  currentVars.forEach(function(v) { html += '<th>' + v + '</th>'; });
   html += '<th>Out</th></tr></thead><tbody>';
-  table.forEach(row => {
+  table.forEach(function(row) {
     html += '<tr>';
-    currentVars.forEach(v => {
-      const val = row.env[v];
-      html += `<td class="${val ? 'tt-one' : ''}">${val}</td>`;
-    });
-    html += `<td class="tt-out-col ${row.result ? 'tt-one' : ''}">${row.result}</td>`;
-    html += '</tr>';
+    currentVars.forEach(function(v) { var val = row.env[v]; html += '<td class="' + (val ? 'tt-one' : '') + '">' + val + '</td>'; });
+    html += '<td class="' + (row.result ? 'tt-one' : '') + '" style="font-weight:600">' + row.result + '</td></tr>';
   });
   html += '</tbody></table>';
-  panel.innerHTML = html;
-  panel.style.display = '';
+  panel.innerHTML = html; panel.style.display = '';
 }
 
 /* ── Export ── */
+function getExportStyles() {
+  var dark = document.body.classList.contains('dark');
+  return '<style>'
+    + '.cg-gate-body{fill:none;stroke-width:2;stroke-linejoin:round}'
+    + '.cg-gate-and .cg-gate-body,.cg-gate-and .cg-bubble{stroke:' + (dark ? '#6ba3e8' : '#2d6abf') + '}'
+    + '.cg-gate-nand .cg-gate-body,.cg-gate-nand .cg-bubble{stroke:' + (dark ? '#a87ee0' : '#7b4fbf') + '}'
+    + '.cg-gate-or .cg-gate-body,.cg-gate-or .cg-bubble{stroke:' + (dark ? '#5fc47e' : '#2d8f4e') + '}'
+    + '.cg-gate-nor .cg-gate-body,.cg-gate-nor .cg-bubble{stroke:' + (dark ? '#e07090' : '#bf4f6e') + '}'
+    + '.cg-gate-not .cg-gate-body,.cg-gate-not .cg-bubble{stroke:' + (dark ? '#e08050' : '#b85c2f') + '}'
+    + '.cg-gate-xor .cg-gate-body,.cg-gate-xor .cg-bubble{stroke:' + (dark ? '#50d0d0' : '#2fa5a5') + '}'
+    + '.cg-gate-xnor .cg-gate-body,.cg-gate-xnor .cg-bubble{stroke:' + (dark ? '#9070e0' : '#6b4fbf') + '}'
+    + '.cg-bubble{fill:' + (dark ? '#1e1e1e' : '#fff') + ';stroke-width:2}'
+    + '.cg-wire{fill:none;stroke:' + (dark ? '#999' : '#666') + ';stroke-width:2;stroke-linecap:round}'
+    + '.cg-junction{fill:' + (dark ? '#999' : '#666') + '}'
+    + '.cg-label{font-family:system-ui,sans-serif;fill:' + (dark ? '#ccc' : '#333') + '}'
+    + '.cg-input-label{font-size:14px;font-weight:600;font-family:monospace}'
+    + '.cg-output-label{font-size:14px;font-weight:600}'
+    + '.cg-gate-text{font-size:10px;font-weight:600}'
+    + 'svg{background:' + (dark ? '#1e1e1e' : '#fafafa') + '}'
+    + '</style>';
+}
 
 function exportSVG() {
-  const svg = document.querySelector('#diagramWrap svg');
+  var svg = document.querySelector('#diagramWrap svg');
   if (!svg) return;
-
-  // Clone and inline styles for export
-  const clone = svg.cloneNode(true);
-  const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-  const isDark = document.body.classList.contains('dark');
-
-  styleEl.textContent = `
-    .gate-body { fill: none; stroke-width: 2; stroke-linejoin: round; }
-    .gate-and .gate-body { stroke: ${isDark ? '#6ba3e8' : '#2d6abf'}; }
-    .gate-or .gate-body { stroke: ${isDark ? '#5fc47e' : '#2d8f4e'}; }
-    .gate-not .gate-body { stroke: ${isDark ? '#e08050' : '#b85c2f'}; }
-    .gate-nand .gate-body { stroke: ${isDark ? '#a87ee0' : '#7b4fbf'}; }
-    .gate-nor .gate-body { stroke: ${isDark ? '#e07090' : '#bf4f6e'}; }
-    .gate-xor .gate-body { stroke: ${isDark ? '#50d0d0' : '#2fa5a5'}; }
-    .gate-xnor .gate-body { stroke: ${isDark ? '#c09840' : '#8f6b2d'}; }
-    .wire { fill: none; stroke: ${isDark ? '#999' : '#666'}; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .not-bubble { fill: ${isDark ? '#1a1a1a' : '#fff'}; stroke-width: 2; }
-    .junction { fill: ${isDark ? '#999' : '#666'}; }
-    .gate-label, .io-label { font-family: system-ui, sans-serif; font-size: 12px; fill: ${isDark ? '#ccc' : '#333'}; }
-    .io-label { font-weight: 600; font-size: 13px; }
-    svg { background: ${isDark ? '#1e1e1e' : '#fafafa'}; }
-  `;
-  clone.insertBefore(styleEl, clone.firstChild);
-
-  const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'circuit.svg';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  var clone = svg.cloneNode(true);
+  clone.insertAdjacentHTML('afterbegin', getExportStyles());
+  var blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'circuit.svg'; a.click(); URL.revokeObjectURL(a.href);
 }
 
 function exportPNG() {
-  const svg = document.querySelector('#diagramWrap svg');
+  var svg = document.querySelector('#diagramWrap svg');
   if (!svg) return;
-
-  const clone = svg.cloneNode(true);
-  const styleEl = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-  const isDark = document.body.classList.contains('dark');
-  styleEl.textContent = `
-    .gate-body { fill: none; stroke-width: 2; stroke-linejoin: round; }
-    .gate-and .gate-body { stroke: ${isDark ? '#6ba3e8' : '#2d6abf'}; }
-    .gate-or .gate-body { stroke: ${isDark ? '#5fc47e' : '#2d8f4e'}; }
-    .gate-not .gate-body { stroke: ${isDark ? '#e08050' : '#b85c2f'}; }
-    .gate-nand .gate-body { stroke: ${isDark ? '#a87ee0' : '#7b4fbf'}; }
-    .gate-nor .gate-body { stroke: ${isDark ? '#e07090' : '#bf4f6e'}; }
-    .gate-xor .gate-body { stroke: ${isDark ? '#50d0d0' : '#2fa5a5'}; }
-    .gate-xnor .gate-body { stroke: ${isDark ? '#c09840' : '#8f6b2d'}; }
-    .wire { fill: none; stroke: ${isDark ? '#999' : '#666'}; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .not-bubble { fill: ${isDark ? '#1a1a1a' : '#fff'}; stroke-width: 2; }
-    .junction { fill: ${isDark ? '#999' : '#666'}; }
-    .gate-label, .io-label { font-family: system-ui, sans-serif; font-size: 12px; fill: ${isDark ? '#ccc' : '#333'}; }
-    .io-label { font-weight: 600; font-size: 13px; }
-    svg { background: ${isDark ? '#1e1e1e' : '#fafafa'}; }
-  `;
-  clone.insertBefore(styleEl, clone.firstChild);
-
-  const svgStr = new XMLSerializer().serializeToString(clone);
-  const img = new Image();
-  const scale = 2;
-  img.onload = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width * scale;
-    canvas.height = img.height * scale;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0);
-    canvas.toBlob(blob => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'circuit.png';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
+  var clone = svg.cloneNode(true);
+  clone.insertAdjacentHTML('afterbegin', getExportStyles());
+  var svgStr = new XMLSerializer().serializeToString(clone);
+  var img = new Image();
+  img.onload = function() {
+    var c = document.createElement('canvas'); c.width = img.width * 2; c.height = img.height * 2;
+    var ctx = c.getContext('2d'); ctx.scale(2, 2); ctx.drawImage(img, 0, 0);
+    c.toBlob(function(blob) { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'circuit.png'; a.click(); URL.revokeObjectURL(a.href); });
   };
   img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgStr)));
 }
 
-/* ================================================================
-   Event Wiring
-   ================================================================ */
+/* ── Event Wiring ── */
+document.addEventListener('DOMContentLoaded', function() {
+  var input = document.getElementById('exprInput'), debounce;
+  input.addEventListener('input', function() { clearTimeout(debounce); debounce = setTimeout(generate, 200); });
+  input.addEventListener('keydown', function(e) { if (e.key === 'Enter') { clearTimeout(debounce); generate(); } });
 
-document.addEventListener('DOMContentLoaded', () => {
-  const input = document.getElementById('exprInput');
-  let debounce;
-
-  input.addEventListener('input', () => {
-    clearTimeout(debounce);
-    debounce = setTimeout(generate, 200);
-  });
-
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      clearTimeout(debounce);
-      generate();
-    }
-  });
-
-  // Gate mode toggle
-  document.querySelectorAll('#gateMode .mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('#gateMode .mode-btn').forEach(b => b.classList.remove('on'));
-      btn.classList.add('on');
-      currentMode = btn.dataset.mode;
-      generate();
+  document.querySelectorAll('#gateMode .mode-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#gateMode .mode-btn').forEach(function(b) { b.classList.remove('on'); });
+      btn.classList.add('on'); currentMode = btn.dataset.mode; generate();
     });
   });
 
-  // Export buttons
   document.getElementById('btnSvg').addEventListener('click', exportSVG);
   document.getElementById('btnPng').addEventListener('click', exportPNG);
-  document.getElementById('btnTT').addEventListener('click', toggleTruthTable);
+  document.getElementById('btnTT').addEventListener('click', toggleTT);
 
-  // Check URL params for passed expression
-  const params = new URLSearchParams(location.search);
-  const passedExpr = params.get('expr');
-  if (passedExpr) {
-    input.value = passedExpr;
-    generate();
-  }
-
+  var params = new URLSearchParams(location.search);
+  var passedExpr = params.get('expr');
+  if (passedExpr) { input.value = passedExpr; generate(); }
   updateKmapLink();
 });
 </script>

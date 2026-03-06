@@ -152,6 +152,13 @@
       margin-bottom: 15px;
     }
 
+    .circuit-wrap {
+      overflow: auto; border: 1px solid #e0e0e0; border-radius: 6px;
+      background: #fafafa; min-height: 150px; position: relative;
+    }
+    body.dark .circuit-wrap { border-color: #444444; background: #1e1e1e; }
+    .circuit-wrap svg { display: block; min-width: 100%; }
+
     @media (max-width: 600px) {
       .km-cell { width: 38px; height: 38px; font-size: 14px; }
     }
@@ -253,6 +260,7 @@
           <button class="btn-t" id="verilogBtn">Verilog</button>
           <button class="btn-t" id="vhdlBtn">VHDL</button>
           <button class="btn-t" id="stepsBtn">Steps</button>
+          <button class="btn-t" id="circuitBtn">Circuit</button>
         </div>
       </div>
 
@@ -273,6 +281,12 @@
     <!-- Steps Panel -->
     <div id="stepsPanel" class="section" style="display: none;"></div>
 
+    <!-- Circuit Panel -->
+    <div id="circuitPanel" class="section" style="display: none;">
+      <div class="result-label" style="margin-top:0;">Circuit Diagram<span class="tag">Gate-Level</span></div>
+      <div id="circuitWrap" class="circuit-wrap"></div>
+    </div>
+
     <div class="footer">
 &copy; 2026 <a href="/">p14m.com</a>
     </div>
@@ -280,6 +294,7 @@
 
   <div id="toast" class="toast" style="display: none;"></div>
 
+<script src="/lib/circuit.js"></script>
 <script>
 /* ───────────────────────── Theme ───────────────────────── */
 
@@ -672,6 +687,7 @@ let state = {
   showVerilog: false,
   showVHDL: false,
   showSteps: false,
+  showCircuit: false,
   manualOverrides: {},
   manualMode: false,
   inputMode: 'expression', // 'expression', 'minterms', 'maxterms'
@@ -703,6 +719,9 @@ const verilogBtn = document.getElementById('verilogBtn');
 const vhdlBtn = document.getElementById('vhdlBtn');
 const stepsBtn = document.getElementById('stepsBtn');
 const stepsPanel = document.getElementById('stepsPanel');
+const circuitBtn = document.getElementById('circuitBtn');
+const circuitPanel = document.getElementById('circuitPanel');
+const circuitWrap = document.getElementById('circuitWrap');
 
 /* ═══════════════════════ FUNCTIONS ═══════════════════════ */
 
@@ -1564,6 +1583,7 @@ function render() {
     kmapPanel.style.display = 'none';
     truthPanel.style.display = 'none';
     stepsPanel.style.display = 'none';
+    circuitPanel.style.display = 'none';
     return;
   }
 
@@ -1763,6 +1783,26 @@ function render() {
   } else {
     stepsPanel.style.display = 'none';
   }
+
+  // Circuit diagram
+  if (state.showCircuit && typeof Circuit !== 'undefined' && sopExpr && sopExpr !== '0') {
+    try {
+      const exprForParser = sopExpr;
+      const tokens = tokenize(exprForParser, varNames);
+      const ast = parse(tokens);
+      const circuit = Circuit.build(ast, 'natural');
+      const svg = Circuit.render(circuit);
+      circuitWrap.innerHTML = '';
+      circuitWrap.appendChild(svg);
+      Circuit.interact(svg, circuit, circuitWrap);
+      circuitPanel.style.display = 'block';
+    } catch (e) {
+      circuitWrap.innerHTML = '<div style="padding:20px;color:#999;font-style:italic;">Could not render circuit: ' + e.message + '</div>';
+      circuitPanel.style.display = 'block';
+    }
+  } else {
+    circuitPanel.style.display = 'none';
+  }
 }
 
 /* ═══════════════════════ EVENT LISTENERS ═══════════════════════ */
@@ -1810,6 +1850,12 @@ vhdlBtn.addEventListener('click', () => {
 stepsBtn.addEventListener('click', () => {
   state.showSteps = !state.showSteps;
   stepsBtn.classList.toggle('on', state.showSteps);
+  render();
+});
+
+circuitBtn.addEventListener('click', () => {
+  state.showCircuit = !state.showCircuit;
+  circuitBtn.classList.toggle('on', state.showCircuit);
   render();
 });
 
