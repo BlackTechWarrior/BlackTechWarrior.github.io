@@ -604,12 +604,6 @@
       text-align: center;
     }
     body.dark .feedback-box { border-top-color: #333333; }
-    .feedback-q {
-      font-size: 13px;
-      color: #595959;
-      margin-bottom: 10px;
-    }
-    body.dark .feedback-q { color: #888888; }
     .feedback-btns {
       display: flex;
       gap: 10px;
@@ -642,10 +636,6 @@
       border-color: #87ceeb;
       background: rgba(135,206,235,0.1);
       color: #87ceeb;
-    }
-    .feedback-btn.dimmed {
-      opacity: 0.4;
-      cursor: default;
     }
     .feedback-count {
       font-size: 11px;
@@ -730,55 +720,46 @@ function setVote(topicId, vote) {
   localStorage.setItem('feedback_' + topicId, vote);
 }
 
-function submitFeedback(topicId, vote) {
+function submitFeedback(topicId) {
   if (getVote(topicId)) return;
-  setVote(topicId, vote);
+  setVote(topicId, 'yes');
   const ref = db.collection('feedback').doc(topicId);
-  ref.set({ [vote]: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+  ref.set({ helpful: firebase.firestore.FieldValue.increment(1) }, { merge: true });
 }
 
 function mountFeedback(topicId) {
   const mount = document.getElementById('feedbackMount');
   if (!mount) return;
 
-  const existing = getVote(topicId);
+  const voted = getVote(topicId);
 
-  function renderFeedback(yes, no) {
-    let html = '<div class="feedback-q">Was this helpful?</div>';
-    html += '<div class="feedback-btns">';
-    if (existing) {
-      const yClass = existing === 'yes' ? 'voted' : 'dimmed';
-      const nClass = existing === 'no' ? 'voted' : 'dimmed';
-      html += `<span class="feedback-btn ${yClass}">Yes <span class="feedback-count">${yes}</span></span>`;
-      html += `<span class="feedback-btn ${nClass}">No <span class="feedback-count">${no}</span></span>`;
+  function renderFeedback(count) {
+    let html = '';
+    if (voted) {
+      html += '<div class="feedback-btns">';
+      html += `<span class="feedback-btn voted">\uD83D\uDC4D Helpful <span class="feedback-count">${count}</span></span>`;
       html += '</div>';
       html += '<div class="feedback-thanks">Thanks for your feedback!</div>';
     } else {
-      html += `<button class="feedback-btn" data-vote="yes">Yes <span class="feedback-count">${yes}</span></button>`;
-      html += `<button class="feedback-btn" data-vote="no">No <span class="feedback-count">${no}</span></button>`;
+      html += '<div class="feedback-btns">';
+      html += `<button class="feedback-btn" id="helpfulBtn">\uD83D\uDC4D Helpful <span class="feedback-count">${count}</span></button>`;
       html += '</div>';
     }
     mount.innerHTML = html;
 
-    if (!existing) {
-      mount.querySelectorAll('.feedback-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const vote = btn.dataset.vote;
-          submitFeedback(topicId, vote);
-          const counts = { yes, no };
-          counts[vote]++;
-          renderFeedback(counts.yes, counts.no);
-        });
+    if (!voted) {
+      document.getElementById('helpfulBtn').addEventListener('click', () => {
+        submitFeedback(topicId);
+        renderFeedback(count + 1);
       });
     }
   }
 
-  // Load counts from Firestore
   db.collection('feedback').doc(topicId).get().then(doc => {
     const data = doc.exists ? doc.data() : {};
-    renderFeedback(data.yes || 0, data.no || 0);
+    renderFeedback(data.helpful || 0);
   }).catch(() => {
-    renderFeedback(0, 0);
+    renderFeedback(0);
   });
 }
 
