@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive adder architecture visualizer comparing Ripple Carry, Carry Lookahead, and Carry Select adders with animated carry propagation.">
+  <meta property="og:title" content="Adder Visualizer | p14m.com">
+  <meta property="og:description" content="Compare binary adder architectures side-by-side with animated carry propagation and area-speed tradeoffs.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://p14m.com/adders/">
+  <title>Adder Visualizer | p14m.com</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    /* ── Adder-specific styles ── */
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: auto 1fr 1fr;
+      gap: 15px;
+      align-items: end;
+      margin-bottom: 15px;
+    }
+
+    .operand-input {
+      width: 100%;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      color: #000000;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .operand-input:focus { border-color: #0066cc; }
+    .operand-input::placeholder { color: #999999; }
+    body.dark .operand-input {
+      background: #2a2a2a;
+      border-color: #444444;
+      color: #e0e0e0;
+    }
+    body.dark .operand-input:focus { border-color: #87ceeb; }
+
+    .arch-checks {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .arch-checks label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .arch-checks input[type="checkbox"] {
+      accent-color: #0066cc;
+    }
+    body.dark .arch-checks input[type="checkbox"] {
+      accent-color: #87ceeb;
+    }
+
+    .csa-final {
+      font-size: 12px;
+      color: #595959;
+      margin-left: 4px;
+    }
+    body.dark .csa-final { color: #888888; }
+    .csa-final select {
+      font-size: 12px;
+      font-family: inherit;
+      background: #f5f5f5;
+      border: 1px solid #cccccc;
+      border-radius: 4px;
+      padding: 2px 4px;
+      color: inherit;
+    }
+    body.dark .csa-final select {
+      background: #333333;
+      border-color: #555555;
+      color: #e0e0e0;
+    }
+
+    /* ── Playback ── */
+    .playback-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pb-btn {
+      background: transparent;
+      border: 1px solid #cccccc;
+      color: #595959;
+      border-radius: 5px;
+      padding: 5px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-width: 36px;
+      text-align: center;
+    }
+    .pb-btn:hover { border-color: #999999; color: #333333; }
+    .pb-btn.active { border-color: #0066cc; color: #0066cc; background: rgba(0,102,204,0.05); }
+    body.dark .pb-btn { border-color: #444444; color: #888888; }
+    body.dark .pb-btn:hover { border-color: #666666; color: #cccccc; }
+    body.dark .pb-btn.active { border-color: #87ceeb; color: #87ceeb; background: rgba(135,206,235,0.1); }
+
+    .speed-label {
+      font-size: 12px;
+      color: #767676;
+      margin-left: 8px;
+    }
+    body.dark .speed-label { color: #9a9a9a; }
+    .speed-slider {
+      width: 80px;
+      accent-color: #0066cc;
+    }
+    body.dark .speed-slider { accent-color: #87ceeb; }
+
+    /* ── Race Lanes ── */
+    .race-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 15px;
+    }
+
+    .race-lane {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 14px;
+      position: relative;
+    }
+    body.dark .race-lane { border-color: #444444; }
+    .race-lane.finished {
+      border-color: #28a745;
+    }
+    body.dark .race-lane.finished {
+      border-color: #4caf50;
+    }
+
+    .lane-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .lane-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .lane-stats {
+      font-size: 12px;
+      font-family: monospace;
+      color: #767676;
+    }
+    body.dark .lane-stats { color: #9a9a9a; }
+    .lane-step {
+      font-size: 12px;
+      color: #595959;
+      margin-top: 8px;
+      font-style: italic;
+      min-height: 18px;
+    }
+    body.dark .lane-step { color: #888888; }
+
+    /* ── SVG Adder Diagram ── */
+    .adder-svg {
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+    }
+    .adder-svg-wrap {
+      overflow-x: auto;
+      margin: 0 -4px;
+      padding: 0 4px;
+    }
+
+    .fa-body {
+      fill: #f5f5f5;
+      stroke: #cccccc;
+      stroke-width: 1.5;
+      transition: fill 0.25s, stroke 0.25s;
+    }
+    body.dark .fa-body {
+      fill: #2a2a2a;
+      stroke: #555555;
+    }
+    .fa-body.computing {
+      fill: #fff3cd;
+      stroke: #ffc107;
+    }
+    body.dark .fa-body.computing {
+      fill: #3d3520;
+      stroke: #ffc107;
+    }
+    .fa-body.resolved {
+      fill: rgba(0, 102, 204, 0.1);
+      stroke: #0066cc;
+    }
+    body.dark .fa-body.resolved {
+      fill: rgba(135, 206, 235, 0.12);
+      stroke: #87ceeb;
+    }
+
+    .fa-text {
+      font-family: monospace;
+      font-size: 11px;
+      fill: #555555;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+    body.dark .fa-text { fill: #aaaaaa; }
+
+    .fa-bit-label {
+      font-family: monospace;
+      font-size: 9px;
+      fill: #999999;
+      text-anchor: middle;
+    }
+    body.dark .fa-bit-label { fill: #777777; }
+
+    .carry-line {
+      stroke: #cccccc;
+      stroke-width: 2;
+      fill: none;
+      transition: stroke 0.25s;
+    }
+    body.dark .carry-line { stroke: #555555; }
+    .carry-line.active {
+      stroke: #dc3545;
+    }
+    .carry-line.resolved {
+      stroke: #28a745;
+    }
+
+    .sum-bit {
+      font-family: monospace;
+      font-size: 12px;
+      fill: #767676;
+      text-anchor: middle;
+      transition: fill 0.25s;
+    }
+    body.dark .sum-bit { fill: #888888; }
+    .sum-bit.resolved {
+      fill: #0066cc;
+      font-weight: 600;
+    }
+    body.dark .sum-bit.resolved { fill: #87ceeb; }
+
+    .input-bit {
+      font-family: monospace;
+      font-size: 10px;
+      fill: #999999;
+      text-anchor: middle;
+    }
+    body.dark .input-bit { fill: #777777; }
+
+    /* CLA group bracket */
+    .clu-body {
+      fill: #eef6ff;
+      stroke: #0066cc;
+      stroke-width: 1;
+      stroke-dasharray: 4 2;
+      rx: 4;
+    }
+    body.dark .clu-body {
+      fill: rgba(135,206,235,0.08);
+      stroke: #87ceeb;
+    }
+    .clu-body.computing {
+      fill: #fff3cd;
+      stroke: #ffc107;
+      stroke-dasharray: none;
+    }
+    body.dark .clu-body.computing {
+      fill: #3d3520;
+      stroke: #ffc107;
+    }
+    .clu-body.resolved {
+      fill: rgba(0,102,204,0.1);
+      stroke: #0066cc;
+      stroke-dasharray: none;
+    }
+    body.dark .clu-body.resolved {
+      fill: rgba(135,206,235,0.12);
+      stroke: #87ceeb;
+    }
+
+    .clu-text {
+      font-family: monospace;
+      font-size: 10px;
+      fill: #0066cc;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+    body.dark .clu-text { fill: #87ceeb; }
+
+    /* CSel mux block */
+    .mux-body {
+      fill: #f0fff0;
+      stroke: #28a745;
+      stroke-width: 1;
+      rx: 3;
+      transition: fill 0.25s, stroke 0.25s;
+    }
+    body.dark .mux-body {
+      fill: rgba(76,175,80,0.08);
+      stroke: #4caf50;
+    }
+    .mux-body.computing {
+      fill: #fff3cd;
+      stroke: #ffc107;
+    }
+    body.dark .mux-body.computing {
+      fill: #3d3520;
+      stroke: #ffc107;
+    }
+    .mux-body.resolved {
+      fill: rgba(40,167,69,0.15);
+      stroke: #28a745;
+    }
+    body.dark .mux-body.resolved {
+      fill: rgba(76,175,80,0.15);
+      stroke: #4caf50;
+    }
+    .mux-text {
+      font-family: monospace;
+      font-size: 9px;
+      fill: #28a745;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+    body.dark .mux-text { fill: #4caf50; }
+
+    /* ── Result Display ── */
+    .result-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      font-family: monospace;
+      font-size: 14px;
+      flex-wrap: wrap;
+    }
+    .result-val {
+      font-weight: 600;
+      color: #0066cc;
+    }
+    body.dark .result-val { color: #87ceeb; }
+    .result-fmt {
+      font-size: 12px;
+      color: #767676;
+    }
+    body.dark .result-fmt { color: #9a9a9a; }
+
+    /* ── Summary Table ── */
+    .summary-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    .summary-tbl th {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 2px solid #cccccc;
+      font-weight: 600;
+      font-size: 12px;
+      color: #555555;
+    }
+    body.dark .summary-tbl th {
+      border-bottom-color: #444444;
+      color: #aaaaaa;
+    }
+    .summary-tbl td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #eeeeee;
+      font-family: monospace;
+    }
+    body.dark .summary-tbl td { border-bottom-color: #333333; }
+    .summary-tbl tr:last-child td { border-bottom: none; }
+    .summary-tbl .best {
+      color: #28a745;
+      font-weight: 600;
+    }
+    body.dark .summary-tbl .best { color: #4caf50; }
+    .summary-tbl .arch-name {
+      font-family: inherit;
+      font-weight: 500;
+    }
+
+    .formula-hint {
+      font-size: 11px;
+      color: #999999;
+      font-family: inherit;
+      font-weight: 400;
+    }
+    body.dark .formula-hint { color: #666666; }
+
+    /* ── Progress bar ── */
+    .progress-bar {
+      height: 3px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    body.dark .progress-bar { background: #333333; }
+    .progress-fill {
+      height: 100%;
+      background: #0066cc;
+      transition: width 0.15s;
+      border-radius: 2px;
+    }
+    body.dark .progress-fill { background: #87ceeb; }
+    .progress-fill.done { background: #28a745; }
+    body.dark .progress-fill.done { background: #4caf50; }
+
+    /* ── CSvA third operand ── */
+    #operandCWrap {
+      transition: opacity 0.2s, max-height 0.2s;
+      overflow: hidden;
+    }
+    #operandCWrap.hidden {
+      opacity: 0;
+      max-height: 0 !important;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+      .arch-checks {
+        gap: 10px;
+      }
+      .playback-row {
+        gap: 4px;
+      }
+      .pb-btn {
+        padding: 5px 8px;
+        font-size: 12px;
+      }
+      .lane-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+      .summary-tbl {
+        font-size: 11px;
+      }
+      .summary-tbl th, .summary-tbl td {
+        padding: 5px 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+  <main class="container">
+    <div class="nav-row">
+      <div class="nav-links">
+        <a href="/" class="back-link">&larr; p14m.com</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/kmap/">K-Map</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/bits/">Bits</a>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-text">&#9790;</span>
+      </button>
+    </div>
+
+    <h1>Adder Visualizer</h1>
+    <p class="subtitle">Compare binary adder architectures with animated carry propagation</p>
+
+    <details class="how-to">
+      <summary>How to use</summary>
+      <div class="how-to-body">
+        <ul>
+          <li>Enter two operands (A and B) in <strong>decimal or hex</strong> (<code>0xFF</code>). For Carry Save, a third operand C appears.</li>
+          <li>Select <strong>bit width</strong> (4, 8, 16, or 32) and check which <strong>architectures</strong> to compare.</li>
+          <li>Click <strong>Compute</strong> to calculate the result, then use the playback controls to <strong>animate</strong> carry propagation.</li>
+          <li>The <strong>race view</strong> shows all selected architectures simultaneously &mdash; watch CLA finish while RCA is still rippling.</li>
+          <li><strong>Step</strong> (&#9654;|) advances one gate delay at a time. The description below each diagram explains the current step.</li>
+          <li>The <strong>summary table</strong> compares area (gate count), delay (gate delays), and area&times;delay product for the current bit width.</li>
+          <li><strong>Carry Save</strong> reduces 3 operands to 2 in constant time, then uses a selectable final adder (RCA or CLA).</li>
+        </ul>
+      </div>
+    </details>
+
+    <!-- Input Section -->
+    <div class="section">
+      <div class="controls-grid">
+        <div>
+          <label class="lbl">Bit Width</label>
+          <div class="mode-selector" id="bitWidthSelector">
+            <button class="mode-btn" data-bits="4">4</button>
+            <button class="mode-btn on" data-bits="8">8</button>
+            <button class="mode-btn" data-bits="16">16</button>
+            <button class="mode-btn" data-bits="32">32</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl" for="inputA">Operand A</label>
+          <input class="operand-input" id="inputA" value="107" placeholder="decimal or 0xFF" spellcheck="false">
+        </div>
+        <div>
+          <label class="lbl" for="inputB">Operand B</label>
+          <input class="operand-input" id="inputB" value="53" placeholder="decimal or 0xFF" spellcheck="false">
+        </div>
+      </div>
+      <div id="operandCWrap" class="hidden" style="margin-bottom:15px;">
+        <label class="lbl" for="inputC">Operand C <span class="lbl-hint">(Carry Save)</span></label>
+        <input class="operand-input" id="inputC" value="0" placeholder="decimal or 0xFF" spellcheck="false" style="max-width:200px;">
+      </div>
+
+      <div class="arch-checks">
+        <label><input type="checkbox" checked data-arch="rca"> Ripple Carry</label>
+        <label><input type="checkbox" checked data-arch="cla"> Carry Lookahead</label>
+        <label><input type="checkbox" data-arch="csel"> Carry Select</label>
+        <label>
+          <input type="checkbox" data-arch="csva"> Carry Save
+          <span class="csa-final" id="csvaFinalWrap" style="display:none;">
+            final: <select id="csvaFinal"><option value="rca">RCA</option><option value="cla">CLA</option></select>
+          </span>
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-go" id="computeBtn">Compute</button>
+        <div class="playback-row" id="playbackControls" style="display:none;">
+          <button class="pb-btn" id="resetBtn" title="Reset">&#8634;</button>
+          <button class="pb-btn" id="playBtn" title="Play">&#9654;</button>
+          <button class="pb-btn" id="stepBtn" title="Step forward">&#9654;|</button>
+          <span class="speed-label">Speed</span>
+          <input type="range" class="speed-slider" id="speedSlider" min="1" max="5" value="2">
+        </div>
+      </div>
+
+      <div id="errorBox" class="err" style="display:none;"></div>
+    </div>
+
+    <!-- Result -->
+    <div id="resultSection" class="section" style="display:none;">
+      <div class="result-label">Result</div>
+      <div id="resultDisplay" class="result-row"></div>
+    </div>
+
+    <!-- Race View -->
+    <div id="raceSection" style="display:none;">
+      <div class="race-container" id="raceContainer"></div>
+    </div>
+
+    <!-- Summary Table -->
+    <div id="summarySection" class="section" style="display:none;">
+      <div class="result-label">Architecture Comparison <span class="lbl-hint" id="summaryBits"></span></div>
+      <table class="summary-tbl" id="summaryTable">
+        <thead>
+          <tr>
+            <th>Architecture</th>
+            <th>Area <span class="formula-hint">(FA eq.)</span></th>
+            <th>Delay <span class="formula-hint">(gate &Delta;)</span></th>
+            <th>A&times;D</th>
+          </tr>
+        </thead>
+        <tbody id="summaryBody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
+  </main>
+
+<script>
+/* ═══════════════════════ Theme ═══════════════════════ */
+
+function toggleTheme() {
+  const body = document.body;
+  const themeText = document.getElementById('theme-text');
+  if (body.classList.contains('dark')) {
+    body.classList.remove('dark');
+    themeText.innerHTML = '&#9790;';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark');
+    themeText.innerHTML = '&#9788;';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const themeText = document.getElementById('theme-text');
+  if (document.body.classList.contains('dark')) {
+    themeText.innerHTML = '&#9788;';
+  }
+});
+
+/* ═══════════════════════ Constants & Formulas ═══════════════════════ */
+
+const ADDERS = {
+  rca: {
+    name: 'Ripple Carry',
+    short: 'RCA',
+    area: n => n,
+    delay: n => 2 * n,
+    areaFormula: 'n',
+    delayFormula: '2n',
+  },
+  cla: {
+    name: 'Carry Lookahead',
+    short: 'CLA',
+    area: n => Math.ceil(2.25 * n),
+    delay: n => {
+      if (n <= 4) return 4;
+      return 4 + 2 * (Math.ceil(Math.log(n) / Math.log(4)) - 1);
+    },
+    areaFormula: '~2.25n',
+    delayFormula: '4+2(⌈log₄n⌉−1)',
+  },
+  csel: {
+    name: 'Carry Select',
+    short: 'CSel',
+    area: n => Math.ceil(2.5 * n),
+    delay: n => {
+      const k = 4;
+      const blocks = Math.ceil(n / k);
+      return 2 * k + 2 * (blocks - 1);
+    },
+    areaFormula: '~2.5n',
+    delayFormula: '2k+2(⌈n/k⌉−1)',
+  },
+  csva: {
+    name: 'Carry Save',
+    short: 'CSvA',
+    area: (n, finalType) => n + ADDERS[finalType].area(n),
+    delay: (n, finalType) => 2 + ADDERS[finalType].delay(n),
+    areaFormula: 'n + final',
+    delayFormula: '2 + final',
+  },
+};
+
+/* ═══════════════════════ State ═══════════════════════ */
+
+let state = {
+  bitWidth: 8,
+  a: 0,
+  b: 0,
+  c: 0,
+  selected: ['rca', 'cla'],
+  csvaFinal: 'rca',
+  // Animation
+  simulations: {},   // { archKey: { steps: [...], result: ... } }
+  animStep: -1,
+  animPlaying: false,
+  animTimer: null,
+  maxSteps: 0,
+};
+
+/* ═══════════════════════ Helpers ═══════════════════════ */
+
+function parseValue(str) {
+  str = str.trim();
+  if (str === '') return 0;
+  if (/^0x/i.test(str)) return parseInt(str, 16);
+  if (/^0b/i.test(str)) return parseInt(str.slice(2), 2);
+  if (/^0o/i.test(str)) return parseInt(str.slice(2), 8);
+  return parseInt(str, 10);
+}
+
+function mask(n) {
+  if (n >= 32) return 0xFFFFFFFF;
+  return (1 << n) - 1;
+}
+
+function clamp(val, n) {
+  return (val & mask(n)) >>> 0;
+}
+
+function bitAt(val, i) {
+  return (val >>> i) & 1;
+}
+
+function toBin(val, n) {
+  let s = '';
+  for (let i = n - 1; i >= 0; i--) s += bitAt(val, i);
+  return s;
+}
+
+function toHex(val, n) {
+  const digits = Math.ceil(n / 4);
+  return '0x' + val.toString(16).toUpperCase().padStart(digits, '0');
+}
+
+/* ═══════════════════════ Simulation ═══════════════════════ */
+
+/* Each simulator returns { steps: [...], result: Number }
+   A step = { time: Number, desc: String, fa: {bitIndex: 'computing'|'resolved'}, carries: {bitIndex: 'active'|'resolved'}, sums: {bitIndex: true}, extra: {} }
+   time = gate-delay timestamp (0-based) */
+
+function simulateRCA(a, b, cin, n) {
+  const steps = [];
+  const carries = new Array(n + 1);
+  const sums = new Array(n);
+  carries[0] = cin;
+
+  // Step 0: all P/G computed (implicit in FA — show all blocks computing)
+  steps.push({
+    time: 0,
+    desc: 'All full adders receive inputs A, B',
+    fa: Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'computing'])),
+    carries: {},
+    sums: {},
+  });
+
+  // Steps 1..n: carry ripples through each bit
+  const faState = {};
+  const carryState = {};
+  const sumState = {};
+  for (let i = 0; i < n; i++) {
+    const ai = bitAt(a, i);
+    const bi = bitAt(b, i);
+    carries[i + 1] = (ai & bi) | ((ai ^ bi) & carries[i]);
+    sums[i] = ai ^ bi ^ carries[i];
+    faState[i] = 'resolved';
+    carryState[i] = 'resolved';
+    sumState[i] = true;
+
+    steps.push({
+      time: i + 1,
+      desc: i === 0
+        ? `Bit ${i}: C₁ = G₀ + P₀·C₀ = ${carries[i + 1]}, S₀ = ${sums[i]}`
+        : `Bit ${i}: carry ripples → C${i + 1} = ${carries[i + 1]}, S${i} = ${sums[i]}`,
+      fa: {...faState},
+      carries: {...carryState},
+      sums: {...sumState},
+    });
+  }
+
+  let result = 0;
+  for (let i = 0; i < n; i++) result |= (sums[i] << i);
+  result = result >>> 0;
+  return { steps, result, cout: carries[n] };
+}
+
+function simulateCLA(a, b, cin, n) {
+  const steps = [];
+  const groupSize = 4;
+  const numGroups = Math.ceil(n / groupSize);
+
+  // Step 0: compute P, G for all bits in parallel
+  const P = [], G = [];
+  for (let i = 0; i < n; i++) {
+    P[i] = bitAt(a, i) ^ bitAt(b, i);
+    G[i] = bitAt(a, i) & bitAt(b, i);
+  }
+
+  const allFA = Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'computing']));
+  steps.push({
+    time: 0,
+    desc: 'All bits compute P (propagate) and G (generate) in parallel',
+    fa: {...allFA},
+    carries: {},
+    sums: {},
+    clu: {},
+  });
+
+  // Compute carries using CLA logic
+  const carries = new Array(n + 1);
+  carries[0] = cin;
+
+  // For single-level CLA (n <= 4), all carries resolve at once
+  // For multi-level, group carries resolve level by level
+  const levels = Math.max(1, Math.ceil(Math.log(n) / Math.log(4)));
+
+  // Step 1: CLU computes group carries
+  // For simplicity, compute all carries (actual CLA does this with lookahead logic)
+  for (let g = 0; g < numGroups; g++) {
+    const start = g * groupSize;
+    let c = (g === 0) ? cin : 0;
+    // Group P and G
+    let groupP = 1, groupG = 0;
+    for (let j = 0; j < groupSize && start + j < n; j++) {
+      const idx = start + j;
+      if (g === 0) {
+        carries[idx + 1] = G[idx] | (P[idx] & carries[idx]);
+      }
+      // Build group P, G
+      groupG = G[idx] | (P[idx] & groupG);
+      groupP = P[idx] & groupP;
+    }
+    if (g > 0) {
+      // Group carry will be resolved in next step
+    }
+  }
+
+  // Actually compute all carries properly
+  carries[0] = cin;
+  for (let i = 0; i < n; i++) {
+    carries[i + 1] = G[i] | (P[i] & carries[i]);
+  }
+
+  // CLU step: show CLU blocks computing
+  const cluState = {};
+  for (let g = 0; g < numGroups; g++) cluState[g] = 'computing';
+  steps.push({
+    time: 1,
+    desc: `CLU computes all ${numGroups} group carries using lookahead logic`,
+    fa: Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'resolved'])),
+    carries: {},
+    sums: {},
+    clu: {...cluState},
+  });
+
+  // If hierarchical (multiple levels), add intermediate steps
+  if (levels > 1) {
+    for (let l = 1; l < levels; l++) {
+      steps.push({
+        time: 1 + l,
+        desc: `Level-${l + 1} CLU resolves inter-group carries`,
+        fa: Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'resolved'])),
+        carries: {},
+        sums: {},
+        clu: Object.fromEntries(Array.from({length: numGroups}, (_, g) => [g, l < levels - 1 ? 'computing' : 'resolved'])),
+      });
+    }
+  }
+
+  // Final step: all carries resolved, compute sums
+  const allCarries = {};
+  const allSums = {};
+  const sums = [];
+  for (let i = 0; i < n; i++) {
+    allCarries[i] = 'resolved';
+    sums[i] = P[i] ^ carries[i];
+    allSums[i] = true;
+  }
+  const finalTime = 1 + Math.max(1, levels);
+  steps.push({
+    time: finalTime,
+    desc: 'All carries known — sums computed in parallel',
+    fa: Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'resolved'])),
+    carries: allCarries,
+    sums: allSums,
+    clu: Object.fromEntries(Array.from({length: numGroups}, (_, g) => [g, 'resolved'])),
+  });
+
+  let result = 0;
+  for (let i = 0; i < n; i++) result |= (sums[i] << i);
+  result = result >>> 0;
+  return { steps, result, cout: carries[n] };
+}
+
+function simulateCSel(a, b, cin, n) {
+  const steps = [];
+  const blockSize = 4;
+  const numBlocks = Math.ceil(n / blockSize);
+
+  // Compute actual result for both carry assumptions per block
+  const sums0 = [], sums1 = [], cout0 = [], cout1 = [];
+  for (let blk = 0; blk < numBlocks; blk++) {
+    const start = blk * blockSize;
+    const end = Math.min(start + blockSize, n);
+    sums0[blk] = [];
+    sums1[blk] = [];
+    let c0 = 0, c1 = 1;
+    for (let i = start; i < end; i++) {
+      const ai = bitAt(a, i), bi = bitAt(b, i);
+      sums0[blk].push(ai ^ bi ^ c0);
+      sums1[blk].push(ai ^ bi ^ c1);
+      c0 = (ai & bi) | ((ai ^ bi) & c0);
+      c1 = (ai & bi) | ((ai ^ bi) & c1);
+    }
+    cout0[blk] = c0;
+    cout1[blk] = c1;
+  }
+
+  // Step 0: all blocks start computing both assumptions in parallel
+  const allFA = {};
+  for (let i = 0; i < n; i++) allFA[i] = 'computing';
+  steps.push({
+    time: 0,
+    desc: 'All blocks compute sums for carry-in = 0 and carry-in = 1 in parallel',
+    fa: {...allFA},
+    carries: {},
+    sums: {},
+    mux: {},
+  });
+
+  // Steps 1..blockSize: blocks are rippling internally (both assumptions)
+  for (let t = 1; t <= blockSize; t++) {
+    const faState = {};
+    for (let blk = 0; blk < numBlocks; blk++) {
+      for (let j = 0; j < blockSize && blk * blockSize + j < n; j++) {
+        const idx = blk * blockSize + j;
+        faState[idx] = (j < t) ? 'resolved' : 'computing';
+      }
+    }
+    steps.push({
+      time: t,
+      desc: t < blockSize
+        ? `Internal ripple: bit ${t - 1} resolved in each block (both assumptions)`
+        : 'All blocks finished internal computation — waiting for actual carries',
+      fa: faState,
+      carries: {},
+      sums: {},
+      mux: {},
+    });
+  }
+
+  // Steps blockSize+1..blockSize+numBlocks-1: mux chain selects correct result per block
+  const carries = [cin];
+  const finalSums = new Array(n);
+  const muxState = {};
+  const sumState = {};
+  const carryState = {};
+
+  // First block always uses cin directly
+  const firstSums = cin === 0 ? sums0[0] : sums1[0];
+  carries[1] = cin === 0 ? cout0[0] : cout1[0];
+  for (let j = 0; j < firstSums.length; j++) {
+    finalSums[j] = firstSums[j];
+    sumState[j] = true;
+    carryState[j] = 'resolved';
+  }
+  muxState[0] = 'resolved';
+
+  steps.push({
+    time: blockSize + 1,
+    desc: `Block 0 selects result for carry-in = ${cin}, cout = ${carries[1]}`,
+    fa: Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'resolved'])),
+    carries: {...carryState},
+    sums: {...sumState},
+    mux: {...muxState},
+  });
+
+  for (let blk = 1; blk < numBlocks; blk++) {
+    const start = blk * blockSize;
+    const c = carries[blk];
+    const chosen = c === 0 ? sums0[blk] : sums1[blk];
+    carries[blk + 1] = c === 0 ? cout0[blk] : cout1[blk];
+    for (let j = 0; j < chosen.length; j++) {
+      finalSums[start + j] = chosen[j];
+      sumState[start + j] = true;
+      carryState[start + j] = 'resolved';
+    }
+    muxState[blk] = 'resolved';
+
+    steps.push({
+      time: blockSize + 1 + blk,
+      desc: `Block ${blk} mux selects for carry-in = ${c}, cout = ${carries[blk + 1]}`,
+      fa: Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'resolved'])),
+      carries: {...carryState},
+      sums: {...sumState},
+      mux: {...muxState},
+    });
+  }
+
+  let result = 0;
+  for (let i = 0; i < n; i++) result |= (finalSums[i] << i);
+  result = result >>> 0;
+  return { steps, result, cout: carries[numBlocks] };
+}
+
+function simulateCSvA(a, b, c, n, finalType) {
+  const steps = [];
+
+  // Step 0: CSA stage — all n FAs compute in parallel
+  // sum[i] = a[i] ^ b[i] ^ c[i], carry[i+1] = majority(a[i], b[i], c[i])
+  const csaSum = new Array(n);
+  const csaCarry = new Array(n + 1);
+  csaCarry[0] = 0;
+
+  for (let i = 0; i < n; i++) {
+    const ai = bitAt(a, i), bi = bitAt(b, i), ci = bitAt(c, i);
+    csaSum[i] = ai ^ bi ^ ci;
+    csaCarry[i + 1] = (ai & bi) | (bi & ci) | (ai & ci);
+  }
+
+  // Build the two vectors as numbers
+  let sumVec = 0, carryVec = 0;
+  for (let i = 0; i < n; i++) {
+    sumVec |= (csaSum[i] << i);
+    carryVec |= (csaCarry[i + 1] << (i + 1));  // carry is shifted left by 1
+  }
+  sumVec = sumVec >>> 0;
+  carryVec = clamp(carryVec, n);
+
+  const allFA = Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'computing']));
+  steps.push({
+    time: 0,
+    desc: 'CSA: all bits compute sum and carry of 3 operands in parallel',
+    fa: {...allFA},
+    carries: {},
+    sums: {},
+    phase: 'csa',
+  });
+
+  steps.push({
+    time: 1,
+    desc: `CSA complete: sum = ${toHex(sumVec, n)}, carry = ${toHex(carryVec, n)} — now final ${ADDERS[finalType].short} adder`,
+    fa: Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'resolved'])),
+    carries: {},
+    sums: {},
+    phase: 'csa-done',
+  });
+
+  // Run the final adder on sumVec + carryVec
+  const finalSim = (finalType === 'cla')
+    ? simulateCLA(sumVec, carryVec, 0, n)
+    : simulateRCA(sumVec, carryVec, 0, n);
+
+  // Offset final adder steps by time 2
+  for (const step of finalSim.steps) {
+    steps.push({
+      ...step,
+      time: step.time + 2,
+      desc: `[${ADDERS[finalType].short}] ${step.desc}`,
+      phase: 'final',
+    });
+  }
+
+  return { steps, result: finalSim.result, cout: finalSim.cout };
+}
+
+/* ═══════════════════════ SVG Rendering ═══════════════════════ */
+
+const FA_W = 44, FA_H = 48, FA_GAP = 6, CARRY_H = 14;
+const CLU_H = 24, MUX_H = 16;
+
+function renderAdderSVG(archKey, n, sim) {
+  if (archKey === 'csva') return renderCSvASVG(n, sim);
+  if (archKey === 'csel') return renderCSelSVG(n, sim);
+  if (archKey === 'cla') return renderCLASVG(n, sim);
+  return renderRCASVG(n, sim);
+}
+
+function renderRCASVG(n, sim) {
+  const totalW = n * (FA_W + FA_GAP) + 20;
+  const svgH = 110;
+  let svg = `<svg class="adder-svg" viewBox="0 0 ${totalW} ${svgH}" preserveAspectRatio="xMidYMid meet">`;
+
+  for (let i = n - 1; i >= 0; i--) {
+    const xi = (n - 1 - i) * (FA_W + FA_GAP) + 10;
+    const yi = 30;
+    svg += `<text class="input-bit" x="${xi + FA_W / 2}" y="${yi - 8}">A${i} B${i}</text>`;
+    svg += `<rect class="fa-body" data-fa="${i}" x="${xi}" y="${yi}" width="${FA_W}" height="${FA_H}" rx="4"/>`;
+    svg += `<text class="fa-text" x="${xi + FA_W / 2}" y="${yi + FA_H / 2}">FA${i}</text>`;
+    // carry line to next
+    if (i > 0) {
+      svg += `<line class="carry-line" data-carry="${i - 1}" x1="${xi + FA_W}" y1="${yi + FA_H / 2}" x2="${xi + FA_W + FA_GAP}" y2="${yi + FA_H / 2}"/>`;
+    }
+    // carry-in arrow for bit 0
+    if (i === 0) {
+      svg += `<text class="fa-bit-label" x="${xi + FA_W + 8}" y="${yi + FA_H / 2 + 3}" text-anchor="start" font-size="9">C₀</text>`;
+    }
+    // sum output
+    svg += `<text class="sum-bit" data-sum="${i}" x="${xi + FA_W / 2}" y="${yi + FA_H + 16}">?</text>`;
+    svg += `<text class="fa-bit-label" x="${xi + FA_W / 2}" y="${yi + FA_H + 26}">S${i}</text>`;
+  }
+  // Cout label
+  const x0 = 10;
+  svg += `<text class="fa-bit-label" x="${x0 - 6}" y="${30 + FA_H / 2 + 3}" text-anchor="end" font-size="9">C${n}</text>`;
+
+  svg += '</svg>';
+  return svg;
+}
+
+function renderCLASVG(n, sim) {
+  const groupSize = 4;
+  const numGroups = Math.ceil(n / groupSize);
+  const totalW = n * (FA_W + FA_GAP) + 20;
+  const svgH = 140;
+  let svg = `<svg class="adder-svg" viewBox="0 0 ${totalW} ${svgH}" preserveAspectRatio="xMidYMid meet">`;
+
+  // CLU blocks at top
+  for (let g = 0; g < numGroups; g++) {
+    const start = g * groupSize;
+    const end = Math.min(start + groupSize, n);
+    const gLen = end - start;
+    const xStart = (n - 1 - (start + gLen - 1)) * (FA_W + FA_GAP) + 10;
+    const cluW = gLen * (FA_W + FA_GAP) - FA_GAP;
+    svg += `<rect class="clu-body" data-clu="${g}" x="${xStart}" y="4" width="${cluW}" height="${CLU_H}"/>`;
+    svg += `<text class="clu-text" x="${xStart + cluW / 2}" y="${4 + CLU_H / 2}">CLU${g}</text>`;
+  }
+
+  // FA blocks
+  const faY = 36;
+  for (let i = n - 1; i >= 0; i--) {
+    const xi = (n - 1 - i) * (FA_W + FA_GAP) + 10;
+    svg += `<text class="input-bit" x="${xi + FA_W / 2}" y="${faY - 6}">A${i} B${i}</text>`;
+    svg += `<rect class="fa-body" data-fa="${i}" x="${xi}" y="${faY}" width="${FA_W}" height="${FA_H}" rx="4"/>`;
+    svg += `<text class="fa-text" x="${xi + FA_W / 2}" y="${faY + FA_H / 2}">FA${i}</text>`;
+    if (i > 0) {
+      svg += `<line class="carry-line" data-carry="${i - 1}" x1="${xi + FA_W}" y1="${faY + FA_H / 2}" x2="${xi + FA_W + FA_GAP}" y2="${faY + FA_H / 2}"/>`;
+    }
+    if (i === 0) {
+      svg += `<text class="fa-bit-label" x="${xi + FA_W + 8}" y="${faY + FA_H / 2 + 3}" text-anchor="start" font-size="9">C₀</text>`;
+    }
+    svg += `<text class="sum-bit" data-sum="${i}" x="${xi + FA_W / 2}" y="${faY + FA_H + 16}">?</text>`;
+    svg += `<text class="fa-bit-label" x="${xi + FA_W / 2}" y="${faY + FA_H + 26}">S${i}</text>`;
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+function renderCSelSVG(n, sim) {
+  const blockSize = 4;
+  const numBlocks = Math.ceil(n / blockSize);
+  const totalW = n * (FA_W + FA_GAP) + 20;
+  const svgH = 150;
+  let svg = `<svg class="adder-svg" viewBox="0 0 ${totalW} ${svgH}" preserveAspectRatio="xMidYMid meet">`;
+
+  // FA blocks
+  const faY = 30;
+  for (let i = n - 1; i >= 0; i--) {
+    const xi = (n - 1 - i) * (FA_W + FA_GAP) + 10;
+    svg += `<text class="input-bit" x="${xi + FA_W / 2}" y="${faY - 8}">A${i} B${i}</text>`;
+    svg += `<rect class="fa-body" data-fa="${i}" x="${xi}" y="${faY}" width="${FA_W}" height="${FA_H}" rx="4"/>`;
+    svg += `<text class="fa-text" x="${xi + FA_W / 2}" y="${faY + FA_H / 2}">FA${i}</text>`;
+    if (i > 0) {
+      svg += `<line class="carry-line" data-carry="${i - 1}" x1="${xi + FA_W}" y1="${faY + FA_H / 2}" x2="${xi + FA_W + FA_GAP}" y2="${faY + FA_H / 2}"/>`;
+    }
+    svg += `<text class="sum-bit" data-sum="${i}" x="${xi + FA_W / 2}" y="${faY + FA_H + 16}">?</text>`;
+  }
+
+  // MUX blocks per group
+  const muxY = faY + FA_H + 28;
+  for (let blk = 0; blk < numBlocks; blk++) {
+    const start = blk * blockSize;
+    const end = Math.min(start + blockSize, n);
+    const gLen = end - start;
+    const xStart = (n - 1 - (start + gLen - 1)) * (FA_W + FA_GAP) + 10;
+    const muxW = gLen * (FA_W + FA_GAP) - FA_GAP;
+    svg += `<rect class="mux-body" data-mux="${blk}" x="${xStart}" y="${muxY}" width="${muxW}" height="${MUX_H}" rx="3"/>`;
+    svg += `<text class="mux-text" x="${xStart + muxW / 2}" y="${muxY + MUX_H / 2}">MUX${blk}</text>`;
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+function renderCSvASVG(n, sim) {
+  const totalW = n * (FA_W + FA_GAP) + 20;
+  const svgH = 90;
+  let svg = `<svg class="adder-svg" viewBox="0 0 ${totalW} ${svgH}" preserveAspectRatio="xMidYMid meet">`;
+
+  for (let i = n - 1; i >= 0; i--) {
+    const xi = (n - 1 - i) * (FA_W + FA_GAP) + 10;
+    const yi = 24;
+    svg += `<text class="input-bit" x="${xi + FA_W / 2}" y="${yi - 8}">A${i}B${i}C${i}</text>`;
+    svg += `<rect class="fa-body" data-fa="${i}" x="${xi}" y="${yi}" width="${FA_W}" height="${FA_H}" rx="4"/>`;
+    svg += `<text class="fa-text" x="${xi + FA_W / 2}" y="${yi + FA_H / 2}">CSA${i}</text>`;
+    svg += `<text class="sum-bit" data-sum="${i}" x="${xi + FA_W / 2}" y="${yi + FA_H + 14}">?</text>`;
+  }
+
+  svg += '</svg>';
+  return svg;
+}
+
+/* ═══════════════════════ SVG State Update ═══════════════════════ */
+
+function updateSVGForStep(container, step, sim, n) {
+  // Update FA blocks
+  container.querySelectorAll('.fa-body').forEach(el => {
+    const idx = parseInt(el.dataset.fa);
+    el.classList.remove('computing', 'resolved');
+    if (step.fa && step.fa[idx]) {
+      el.classList.add(step.fa[idx]);
+    }
+  });
+
+  // Update carry lines
+  container.querySelectorAll('.carry-line').forEach(el => {
+    const idx = parseInt(el.dataset.carry);
+    el.classList.remove('active', 'resolved');
+    if (step.carries && step.carries[idx]) {
+      el.classList.add(step.carries[idx]);
+    }
+  });
+
+  // Update sum bits
+  container.querySelectorAll('.sum-bit').forEach(el => {
+    const idx = parseInt(el.dataset.sum);
+    el.classList.remove('resolved');
+    if (step.sums && step.sums[idx]) {
+      el.classList.add('resolved');
+      el.textContent = bitAt(sim.result, idx).toString();
+    } else {
+      el.textContent = '?';
+    }
+  });
+
+  // Update CLU blocks
+  container.querySelectorAll('.clu-body').forEach(el => {
+    const idx = parseInt(el.dataset.clu);
+    el.classList.remove('computing', 'resolved');
+    if (step.clu && step.clu[idx]) {
+      el.classList.add(step.clu[idx]);
+    }
+  });
+
+  // Update MUX blocks
+  container.querySelectorAll('.mux-body').forEach(el => {
+    const idx = parseInt(el.dataset.mux);
+    el.classList.remove('computing', 'resolved');
+    if (step.mux && step.mux[idx]) {
+      el.classList.add(step.mux[idx]);
+    }
+  });
+}
+
+/* ═══════════════════════ Race View ═══════════════════════ */
+
+function buildRaceLanes() {
+  const container = document.getElementById('raceContainer');
+  container.innerHTML = '';
+
+  for (const key of state.selected) {
+    const sim = state.simulations[key];
+    if (!sim) continue;
+    const info = ADDERS[key];
+    const n = state.bitWidth;
+    const areaVal = key === 'csva' ? info.area(n, state.csvaFinal) : info.area(n);
+    const delayVal = key === 'csva' ? info.delay(n, state.csvaFinal) : info.delay(n);
+
+    const lane = document.createElement('div');
+    lane.className = 'race-lane';
+    lane.id = 'lane-' + key;
+    lane.innerHTML = `
+      <div class="lane-header">
+        <span class="lane-title">${info.name}${key === 'csva' ? ' + ' + ADDERS[state.csvaFinal].short : ''}</span>
+        <span class="lane-stats">Area: ${areaVal} FA &middot; Delay: ${delayVal}&Delta; &middot; Steps: ${sim.steps.length}</span>
+      </div>
+      <div class="adder-svg-wrap">${renderAdderSVG(key, n, sim)}</div>
+      <div class="progress-bar"><div class="progress-fill" data-pf="${key}" style="width:0%"></div></div>
+      <div class="lane-step" data-desc="${key}">Ready</div>
+    `;
+    container.appendChild(lane);
+  }
+}
+
+function updateRaceStep(stepIdx) {
+  for (const key of state.selected) {
+    const sim = state.simulations[key];
+    if (!sim) continue;
+    const lane = document.getElementById('lane-' + key);
+    if (!lane) continue;
+
+    const totalSteps = sim.steps.length;
+    // Find the step whose time matches or is closest to stepIdx
+    let activeStep = sim.steps[0];
+    let activeIdx = 0;
+    for (let i = 0; i < totalSteps; i++) {
+      if (sim.steps[i].time <= stepIdx) {
+        activeStep = sim.steps[i];
+        activeIdx = i;
+      }
+    }
+
+    const isFinished = activeIdx >= totalSteps - 1 && stepIdx >= sim.steps[totalSteps - 1].time;
+    const pct = Math.min(100, ((activeIdx + 1) / totalSteps) * 100);
+
+    updateSVGForStep(lane, activeStep, sim, state.bitWidth);
+
+    const pf = lane.querySelector(`[data-pf="${key}"]`);
+    if (pf) {
+      pf.style.width = pct + '%';
+      pf.classList.toggle('done', isFinished);
+    }
+
+    const desc = lane.querySelector(`[data-desc="${key}"]`);
+    if (desc) {
+      if (isFinished) {
+        desc.textContent = `Done — Result: ${sim.result} (${toHex(sim.result, state.bitWidth)})`;
+      } else {
+        desc.textContent = `[${activeStep.time}&Delta;] ${activeStep.desc}`;
+      }
+    }
+
+    lane.classList.toggle('finished', isFinished);
+  }
+}
+
+/* ═══════════════════════ Summary Table ═══════════════════════ */
+
+function updateSummaryTable() {
+  const n = state.bitWidth;
+  const tbody = document.getElementById('summaryBody');
+  tbody.innerHTML = '';
+  document.getElementById('summaryBits').textContent = `(${n}-bit)`;
+
+  const rows = [];
+  for (const key of state.selected) {
+    const info = ADDERS[key];
+    const area = key === 'csva' ? info.area(n, state.csvaFinal) : info.area(n);
+    const delay = key === 'csva' ? info.delay(n, state.csvaFinal) : info.delay(n);
+    const ad = area * delay;
+    const label = key === 'csva' ? info.name + ' + ' + ADDERS[state.csvaFinal].short : info.name;
+    const areaF = key === 'csva' ? `n + ${ADDERS[state.csvaFinal].areaFormula}` : info.areaFormula;
+    const delayF = key === 'csva' ? `2 + ${ADDERS[state.csvaFinal].delayFormula}` : info.delayFormula;
+    rows.push({ key, label, area, delay, ad, areaF, delayF });
+  }
+
+  const minArea = Math.min(...rows.map(r => r.area));
+  const minDelay = Math.min(...rows.map(r => r.delay));
+  const minAD = Math.min(...rows.map(r => r.ad));
+
+  for (const r of rows) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="arch-name">${r.label}</td>
+      <td class="${r.area === minArea ? 'best' : ''}">${r.area} <span class="formula-hint">${r.areaF}</span></td>
+      <td class="${r.delay === minDelay ? 'best' : ''}">${r.delay} <span class="formula-hint">${r.delayF}</span></td>
+      <td class="${r.ad === minAD ? 'best' : ''}">${r.ad}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+/* ═══════════════════════ Animation Engine ═══════════════════════ */
+
+function getSpeedMs() {
+  const v = parseInt(document.getElementById('speedSlider').value);
+  return [800, 500, 300, 150, 80][v - 1] || 300;
+}
+
+function animPlay() {
+  if (state.animPlaying) return;
+  state.animPlaying = true;
+  document.getElementById('playBtn').classList.add('active');
+  document.getElementById('playBtn').innerHTML = '&#9646;&#9646;';
+  animTick();
+}
+
+function animPause() {
+  state.animPlaying = false;
+  clearTimeout(state.animTimer);
+  document.getElementById('playBtn').classList.remove('active');
+  document.getElementById('playBtn').innerHTML = '&#9654;';
+}
+
+function animTick() {
+  if (!state.animPlaying) return;
+  if (state.animStep >= state.maxSteps) {
+    animPause();
+    return;
+  }
+  state.animStep++;
+  updateRaceStep(state.animStep);
+  state.animTimer = setTimeout(animTick, getSpeedMs());
+}
+
+function animStep() {
+  animPause();
+  if (state.animStep >= state.maxSteps) return;
+  state.animStep++;
+  updateRaceStep(state.animStep);
+}
+
+function animReset() {
+  animPause();
+  state.animStep = -1;
+  updateRaceStep(-1);
+  // Reset all progress
+  document.querySelectorAll('.progress-fill').forEach(pf => {
+    pf.style.width = '0%';
+    pf.classList.remove('done');
+  });
+  document.querySelectorAll('.lane-step').forEach(el => el.textContent = 'Ready');
+  document.querySelectorAll('.race-lane').forEach(el => el.classList.remove('finished'));
+  document.querySelectorAll('.fa-body').forEach(el => el.classList.remove('computing', 'resolved'));
+  document.querySelectorAll('.carry-line').forEach(el => el.classList.remove('active', 'resolved'));
+  document.querySelectorAll('.sum-bit').forEach(el => { el.classList.remove('resolved'); el.textContent = '?'; });
+  document.querySelectorAll('.clu-body').forEach(el => el.classList.remove('computing', 'resolved'));
+  document.querySelectorAll('.mux-body').forEach(el => el.classList.remove('computing', 'resolved'));
+}
+
+/* ═══════════════════════ Compute ═══════════════════════ */
+
+function compute() {
+  const n = state.bitWidth;
+  const a = clamp(parseValue(document.getElementById('inputA').value), n);
+  const b = clamp(parseValue(document.getElementById('inputB').value), n);
+  const c = clamp(parseValue(document.getElementById('inputC').value), n);
+  state.a = a;
+  state.b = b;
+  state.c = c;
+
+  // Validate
+  if (state.selected.length === 0) {
+    showError('Select at least one architecture.');
+    return;
+  }
+  if (isNaN(a) || isNaN(b)) {
+    showError('Invalid operand values.');
+    return;
+  }
+  hideError();
+
+  // Run simulations
+  state.simulations = {};
+  for (const key of state.selected) {
+    if (key === 'rca') state.simulations.rca = simulateRCA(a, b, 0, n);
+    else if (key === 'cla') state.simulations.cla = simulateCLA(a, b, 0, n);
+    else if (key === 'csel') state.simulations.csel = simulateCSel(a, b, 0, n);
+    else if (key === 'csva') state.simulations.csva = simulateCSvA(a, b, c, n, state.csvaFinal);
+  }
+
+  // Find max time across all simulations
+  state.maxSteps = 0;
+  for (const key of state.selected) {
+    const sim = state.simulations[key];
+    if (sim) {
+      const lastTime = sim.steps[sim.steps.length - 1].time;
+      state.maxSteps = Math.max(state.maxSteps, lastTime);
+    }
+  }
+
+  // Show result
+  const mainResult = state.simulations[state.selected[0]];
+  const result = mainResult.result;
+  const cout = mainResult.cout || 0;
+  document.getElementById('resultDisplay').innerHTML = `
+    <span class="result-val">${result}</span>
+    <span class="result-fmt">= ${toHex(result, n)}</span>
+    <span class="result-fmt">= 0b${toBin(result, n)}</span>
+    ${cout ? '<span class="result-fmt" style="color:#dc3545;">(carry out)</span>' : ''}
+  `;
+  document.getElementById('resultSection').style.display = '';
+
+  // Build race lanes and summary
+  buildRaceLanes();
+  updateSummaryTable();
+
+  // Show sections
+  document.getElementById('raceSection').style.display = '';
+  document.getElementById('summarySection').style.display = '';
+  document.getElementById('playbackControls').style.display = '';
+
+  // Reset animation
+  state.animStep = -1;
+  updateRaceStep(-1);
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = msg;
+  el.style.display = '';
+}
+
+function hideError() {
+  document.getElementById('errorBox').style.display = 'none';
+}
+
+/* ═══════════════════════ UI Bindings ═══════════════════════ */
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Bit width selector
+  document.querySelectorAll('#bitWidthSelector .mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#bitWidthSelector .mode-btn').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      state.bitWidth = parseInt(btn.dataset.bits);
+    });
+  });
+
+  // Architecture checkboxes
+  document.querySelectorAll('.arch-checks input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      state.selected = [];
+      document.querySelectorAll('.arch-checks input[type="checkbox"]:checked').forEach(c => {
+        state.selected.push(c.dataset.arch);
+      });
+      // Show/hide CSvA options
+      const csvaChecked = state.selected.includes('csva');
+      document.getElementById('csvaFinalWrap').style.display = csvaChecked ? '' : 'none';
+      const cWrap = document.getElementById('operandCWrap');
+      if (csvaChecked) {
+        cWrap.classList.remove('hidden');
+        cWrap.style.maxHeight = '80px';
+      } else {
+        cWrap.classList.add('hidden');
+      }
+    });
+  });
+
+  // CSvA final adder selector
+  document.getElementById('csvaFinal').addEventListener('change', e => {
+    state.csvaFinal = e.target.value;
+  });
+
+  // Compute button
+  document.getElementById('computeBtn').addEventListener('click', compute);
+
+  // Enter key on inputs
+  ['inputA', 'inputB', 'inputC'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') compute();
+    });
+  });
+
+  // Playback buttons
+  document.getElementById('playBtn').addEventListener('click', () => {
+    if (state.animPlaying) animPause();
+    else {
+      // If already finished, reset first
+      if (state.animStep >= state.maxSteps) animReset();
+      animPlay();
+    }
+  });
+  document.getElementById('stepBtn').addEventListener('click', animStep);
+  document.getElementById('resetBtn').addEventListener('click', animReset);
+});
+</script>
+</body>
+</html>
