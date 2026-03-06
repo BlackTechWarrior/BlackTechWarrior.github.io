@@ -53,6 +53,8 @@ body.dark .nav-row { border-bottom-color: #444444; }
   flex-wrap: wrap;
   min-width: 0;
 }
+.nav-links a { text-decoration: none; }
+.nav-links a:hover { text-decoration: underline; }
 
 .back-link {
   font-size: 14px;
