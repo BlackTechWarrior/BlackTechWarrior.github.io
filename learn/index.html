@@ -43,11 +43,10 @@
     .cat-header {
       font-size: 16px;
       font-weight: 600;
-      margin: 24px 0 6px 0;
+      margin: 0 0 6px 0;
       padding-bottom: 6px;
       border-bottom: 2px solid #0066cc;
     }
-    .cat-header:first-of-type { margin-top: 0; }
     body.dark .cat-header { border-bottom-color: grey; }
 
     .cat-intro {
@@ -847,6 +846,7 @@ function renderLanding(categoryFilter) {
     const catTopics = TOPICS.filter(t => t.category === key).sort((a, b) => a.order - b.order);
     if (catTopics.length === 0) continue;
 
+    html += '<div class="section">';
     html += `<h2 class="cat-header">${cat.name}</h2>`;
     if (cat.intro) html += `<p class="cat-intro">${cat.intro}</p>`;
 
@@ -863,6 +863,7 @@ function renderLanding(categoryFilter) {
       html += '</div>';
       html += '</a>';
     }
+    html += '</div>';
     html += '</div>';
   }
 
@@ -890,6 +891,8 @@ function renderTopic(id) {
 
   // Back link
   html += '<a href="#" class="back-btn">&larr; All topics</a>';
+
+  html += '<div class="section">';
 
   // Title + meta
   html += `<h2 class="topic-title">${topic.title}</h2>`;
@@ -996,6 +999,8 @@ function renderTopic(id) {
     html += '</div>';
     html += '</div>';
   }
+
+  html += '</div>'; // close .section
 
   content.innerHTML = html;
 
