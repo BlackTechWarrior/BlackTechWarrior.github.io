@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive multiplier architecture visualizer comparing Shift-and-Add, Array, and Wallace Tree multipliers with animated partial product reduction.">
+  <meta property="og:title" content="Multiplier Visualizer | p14m.com">
+  <meta property="og:description" content="Compare binary multiplier architectures side-by-side with animated partial product reduction and area-speed tradeoffs.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://p14m.com/multipliers/">
+  <title>Multiplier Visualizer | p14m.com</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    /* ── Multiplier-specific styles ── */
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: auto 1fr 1fr;
+      gap: 15px;
+      align-items: end;
+      margin-bottom: 15px;
+    }
+
+    .operand-input {
+      width: 100%;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 6px;
+      color: #000000;
+      font-family: monospace;
+      font-size: 14px;
+      padding: 8px 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .operand-input:focus { border-color: #0066cc; }
+    .operand-input::placeholder { color: #999999; }
+    body.dark .operand-input {
+      background: #2a2a2a;
+      border-color: #444444;
+      color: #e0e0e0;
+    }
+    body.dark .operand-input:focus { border-color: #87ceeb; }
+
+    .arch-checks {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    .arch-checks label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .arch-checks input[type="checkbox"] {
+      accent-color: #0066cc;
+    }
+    body.dark .arch-checks input[type="checkbox"] {
+      accent-color: #87ceeb;
+    }
+
+    .wt-final {
+      font-size: 12px;
+      color: #595959;
+      margin-left: 4px;
+    }
+    body.dark .wt-final { color: #888888; }
+    .wt-final select {
+      font-size: 12px;
+      font-family: inherit;
+      background: #f5f5f5;
+      border: 1px solid #cccccc;
+      border-radius: 4px;
+      padding: 2px 4px;
+      color: inherit;
+    }
+    body.dark .wt-final select {
+      background: #333333;
+      border-color: #555555;
+      color: #e0e0e0;
+    }
+
+    /* ── Playback ── */
+    .playback-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pb-btn {
+      background: transparent;
+      border: 1px solid #cccccc;
+      color: #595959;
+      border-radius: 5px;
+      padding: 5px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      min-width: 36px;
+      text-align: center;
+    }
+    .pb-btn:hover { border-color: #999999; color: #333333; }
+    .pb-btn.active { border-color: #0066cc; color: #0066cc; background: rgba(0,102,204,0.05); }
+    body.dark .pb-btn { border-color: #444444; color: #888888; }
+    body.dark .pb-btn:hover { border-color: #666666; color: #cccccc; }
+    body.dark .pb-btn.active { border-color: #87ceeb; color: #87ceeb; background: rgba(135,206,235,0.1); }
+
+    .speed-label {
+      font-size: 12px;
+      color: #767676;
+      margin-left: 8px;
+    }
+    body.dark .speed-label { color: #9a9a9a; }
+    .speed-slider {
+      width: 80px;
+      accent-color: #0066cc;
+    }
+    body.dark .speed-slider { accent-color: #87ceeb; }
+
+    /* ── Race Lanes ── */
+    .race-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 15px;
+    }
+
+    .race-lane {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 14px;
+      position: relative;
+    }
+    body.dark .race-lane { border-color: #444444; }
+    .race-lane.finished {
+      border-color: #28a745;
+    }
+    body.dark .race-lane.finished {
+      border-color: #4caf50;
+    }
+
+    .lane-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .lane-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .lane-stats {
+      font-size: 12px;
+      color: #767676;
+      font-family: monospace;
+    }
+    body.dark .lane-stats { color: #9a9a9a; }
+
+    .lane-step {
+      font-size: 12px;
+      color: #595959;
+      margin-top: 8px;
+      min-height: 1.3em;
+    }
+    body.dark .lane-step { color: #888888; }
+
+    /* ── Partial Product Matrix (canvas-like grid) ── */
+    .pp-matrix {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin: 8px 0;
+      overflow-x: auto;
+    }
+    .pp-row {
+      display: flex;
+      gap: 2px;
+      justify-content: flex-end;
+    }
+    .pp-spacer {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .pp-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+      font-size: 9px;
+      font-family: monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, color 0.2s;
+      background: #e8e8e8;
+      color: #999999;
+      border: 1px solid #d0d0d0;
+    }
+    body.dark .pp-dot {
+      background: #2a2a2a;
+      color: #666666;
+      border-color: #3a3a3a;
+    }
+    .pp-dot.active {
+      background: #fff3cd;
+      color: #856404;
+      border-color: #ffc107;
+    }
+    body.dark .pp-dot.active {
+      background: #3d3520;
+      color: #ffc107;
+      border-color: #ffc107;
+    }
+    .pp-dot.done {
+      background: rgba(40,167,69,0.15);
+      color: #28a745;
+      border-color: #28a745;
+      font-weight: 600;
+    }
+    body.dark .pp-dot.done {
+      background: rgba(76,175,80,0.15);
+      color: #4caf50;
+      border-color: #4caf50;
+    }
+
+    .result-dots {
+      display: flex;
+      gap: 2px;
+      justify-content: flex-end;
+      margin-top: 4px;
+      padding-top: 4px;
+      border-top: 2px solid #0066cc;
+    }
+    body.dark .result-dots {
+      border-top-color: #87ceeb;
+    }
+    .pp-dot.result {
+      background: rgba(0,102,204,0.1);
+      color: #0066cc;
+      border-color: #0066cc;
+      font-weight: 600;
+    }
+    body.dark .pp-dot.result {
+      background: rgba(135,206,235,0.15);
+      color: #87ceeb;
+      border-color: #87ceeb;
+    }
+
+    /* ── Result Display ── */
+    .result-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+      font-family: monospace;
+      font-size: 14px;
+      flex-wrap: wrap;
+    }
+    .result-val {
+      font-weight: 600;
+      color: #0066cc;
+    }
+    body.dark .result-val { color: #87ceeb; }
+    .result-fmt {
+      font-size: 12px;
+      color: #767676;
+    }
+    body.dark .result-fmt { color: #9a9a9a; }
+
+    /* ── Summary Table ── */
+    .summary-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    .summary-tbl th {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 2px solid #cccccc;
+      font-weight: 600;
+      font-size: 12px;
+      color: #555555;
+    }
+    body.dark .summary-tbl th {
+      border-bottom-color: #444444;
+      color: #aaaaaa;
+    }
+    .summary-tbl td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #eeeeee;
+      font-family: monospace;
+    }
+    body.dark .summary-tbl td { border-bottom-color: #333333; }
+    .summary-tbl tr:last-child td { border-bottom: none; }
+    .summary-tbl .best {
+      color: #28a745;
+      font-weight: 600;
+    }
+    body.dark .summary-tbl .best { color: #4caf50; }
+    .summary-tbl .arch-name {
+      font-family: inherit;
+      font-weight: 500;
+    }
+
+    .formula-hint {
+      font-size: 11px;
+      color: #999999;
+      font-family: inherit;
+      font-weight: 400;
+    }
+    body.dark .formula-hint { color: #666666; }
+
+    /* ── Progress bar ── */
+    .progress-bar {
+      height: 3px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    body.dark .progress-bar { background: #333333; }
+    .progress-fill {
+      height: 100%;
+      background: #0066cc;
+      transition: width 0.15s;
+      border-radius: 2px;
+    }
+    body.dark .progress-fill { background: #87ceeb; }
+    .progress-fill.done { background: #28a745; }
+    body.dark .progress-fill.done { background: #4caf50; }
+
+    .signed-info {
+      font-size: 12px;
+      color: #595959;
+      margin-top: 6px;
+    }
+    body.dark .signed-info { color: #888888; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+      .arch-checks {
+        gap: 10px;
+      }
+      .playback-row {
+        gap: 4px;
+      }
+      .pb-btn {
+        padding: 5px 8px;
+        font-size: 12px;
+      }
+      .lane-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+      .summary-tbl {
+        font-size: 11px;
+      }
+      .summary-tbl th, .summary-tbl td {
+        padding: 5px 6px;
+      }
+      .pp-dot, .pp-spacer {
+        width: 14px;
+        height: 14px;
+        font-size: 7px;
+      }
+    }
+  </style>
+</head>
+<body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+  <main class="container">
+    <div class="nav-row">
+      <div class="nav-links">
+        <a href="/" class="back-link">&larr; p14m.com</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/kmap/">K-Map</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/bits/">Bits</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/adders/">Adders</a>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-text">&#9790;</span>
+      </button>
+    </div>
+
+    <h1>Multiplier Visualizer</h1>
+    <p class="subtitle">Compare binary multiplier architectures with animated partial product reduction</p>
+
+    <details class="how-to">
+      <summary>How to use</summary>
+      <div class="how-to-body">
+        <ul>
+          <li>Enter two operands (A and B) in <strong>decimal or hex</strong> (<code>0xFF</code>).</li>
+          <li>Select <strong>bit width</strong> (4, 8, 12, or 16) and check which <strong>architectures</strong> to compare.</li>
+          <li>Click <strong>Compute</strong> to see the result, then use playback controls to <strong>animate</strong> partial product reduction.</li>
+          <li>The <strong>race view</strong> shows all selected architectures simultaneously &mdash; watch Wallace Tree finish before Array Multiplier.</li>
+          <li><strong>Step</strong> (&#9654;|) advances one step at a time. The description below each diagram explains the current step.</li>
+          <li>The <strong>summary table</strong> compares area (full-adder equivalents), delay (gate delays), and area&times;delay product.</li>
+          <li><strong>Wallace Tree</strong> uses a selectable final carry-propagation adder (RCA or CLA).</li>
+          <li>Toggle <strong>Signed (2's complement)</strong> to interpret operands and the 2n-bit result as signed integers.</li>
+        </ul>
+      </div>
+    </details>
+
+    <!-- Input Section -->
+    <div class="section">
+      <div class="controls-grid">
+        <div>
+          <label class="lbl">Bit Width</label>
+          <div class="mode-selector" id="bitWidthSelector">
+            <button class="mode-btn" data-bits="4">4</button>
+            <button class="mode-btn on" data-bits="8">8</button>
+            <button class="mode-btn" data-bits="12">12</button>
+            <button class="mode-btn" data-bits="16">16</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl" for="inputA">Operand A</label>
+          <input class="operand-input" id="inputA" value="13" placeholder="decimal or 0xFF" spellcheck="false">
+        </div>
+        <div>
+          <label class="lbl" for="inputB">Operand B</label>
+          <input class="operand-input" id="inputB" value="11" placeholder="decimal or 0xFF" spellcheck="false">
+        </div>
+      </div>
+
+      <div style="margin-bottom:15px;">
+        <label class="lbl">Interpretation</label>
+        <div class="mode-selector" id="signSelector">
+          <button class="mode-btn on" data-sign="unsigned">Unsigned</button>
+          <button class="mode-btn" data-sign="signed">Signed (2's complement)</button>
+        </div>
+      </div>
+
+      <div class="arch-checks">
+        <label><input type="checkbox" checked data-arch="saa"> Shift-and-Add</label>
+        <label><input type="checkbox" checked data-arch="array"> Array Multiplier</label>
+        <label>
+          <input type="checkbox" checked data-arch="wallace"> Wallace Tree
+          <span class="wt-final" id="wtFinalWrap">
+            CPA: <select id="wtFinal"><option value="rca">RCA</option><option value="cla">CLA</option></select>
+          </span>
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-go" id="computeBtn">Compute</button>
+        <div class="playback-row" id="playbackControls" style="display:none;">
+          <button class="pb-btn" id="resetBtn" title="Reset">&#8634;</button>
+          <button class="pb-btn" id="playBtn" title="Play">&#9654;</button>
+          <button class="pb-btn" id="stepBtn" title="Step forward">&#9654;|</button>
+          <span class="speed-label">Speed</span>
+          <input type="range" class="speed-slider" id="speedSlider" min="1" max="5" value="2">
+        </div>
+      </div>
+
+      <div id="errorBox" class="err" style="display:none;"></div>
+    </div>
+
+    <!-- Result -->
+    <div id="resultSection" class="section" style="display:none;">
+      <div class="result-label">Result</div>
+      <div id="resultDisplay" class="result-row"></div>
+    </div>
+
+    <!-- Race View -->
+    <div id="raceSection" style="display:none;">
+      <div class="race-container" id="raceContainer"></div>
+    </div>
+
+    <!-- Summary Table -->
+    <div id="summarySection" class="section" style="display:none;">
+      <div class="result-label">Architecture Comparison <span class="lbl-hint" id="summaryBits"></span></div>
+      <table class="summary-tbl" id="summaryTable">
+        <thead>
+          <tr>
+            <th>Architecture</th>
+            <th>Area <span class="formula-hint">(FA eq.)</span></th>
+            <th>Delay <span class="formula-hint">(gate &Delta;)</span></th>
+            <th>A&times;D</th>
+          </tr>
+        </thead>
+        <tbody id="summaryBody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
+  </main>
+
+<script>
+/* ═══════════════════════ Theme ═══════════════════════ */
+
+function toggleTheme() {
+  const body = document.body;
+  const themeText = document.getElementById('theme-text');
+  if (body.classList.contains('dark')) {
+    body.classList.remove('dark');
+    themeText.innerHTML = '&#9790;';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark');
+    themeText.innerHTML = '&#9788;';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const themeText = document.getElementById('theme-text');
+  if (document.body.classList.contains('dark')) {
+    themeText.innerHTML = '&#9788;';
+  }
+});
+
+/* ═══════════════════════ Constants & Formulas ═══════════════════════ */
+
+function wallaceLevels(n) {
+  let count = n;
+  let levels = 0;
+  while (count > 2) {
+    const groups3 = Math.floor(count / 3);
+    count = groups3 * 2 + (count % 3);
+    levels++;
+  }
+  return levels;
+}
+
+function cpaDelay(type, width) {
+  if (type === 'cla') {
+    if (width <= 4) return 4;
+    return 4 + 2 * (Math.ceil(Math.log(width) / Math.log(4)) - 1);
+  }
+  return 2 * width; // RCA
+}
+
+const MULTIPLIERS = {
+  saa: {
+    name: 'Shift-and-Add',
+    short: 'S&A',
+    area: n => 2 * n,
+    delay: n => 4 * n * n,
+    areaFormula: '2n',
+    delayFormula: '4n\u00B2',
+  },
+  array: {
+    name: 'Array Multiplier',
+    short: 'Array',
+    area: n => n * n,
+    delay: n => 4 * (n - 1),
+    areaFormula: 'n\u00B2',
+    delayFormula: '4(n\u22121)',
+  },
+  wallace: {
+    name: 'Wallace Tree',
+    short: 'Wallace',
+    area: (n, ft) => n * n,
+    delay: (n, ft) => {
+      const wl = wallaceLevels(n);
+      return 2 + 2 * wl + cpaDelay(ft || 'rca', 2 * n);
+    },
+    areaFormula: 'n\u00B2',
+    delayFormula: '2+2L+CPA(2n)',
+  },
+};
+
+/* ═══════════════════════ State ═══════════════════════ */
+
+let state = {
+  bitWidth: 8,
+  a: 0,
+  b: 0,
+  signed: false,
+  selected: ['saa', 'array', 'wallace'],
+  wtFinal: 'rca',
+  simulations: {},
+  animStep: -1,
+  animPlaying: false,
+  animTimer: null,
+  maxSteps: 0,
+};
+
+/* ═══════════════════════ Helpers ═══════════════════════ */
+
+function parseValue(str, n, signed) {
+  str = str.trim();
+  if (str === '') return 0;
+  let val;
+  if (/^-?0x/i.test(str)) val = parseInt(str, 16);
+  else if (/^-?0b/i.test(str)) { val = parseInt(str.replace(/^-?0b/i, ''), 2); if (str[0] === '-') val = -val; }
+  else if (/^-?0o/i.test(str)) { val = parseInt(str.replace(/^-?0o/i, ''), 8); if (str[0] === '-') val = -val; }
+  else val = parseInt(str, 10);
+  if (isNaN(val)) return NaN;
+  if (signed && val < 0) {
+    return fromSigned(val, n);
+  }
+  return clamp(val, n);
+}
+
+function mask(n) {
+  if (n >= 32) return 0xFFFFFFFF;
+  return (1 << n) - 1;
+}
+
+function clamp(val, n) {
+  if (n >= 32) return (val & 0xFFFFFFFF) >>> 0;
+  return (val & ((1 << n) - 1)) >>> 0;
+}
+
+function bitAt(val, i) {
+  return (val >>> i) & 1;
+}
+
+// For 2n-bit results that may exceed 32 bits, use number division
+function bitAt2n(val, i) {
+  return Math.floor(val / Math.pow(2, i)) % 2;
+}
+
+function toBin2n(val, n) {
+  let s = '';
+  for (let i = n - 1; i >= 0; i--) s += bitAt2n(val, i);
+  return s;
+}
+
+function toHex2n(val, n) {
+  const digits = Math.ceil(n / 4);
+  // For values that fit in 32 bits
+  if (val <= 0xFFFFFFFF) {
+    return '0x' + (val >>> 0).toString(16).toUpperCase().padStart(digits, '0');
+  }
+  // For larger values, build hex manually
+  let hex = '';
+  let v = val;
+  while (v > 0) {
+    hex = '0123456789ABCDEF'[v % 16] + hex;
+    v = Math.floor(v / 16);
+  }
+  return '0x' + (hex || '0').padStart(digits, '0');
+}
+
+function toSigned(val, n) {
+  if (n >= 32) return val | 0;
+  const msb = 1 << (n - 1);
+  if (val & msb) return val - (1 << n);
+  return val;
+}
+
+function toSigned2n(val, nbits) {
+  // For 2n-bit result
+  const msbPos = nbits - 1;
+  if (bitAt2n(val, msbPos)) {
+    return val - Math.pow(2, nbits);
+  }
+  return val;
+}
+
+function fromSigned(val, n) {
+  if (val < 0) {
+    if (n >= 32) return ((1 << n) + val) >>> 0;
+    return clamp((1 << n) + val, n);
+  }
+  return clamp(val, n);
+}
+
+function multiply(a, b, n) {
+  // Unsigned multiplication, result fits in 2n bits
+  // Use standard JS for n <= 16 (result max 32 bits)
+  if (n <= 16) return a * b;
+  // Fallback for safety
+  return a * b;
+}
+
+/* ═══════════════════════ Simulation ═══════════════════════ */
+
+/* Each simulator returns { steps: [...], result: Number, partialProducts: [[...], ...] }
+   A step = { stepIdx, desc, ppState: {row: {col: 'idle'|'active'|'done'}}, resultBits: {col: true} } */
+
+function generatePartialProducts(a, b, n) {
+  const pp = [];
+  for (let i = 0; i < n; i++) {
+    const row = [];
+    for (let j = 0; j < n; j++) {
+      row.push(bitAt(a, j) & bitAt(b, i));
+    }
+    pp.push(row);
+  }
+  return pp;
+}
+
+function simulateSAA(a, b, n) {
+  const steps = [];
+  const pp = generatePartialProducts(a, b, n);
+  const resultWidth = 2 * n;
+  const result = multiply(a, b, n);
+
+  // Step 0: show all partial products
+  const ppState0 = {};
+  for (let i = 0; i < n; i++) {
+    ppState0[i] = {};
+    for (let j = 0; j < n; j++) {
+      ppState0[i][j] = 'idle';
+    }
+  }
+  steps.push({
+    stepIdx: 0,
+    desc: 'Generate all partial products: PP[i][j] = A[j] \u00D7 B[i]',
+    ppState: JSON.parse(JSON.stringify(ppState0)),
+    resultBits: {},
+  });
+
+  // Each iteration: accumulate one row at a time
+  let accumulator = 0;
+  for (let i = 0; i < n; i++) {
+    // Mark current row as active
+    const ppS = JSON.parse(JSON.stringify(ppState0));
+    for (let r = 0; r < i; r++) {
+      for (let j = 0; j < n; j++) ppS[r][j] = 'done';
+    }
+    for (let j = 0; j < n; j++) ppS[i][j] = 'active';
+
+    // Compute partial product value and shift
+    let ppVal = 0;
+    for (let j = 0; j < n; j++) {
+      ppVal += pp[i][j] * Math.pow(2, j);
+    }
+    accumulator += ppVal * Math.pow(2, i);
+
+    // Which result bits are known
+    const rBits = {};
+    if (i < n - 1) {
+      // After adding row i, bit i is finalized (in shift-and-add)
+      for (let b2 = 0; b2 <= i; b2++) rBits[b2] = true;
+    } else {
+      for (let b2 = 0; b2 < resultWidth; b2++) rBits[b2] = true;
+    }
+
+    steps.push({
+      stepIdx: i + 1,
+      desc: i === 0
+        ? `Add row 0 (B[0]=${bitAt(b,0)}): accumulator = ${accumulator}`
+        : `Shift and add row ${i} (B[${i}]=${bitAt(b,i)}): accumulator = ${accumulator}`,
+      ppState: ppS,
+      resultBits: rBits,
+    });
+  }
+
+  // Mark all done
+  const ppFinal = {};
+  for (let i = 0; i < n; i++) {
+    ppFinal[i] = {};
+    for (let j = 0; j < n; j++) ppFinal[i][j] = 'done';
+  }
+  steps.push({
+    stepIdx: n + 1,
+    desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
+    ppState: ppFinal,
+    resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
+  });
+
+  return { steps, result, pp };
+}
+
+function simulateArray(a, b, n) {
+  const steps = [];
+  const pp = generatePartialProducts(a, b, n);
+  const resultWidth = 2 * n;
+  const result = multiply(a, b, n);
+
+  // Step 0: show all partial products
+  const ppState0 = {};
+  for (let i = 0; i < n; i++) {
+    ppState0[i] = {};
+    for (let j = 0; j < n; j++) ppState0[i][j] = 'idle';
+  }
+  steps.push({
+    stepIdx: 0,
+    desc: 'All AND gates generate partial products in parallel',
+    ppState: JSON.parse(JSON.stringify(ppState0)),
+    resultBits: {},
+  });
+
+  // Array multiplier: row-by-row reduction
+  // Row 0 + Row 1 -> intermediate, then + Row 2 -> etc.
+  for (let i = 0; i < n - 1; i++) {
+    const ppS = JSON.parse(JSON.stringify(ppState0));
+    // Mark rows <= i+1 as active/done
+    for (let r = 0; r < i; r++) {
+      for (let j = 0; j < n; j++) ppS[r][j] = 'done';
+    }
+    for (let j = 0; j < n; j++) {
+      ppS[i][j] = 'active';
+      ppS[i + 1][j] = 'active';
+    }
+
+    // Result bits known: one more LSB each row
+    const rBits = {};
+    for (let b2 = 0; b2 <= i; b2++) rBits[b2] = true;
+
+    steps.push({
+      stepIdx: i + 1,
+      desc: i === 0
+        ? 'Row 0 of adders: add PP[0] + PP[1], produces S[0] and carries'
+        : `Row ${i}: ripple carries through adder row, bit ${i} finalized`,
+      ppState: ppS,
+      resultBits: rBits,
+    });
+  }
+
+  // Final step
+  const ppFinal = {};
+  for (let i = 0; i < n; i++) {
+    ppFinal[i] = {};
+    for (let j = 0; j < n; j++) ppFinal[i][j] = 'done';
+  }
+  steps.push({
+    stepIdx: n,
+    desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
+    ppState: ppFinal,
+    resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
+  });
+
+  return { steps, result, pp };
+}
+
+function simulateWallace(a, b, n, finalType) {
+  const steps = [];
+  const pp = generatePartialProducts(a, b, n);
+  const resultWidth = 2 * n;
+  const result = multiply(a, b, n);
+
+  // Step 0: generate partial products
+  const ppState0 = {};
+  for (let i = 0; i < n; i++) {
+    ppState0[i] = {};
+    for (let j = 0; j < n; j++) ppState0[i][j] = 'idle';
+  }
+  steps.push({
+    stepIdx: 0,
+    desc: 'All AND gates generate partial products in parallel',
+    ppState: JSON.parse(JSON.stringify(ppState0)),
+    resultBits: {},
+  });
+
+  // Wallace tree reduction levels
+  const levels = wallaceLevels(n);
+  let rowCount = n;
+  for (let l = 0; l < levels; l++) {
+    const groups3 = Math.floor(rowCount / 3);
+    const remaining = rowCount % 3;
+    const newCount = groups3 * 2 + remaining;
+
+    // Mark progress through rows
+    const ppS = JSON.parse(JSON.stringify(ppState0));
+    // Shade proportional progress
+    const doneFraction = (l + 1) / (levels + 1);
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        ppS[i][j] = (i / n) < doneFraction ? 'done' : 'active';
+      }
+    }
+
+    steps.push({
+      stepIdx: l + 1,
+      desc: `Reduction level ${l + 1}: ${rowCount} rows \u2192 ${newCount} rows (${groups3} groups of 3${remaining ? ' + ' + remaining + ' pass-through' : ''})`,
+      ppState: ppS,
+      resultBits: {},
+    });
+
+    rowCount = newCount;
+  }
+
+  // CPA step: final 2 rows added with carry-propagate adder
+  const ppCPA = {};
+  for (let i = 0; i < n; i++) {
+    ppCPA[i] = {};
+    for (let j = 0; j < n; j++) ppCPA[i][j] = 'done';
+  }
+  steps.push({
+    stepIdx: levels + 1,
+    desc: `Final ${MULTIPLIERS.wallace.short} CPA (${finalType.toUpperCase()}): add last 2 rows with ${resultWidth}-bit ${finalType.toUpperCase()}`,
+    ppState: ppCPA,
+    resultBits: {},
+  });
+
+  // Done
+  steps.push({
+    stepIdx: levels + 2,
+    desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
+    ppState: ppCPA,
+    resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
+  });
+
+  return { steps, result, pp };
+}
+
+/* ═══════════════════════ PP Matrix Rendering ═══════════════════════ */
+
+function renderPPMatrix(pp, n, resultWidth) {
+  let html = '<div class="pp-matrix">';
+
+  // Each row is shifted by its index (row i starts at column i)
+  for (let i = 0; i < n; i++) {
+    html += '<div class="pp-row">';
+    // Spacers for result-width alignment: total columns = resultWidth
+    // Row i occupies columns i..i+n-1, so (resultWidth - n - i) spacers at left
+    const leftSpacers = resultWidth - n - i;
+    for (let s = 0; s < leftSpacers; s++) {
+      html += '<div class="pp-spacer"></div>';
+    }
+    // PP dots
+    for (let j = n - 1; j >= 0; j--) {
+      html += `<div class="pp-dot" data-row="${i}" data-col="${j}">${pp[i][j]}</div>`;
+    }
+    // Right spacers
+    for (let s = 0; s < i; s++) {
+      html += '<div class="pp-spacer"></div>';
+    }
+    html += '</div>';
+  }
+
+  // Result row
+  html += '<div class="result-dots">';
+  for (let i = resultWidth - 1; i >= 0; i--) {
+    html += `<div class="pp-dot result" data-res="${i}">?</div>`;
+  }
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+function updatePPForStep(container, step, sim, n) {
+  const resultWidth = 2 * n;
+
+  // Update PP dots
+  container.querySelectorAll('.pp-dot[data-row]').forEach(el => {
+    const row = parseInt(el.dataset.row);
+    const col = parseInt(el.dataset.col);
+    el.classList.remove('active', 'done');
+    if (step.ppState && step.ppState[row] && step.ppState[row][col]) {
+      const s = step.ppState[row][col];
+      if (s !== 'idle') el.classList.add(s);
+    }
+  });
+
+  // Update result dots
+  container.querySelectorAll('.pp-dot[data-res]').forEach(el => {
+    const idx = parseInt(el.dataset.res);
+    el.classList.remove('done');
+    if (step.resultBits && step.resultBits[idx]) {
+      el.classList.add('done');
+      el.textContent = bitAt2n(sim.result, idx).toString();
+    } else {
+      el.textContent = '?';
+    }
+  });
+}
+
+/* ═══════════════════════ Race View ═══════════════════════ */
+
+function buildRaceLanes() {
+  const container = document.getElementById('raceContainer');
+  container.innerHTML = '';
+  const n = state.bitWidth;
+  const resultWidth = 2 * n;
+
+  for (const key of state.selected) {
+    const sim = state.simulations[key];
+    if (!sim) continue;
+    const info = MULTIPLIERS[key];
+    const areaVal = key === 'wallace' ? info.area(n, state.wtFinal) : info.area(n);
+    const delayVal = key === 'wallace' ? info.delay(n, state.wtFinal) : info.delay(n);
+
+    const lane = document.createElement('div');
+    lane.className = 'race-lane';
+    lane.id = 'lane-' + key;
+    lane.innerHTML = `
+      <div class="lane-header">
+        <span class="lane-title">${info.name}${key === 'wallace' ? ' + ' + state.wtFinal.toUpperCase() : ''}</span>
+        <span class="lane-stats">Area: ${areaVal} FA &middot; Delay: ${delayVal}&Delta; &middot; Steps: ${sim.steps.length}</span>
+      </div>
+      ${renderPPMatrix(sim.pp, n, resultWidth)}
+      <div class="progress-bar"><div class="progress-fill" data-pf="${key}" style="width:0%"></div></div>
+      <div class="lane-step" data-desc="${key}">Ready</div>
+    `;
+    container.appendChild(lane);
+  }
+}
+
+function updateRaceStep(stepIdx) {
+  for (const key of state.selected) {
+    const sim = state.simulations[key];
+    if (!sim) continue;
+    const lane = document.getElementById('lane-' + key);
+    if (!lane) continue;
+
+    const totalSteps = sim.steps.length;
+    // Find the step matching stepIdx
+    let activeStep = sim.steps[0];
+    let activeIdx = 0;
+    for (let i = 0; i < totalSteps; i++) {
+      if (sim.steps[i].stepIdx <= stepIdx) {
+        activeStep = sim.steps[i];
+        activeIdx = i;
+      }
+    }
+
+    const isFinished = activeIdx >= totalSteps - 1 && stepIdx >= sim.steps[totalSteps - 1].stepIdx;
+    const pct = Math.min(100, ((activeIdx + 1) / totalSteps) * 100);
+
+    updatePPForStep(lane, activeStep, sim, state.bitWidth);
+
+    const pf = lane.querySelector(`[data-pf="${key}"]`);
+    if (pf) {
+      pf.style.width = pct + '%';
+      pf.classList.toggle('done', isFinished);
+    }
+
+    const desc = lane.querySelector(`[data-desc="${key}"]`);
+    if (desc) {
+      if (isFinished) {
+        const resultWidth = 2 * state.bitWidth;
+        if (state.signed) {
+          const sv = toSigned2n(sim.result, resultWidth);
+          desc.textContent = `Done \u2014 Result: ${sv} (${toHex2n(sim.result, resultWidth)})`;
+        } else {
+          desc.textContent = `Done \u2014 Result: ${sim.result} (${toHex2n(sim.result, resultWidth)})`;
+        }
+      } else {
+        desc.textContent = `[Step ${activeStep.stepIdx}] ${activeStep.desc}`;
+      }
+    }
+
+    lane.classList.toggle('finished', isFinished);
+  }
+}
+
+/* ═══════════════════════ Summary Table ═══════════════════════ */
+
+function updateSummaryTable() {
+  const n = state.bitWidth;
+  const tbody = document.getElementById('summaryBody');
+  tbody.innerHTML = '';
+  document.getElementById('summaryBits').textContent = `(${n}-bit)`;
+
+  const rows = [];
+  for (const key of state.selected) {
+    const info = MULTIPLIERS[key];
+    const area = key === 'wallace' ? info.area(n, state.wtFinal) : info.area(n);
+    const delay = key === 'wallace' ? info.delay(n, state.wtFinal) : info.delay(n);
+    const ad = area * delay;
+    const label = key === 'wallace' ? info.name + ' + ' + state.wtFinal.toUpperCase() : info.name;
+    const areaF = info.areaFormula;
+    let delayF = info.delayFormula;
+    if (key === 'wallace') {
+      const wl = wallaceLevels(n);
+      delayF = `2+2\u00D7${wl}+${state.wtFinal.toUpperCase()}(${2*n})`;
+    }
+    rows.push({ key, label, area, delay, ad, areaF, delayF });
+  }
+
+  const minArea = Math.min(...rows.map(r => r.area));
+  const minDelay = Math.min(...rows.map(r => r.delay));
+  const minAD = Math.min(...rows.map(r => r.ad));
+
+  for (const r of rows) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="arch-name">${r.label}</td>
+      <td class="${r.area === minArea ? 'best' : ''}">${r.area} <span class="formula-hint">${r.areaF}</span></td>
+      <td class="${r.delay === minDelay ? 'best' : ''}">${r.delay} <span class="formula-hint">${r.delayF}</span></td>
+      <td class="${r.ad === minAD ? 'best' : ''}">${r.ad}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+/* ═══════════════════════ Animation Engine ═══════════════════════ */
+
+function getSpeedMs() {
+  const v = parseInt(document.getElementById('speedSlider').value);
+  return [800, 500, 300, 150, 80][v - 1] || 300;
+}
+
+function animPlay() {
+  if (state.animPlaying) return;
+  state.animPlaying = true;
+  document.getElementById('playBtn').classList.add('active');
+  document.getElementById('playBtn').innerHTML = '&#9646;&#9646;';
+  animTick();
+}
+
+function animPause() {
+  state.animPlaying = false;
+  clearTimeout(state.animTimer);
+  document.getElementById('playBtn').classList.remove('active');
+  document.getElementById('playBtn').innerHTML = '&#9654;';
+}
+
+function animTick() {
+  if (!state.animPlaying) return;
+  if (state.animStep >= state.maxSteps) {
+    animPause();
+    return;
+  }
+  state.animStep++;
+  updateRaceStep(state.animStep);
+  state.animTimer = setTimeout(animTick, getSpeedMs());
+}
+
+function animStep() {
+  animPause();
+  if (state.animStep >= state.maxSteps) return;
+  state.animStep++;
+  updateRaceStep(state.animStep);
+}
+
+function animReset() {
+  animPause();
+  state.animStep = -1;
+  updateRaceStep(-1);
+  document.querySelectorAll('.progress-fill').forEach(pf => {
+    pf.style.width = '0%';
+    pf.classList.remove('done');
+  });
+  document.querySelectorAll('.lane-step').forEach(el => el.textContent = 'Ready');
+  document.querySelectorAll('.race-lane').forEach(el => el.classList.remove('finished'));
+  document.querySelectorAll('.pp-dot[data-row]').forEach(el => el.classList.remove('active', 'done'));
+  document.querySelectorAll('.pp-dot[data-res]').forEach(el => { el.classList.remove('done'); el.textContent = '?'; });
+}
+
+/* ═══════════════════════ Compute ═══════════════════════ */
+
+function compute() {
+  const n = state.bitWidth;
+  const signed = state.signed;
+  const a = parseValue(document.getElementById('inputA').value, n, signed);
+  const b = parseValue(document.getElementById('inputB').value, n, signed);
+  state.a = a;
+  state.b = b;
+
+  if (state.selected.length === 0) {
+    showError('Select at least one architecture.');
+    return;
+  }
+  if (isNaN(a) || isNaN(b)) {
+    showError('Invalid operand values.');
+    return;
+  }
+  if (signed) {
+    const minVal = -(1 << (n - 1));
+    const maxVal = (1 << (n - 1)) - 1;
+    const aStr = document.getElementById('inputA').value.trim();
+    const bStr = document.getElementById('inputB').value.trim();
+    if (/^-?\d+$/.test(aStr)) {
+      const aInput = parseInt(aStr, 10);
+      if (aInput < minVal || aInput > maxVal) {
+        showError(`Operand A (${aInput}) is out of ${n}-bit signed range [${minVal}, ${maxVal}].`);
+        return;
+      }
+    }
+    if (/^-?\d+$/.test(bStr)) {
+      const bInput = parseInt(bStr, 10);
+      if (bInput < minVal || bInput > maxVal) {
+        showError(`Operand B (${bInput}) is out of ${n}-bit signed range [${minVal}, ${maxVal}].`);
+        return;
+      }
+    }
+  }
+  hideError();
+
+  // Run simulations
+  state.simulations = {};
+  for (const key of state.selected) {
+    if (key === 'saa') state.simulations.saa = simulateSAA(a, b, n);
+    else if (key === 'array') state.simulations.array = simulateArray(a, b, n);
+    else if (key === 'wallace') state.simulations.wallace = simulateWallace(a, b, n, state.wtFinal);
+  }
+
+  // Find max steps across all simulations
+  state.maxSteps = 0;
+  for (const key of state.selected) {
+    const sim = state.simulations[key];
+    if (sim) {
+      const lastStep = sim.steps[sim.steps.length - 1].stepIdx;
+      state.maxSteps = Math.max(state.maxSteps, lastStep);
+    }
+  }
+
+  // Show result
+  const mainResult = state.simulations[state.selected[0]];
+  const result = mainResult.result;
+  const resultWidth = 2 * n;
+
+  let resultHTML = '';
+  if (signed) {
+    const sa = toSigned(a, n);
+    const sb = toSigned(b, n);
+    const signedResult = sa * sb;
+    // The unsigned result bits are the same — just interpret differently
+    resultHTML = `
+      <span class="result-val">${signedResult}</span>
+      <span class="result-fmt">(unsigned: ${result})</span>
+      <span class="result-fmt">= ${toHex2n(result, resultWidth)}</span>
+      <span class="result-fmt">= 0b${toBin2n(result, resultWidth)}</span>
+    `;
+    resultHTML += `<div class="signed-info">A = ${sa}, B = ${sb}</div>`;
+  } else {
+    resultHTML = `
+      <span class="result-val">${result}</span>
+      <span class="result-fmt">= ${toHex2n(result, resultWidth)}</span>
+      <span class="result-fmt">= 0b${toBin2n(result, resultWidth)}</span>
+    `;
+  }
+  document.getElementById('resultDisplay').innerHTML = resultHTML;
+  document.getElementById('resultSection').style.display = '';
+
+  // Build race lanes and summary
+  buildRaceLanes();
+  updateSummaryTable();
+
+  document.getElementById('raceSection').style.display = '';
+  document.getElementById('summarySection').style.display = '';
+  document.getElementById('playbackControls').style.display = '';
+
+  state.animStep = -1;
+  updateRaceStep(-1);
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = msg;
+  el.style.display = '';
+}
+
+function hideError() {
+  document.getElementById('errorBox').style.display = 'none';
+}
+
+/* ═══════════════════════ UI Bindings ═══════════════════════ */
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Bit width selector
+  document.querySelectorAll('#bitWidthSelector .mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#bitWidthSelector .mode-btn').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      state.bitWidth = parseInt(btn.dataset.bits);
+    });
+  });
+
+  // Signed/unsigned selector
+  document.querySelectorAll('#signSelector .mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#signSelector .mode-btn').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      state.signed = btn.dataset.sign === 'signed';
+    });
+  });
+
+  // Architecture checkboxes
+  document.querySelectorAll('.arch-checks input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      state.selected = [];
+      document.querySelectorAll('.arch-checks input[type="checkbox"]:checked').forEach(c => {
+        state.selected.push(c.dataset.arch);
+      });
+      document.getElementById('wtFinalWrap').style.display = state.selected.includes('wallace') ? '' : 'none';
+    });
+  });
+
+  // Wallace Tree final adder selector
+  document.getElementById('wtFinal').addEventListener('change', e => {
+    state.wtFinal = e.target.value;
+  });
+
+  // Compute button
+  document.getElementById('computeBtn').addEventListener('click', compute);
+
+  // Enter key on inputs
+  ['inputA', 'inputB'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') compute();
+    });
+  });
+
+  // Playback buttons
+  document.getElementById('playBtn').addEventListener('click', () => {
+    if (state.animPlaying) animPause();
+    else {
+      if (state.animStep >= state.maxSteps) animReset();
+      animPlay();
+    }
+  });
+  document.getElementById('stepBtn').addEventListener('click', animStep);
+  document.getElementById('resetBtn').addEventListener('click', animReset);
+});
+</script>
+</body>
+</html>
