@@ -368,11 +368,241 @@
     body.dark .booth-pos { color: #4caf50; }
     body.dark .booth-neg { color: #ff6b6b; }
 
+    /* ── Overflow widget ── */
+    .overflow-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .overflow-input {
+      width: 80px;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #000000;
+      outline: none;
+    }
+    .overflow-input:focus { border-color: #0066cc; }
+    body.dark .overflow-input { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
+    body.dark .overflow-input:focus { border-color: #87ceeb; }
+    .overflow-bits {
+      font-family: monospace;
+      font-size: 13px;
+      display: flex;
+      gap: 1px;
+      margin: 4px 0;
+    }
+    .overflow-bit {
+      width: 22px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-weight: 600;
+      background: rgba(0,0,0,0.04);
+      border: 1px solid #ddd;
+    }
+    body.dark .overflow-bit { background: rgba(255,255,255,0.04); border-color: #444; }
+    .overflow-bit.sign { background: rgba(0,102,204,0.1); border-color: rgba(0,102,204,0.3); }
+    body.dark .overflow-bit.sign { background: rgba(135,206,235,0.1); border-color: rgba(135,206,235,0.3); }
+    .overflow-result { font-size: 13px; margin-top: 8px; line-height: 1.6; }
+    .overflow-ok { color: #28a745; font-weight: 600; }
+    .overflow-bad { color: #dc3545; font-weight: 600; }
+    body.dark .overflow-ok { color: #4caf50; }
+    body.dark .overflow-bad { color: #ff6b6b; }
+
+    /* ── Fixed-point widget ── */
+    .fp-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .fp-input {
+      width: 120px;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #000000;
+      outline: none;
+    }
+    .fp-input:focus { border-color: #0066cc; }
+    body.dark .fp-input { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
+    body.dark .fp-input:focus { border-color: #87ceeb; }
+    .fp-select {
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #000000;
+      outline: none;
+    }
+    body.dark .fp-select { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
+    .fp-bits {
+      font-family: monospace;
+      font-size: 13px;
+      display: flex;
+      gap: 1px;
+      align-items: center;
+    }
+    .fp-bit {
+      width: 22px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-weight: 600;
+      background: rgba(0,0,0,0.04);
+      border: 1px solid #ddd;
+    }
+    body.dark .fp-bit { background: rgba(255,255,255,0.04); border-color: #444; }
+    .fp-bit.int-part { background: rgba(0,102,204,0.08); border-color: rgba(0,102,204,0.2); }
+    .fp-bit.frac-part { background: rgba(40,167,69,0.08); border-color: rgba(40,167,69,0.2); }
+    body.dark .fp-bit.int-part { background: rgba(135,206,235,0.08); border-color: rgba(135,206,235,0.2); }
+    body.dark .fp-bit.frac-part { background: rgba(76,175,80,0.08); border-color: rgba(76,175,80,0.2); }
+    .fp-radix { font-size: 18px; font-weight: 700; margin: 0 2px; color: #dc3545; }
+    .fp-info { font-size: 12px; margin-top: 6px; line-height: 1.6; color: #595959; }
+    body.dark .fp-info { color: #888; }
+
+    /* ── Barrel shifter diagram ── */
+    .barrel-diagram {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .barrel-stage {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .barrel-label {
+      width: 80px;
+      font-weight: 600;
+      font-size: 11px;
+      color: #0066cc;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    body.dark .barrel-label { color: #87ceeb; }
+    .barrel-muxes {
+      display: flex;
+      gap: 2px;
+    }
+    .barrel-mux {
+      width: 28px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(0,102,204,0.08);
+      border: 1px solid rgba(0,102,204,0.2);
+      color: #0066cc;
+    }
+    body.dark .barrel-mux { background: rgba(135,206,235,0.08); border-color: rgba(135,206,235,0.2); color: #87ceeb; }
+    .barrel-mux.pass { background: rgba(0,0,0,0.03); border-color: #ddd; color: #999; }
+    body.dark .barrel-mux.pass { background: rgba(255,255,255,0.03); border-color: #444; color: #666; }
+    .barrel-note {
+      font-size: 11px;
+      color: #595959;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    body.dark .barrel-note { color: #888; }
+
+    /* ── IEEE 754 widget ── */
+    .ieee-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .ieee-input {
+      width: 160px;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #000000;
+      outline: none;
+    }
+    .ieee-input:focus { border-color: #0066cc; }
+    body.dark .ieee-input { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
+    body.dark .ieee-input:focus { border-color: #87ceeb; }
+    .ieee-bits {
+      font-family: monospace;
+      font-size: 13px;
+      display: flex;
+      gap: 1px;
+      margin: 4px 0;
+      flex-wrap: wrap;
+    }
+    .ieee-bit {
+      width: 22px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    .ieee-sign { background: rgba(220,53,69,0.1); border: 1px solid rgba(220,53,69,0.3); color: #dc3545; }
+    .ieee-exp { background: rgba(0,102,204,0.08); border: 1px solid rgba(0,102,204,0.2); color: #0066cc; }
+    .ieee-mant { background: rgba(40,167,69,0.08); border: 1px solid rgba(40,167,69,0.2); color: #28a745; }
+    body.dark .ieee-sign { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.3); color: #ff6b6b; }
+    body.dark .ieee-exp { background: rgba(135,206,235,0.08); border-color: rgba(135,206,235,0.2); color: #87ceeb; }
+    body.dark .ieee-mant { background: rgba(76,175,80,0.08); border-color: rgba(76,175,80,0.2); color: #4caf50; }
+    .ieee-field-labels {
+      display: flex;
+      gap: 1px;
+      font-size: 10px;
+      margin-bottom: 8px;
+    }
+    .ieee-field-label {
+      text-align: center;
+      font-weight: 600;
+      padding: 2px 0;
+      border-radius: 3px;
+    }
+    .ieee-field-label.sign { width: 22px; color: #dc3545; }
+    .ieee-field-label.exp { width: calc(8 * 23px); color: #0066cc; }
+    .ieee-field-label.mant { width: calc(23 * 23px); color: #28a745; }
+    body.dark .ieee-field-label.sign { color: #ff6b6b; }
+    body.dark .ieee-field-label.exp { color: #87ceeb; }
+    body.dark .ieee-field-label.mant { color: #4caf50; }
+    .ieee-info { font-size: 12px; margin-top: 8px; line-height: 1.7; }
+    .ieee-special { font-weight: 600; color: #856404; }
+    body.dark .ieee-special { color: #ffc107; }
+
     /* ── Responsive ── */
     @media (max-width: 600px) {
       .card-grid { grid-template-columns: 1fr; }
       .topic-title { font-size: 18px; }
       .tradeoffs-grid { font-size: 12px; }
+      .ieee-bits { gap: 0; }
+      .ieee-bit { width: 18px; height: 20px; font-size: 11px; }
+      .ieee-field-label.exp { width: calc(8 * 19px); }
+      .ieee-field-label.mant { width: calc(23 * 19px); }
     }
   </style>
 </head>
@@ -455,15 +685,25 @@ const CATEGORIES = {
     order: 0,
     intro: 'The fundamental components and conventions used throughout these topics. Start here if terms like "full adder", "gate delay", or "FA-eq" are unfamiliar.',
   },
+  timing: {
+    name: 'Timing & Performance',
+    order: 1,
+    intro: 'Hardware speed is limited by how fast signals propagate through gates and wires. Understanding critical paths, setup/hold constraints, and the area-speed tradeoff is essential for designing circuits that meet timing at a target clock frequency.',
+  },
   multipliers: {
     name: 'Multiplier Architectures',
-    order: 1,
+    order: 2,
     intro: 'Binary multiplication in hardware has three stages: partial product generation (AND gates), partial product reduction (the core architectural choice), and final addition (carry-propagate adder). Architectures differ in how they organize reduction \u2014 sequentially reusing one adder, or in parallel across a 2D array or tree. The fundamental tradeoff: more combinational hardware buys less delay.',
   },
   adders: {
     name: 'Final-stage Adders',
-    order: 2,
+    order: 3,
     intro: 'The final stage of any parallel multiplier is a carry-propagate addition of two rows. The choice of adder directly impacts total delay. These architectures also stand alone as general-purpose binary adders.',
+  },
+  numbers: {
+    name: 'Number Systems',
+    order: 4,
+    intro: 'How hardware encodes different kinds of numbers \u2014 signed integers, fractions, and real numbers with wide dynamic range. The representation determines what arithmetic the hardware can do and how much it costs.',
   },
 };
 
@@ -604,6 +844,210 @@ const TOPICS = [
     tryItLink: '/circuitgen/',
     relatedTopics: ['logic-gates', 'full-adder'],
     order: 7,
+  },
+  {
+    id: 'sign-extension',
+    title: 'Sign Extension',
+    shortDescription: 'Widening a signed number from N to M bits without changing its value.',
+    type: 'concept',
+    tags: ['fundamentals', 'signed'],
+    category: 'foundations',
+    content: {
+      problem: 'How do you widen an N-bit signed number to M bits (M > N) so it keeps the same value?',
+      howItWorks: 'In two\u2019s complement, the MSB carries the sign. To extend from N to M bits, copy the sign bit into every new upper bit position. The value is unchanged because each copied bit adds 0 net weight.<br><br>'
+        + 'Example: extend 4-bit \u22123 (<code>1101</code>) to 8 bits \u2192 <code>11111101</code>. The four new MSBs are all 1 (the sign). Evaluating: \u2212128+64+32+16+8+4+0+1 = \u22123. Same value.<br><br>'
+        + 'For unsigned numbers, the equivalent is <strong>zero extension</strong>: pad the upper bits with 0. The choice between sign- and zero-extension is why ISAs have separate instructions (e.g., <code>MOVSX</code> vs <code>MOVZX</code> in x86).',
+      keyInsight: 'Sign extension is just copying the MSB upward. It\u2019s free in hardware \u2014 literally wires, no gates needed.',
+    },
+    relatedTopics: ['twos-complement', 'overflow-detection', 'fixed-point'],
+    order: 8,
+  },
+  {
+    id: 'overflow-detection',
+    title: 'Overflow Detection',
+    shortDescription: 'How hardware knows when an arithmetic result doesn\u2019t fit.',
+    type: 'concept',
+    tags: ['fundamentals', 'signed', 'arithmetic'],
+    category: 'foundations',
+    content: {
+      problem: 'When two N-bit numbers are added, the true mathematical result might need N+1 bits. How does hardware detect this?',
+      howItWorks: '<strong>Unsigned overflow</strong> is simple: the carry-out of the MSB position is 1. This means the result exceeds 2<sup>N</sup>\u22121.<br><br>'
+        + '<strong>Signed overflow</strong> is different. It occurs when the result\u2019s sign is wrong \u2014 specifically when both operands have the same sign but the result has the opposite sign. The rule:<br><br>'
+        + 'Overflow = C<sub>in</sub>[MSB] \u2295 C<sub>out</sub>[MSB]<br><br>'
+        + 'That is, overflow happens when the carry <em>into</em> the sign bit differs from the carry <em>out of</em> it. Equivalently:<br>'
+        + '\u2022 (+) + (+) = (\u2212) \u2192 overflow<br>'
+        + '\u2022 (\u2212) + (\u2212) = (+) \u2192 overflow<br>'
+        + '\u2022 Mixed signs \u2192 never overflows<br><br>'
+        + 'Hardware implements this with a single XOR gate on the two carry signals. CPUs set the overflow flag (V or OF) using exactly this logic.',
+      keyInsight: 'Signed overflow is a single XOR of two carry bits. The adder already produces both carries, so detection is essentially free.',
+    },
+    interactive: overflowWidget,
+    relatedTopics: ['twos-complement', 'full-adder', 'sign-extension'],
+    order: 9,
+  },
+  {
+    id: 'fixed-point',
+    title: 'Fixed-Point Representation',
+    shortDescription: 'Representing fractional numbers without a floating-point unit.',
+    type: 'concept',
+    tags: ['fundamentals', 'numbers'],
+    category: 'foundations',
+    content: {
+      problem: 'How do you represent numbers like 3.75 in hardware without a floating-point unit?',
+      howItWorks: 'Fixed-point uses a regular integer with an <em>implied</em> binary point at a fixed position. The hardware does integer arithmetic; the programmer tracks where the point is.<br><br>'
+        + '<strong>Q notation:</strong> Q<em>m</em>.<em>f</em> means <em>m</em> integer bits and <em>f</em> fractional bits. In Q4.4 (8 bits total), the value 3.75 is stored as 0011.1100 = 60 (the integer 60 represents 60/2<sup>4</sup> = 3.75).<br><br>'
+        + '<strong>Arithmetic:</strong> Addition and subtraction work directly if both operands use the same Q format. Multiplication of Qm.f \u00D7 Qm.f produces a Q(2m).(2f) result \u2014 you shift right by <em>f</em> to get back to Qm.f.<br><br>'
+        + '<strong>Resolution:</strong> with <em>f</em> fractional bits, the smallest representable step is 2<sup>\u2212f</sup>. Q8.8 has resolution 1/256 \u2248 0.0039. More fractional bits = finer resolution but smaller integer range.',
+      keyInsight: 'Fixed-point is just integer arithmetic with a bookkeeping convention. The hardware is identical to an integer ALU \u2014 no FPU needed.',
+    },
+    interactive: fixedPointWidget,
+    relatedTopics: ['twos-complement', 'sign-extension', 'ieee754'],
+    order: 10,
+  },
+  {
+    id: 'priority-encoder',
+    title: 'Priority Encoder',
+    shortDescription: 'Given multiple active inputs, finding the highest-priority one quickly.',
+    type: 'concept',
+    tags: ['fundamentals', 'combinational'],
+    category: 'foundations',
+    content: {
+      problem: 'Multiple interrupt lines or request signals are active simultaneously. How does hardware instantly determine which one to service first?',
+      howItWorks: 'A priority encoder has N input lines and outputs the binary index of the highest-priority active input (plus a "valid" bit indicating at least one input is active). Priority is fixed by position: input N\u22121 has highest priority, input 0 has lowest.<br><br>'
+        + 'For example, an 8-to-3 priority encoder: if inputs 2, 5, and 7 are all active, the output is <code>111</code> (binary 7) because input 7 has the highest priority.<br><br>'
+        + '<strong>Implementation:</strong> can be built as a cascade of OR gates and simple logic. For an 8-input encoder, the critical path is just 3\u20134 gate delays regardless of which input is active.<br><br>'
+        + '<strong>Leading zero detection</strong> is a priority encoder in disguise: given a binary number, finding the position of the most significant 1 is exactly the same as finding the highest-priority active input. This is critical for floating-point normalization and variable-length shift operations.',
+      keyInsight: 'A priority encoder answers "which is the most important active signal?" in constant time \u2014 the hardware equivalent of finding the MSB.',
+    },
+    relatedTopics: ['logic-gates', 'barrel-shifter', 'ieee754'],
+    order: 11,
+  },
+  {
+    id: 'barrel-shifter',
+    title: 'Barrel Shifter',
+    shortDescription: 'Shifting by a variable amount in O(log n) delays.',
+    type: 'concept',
+    tags: ['fundamentals', 'combinational'],
+    category: 'foundations',
+    content: {
+      problem: 'How do you shift a value by a variable number of positions in one clock cycle, not one position per cycle?',
+      howItWorks: 'A barrel shifter decomposes the shift amount into powers of 2 and uses log\u2082(n) stages of multiplexers. Each stage conditionally shifts by 2<sup>k</sup> positions based on bit k of the shift amount.<br><br>'
+        + 'For an 8-bit barrel shifter with shift amount S[2:0]:<br>'
+        + '\u2022 <strong>Stage 0</strong> (S[0]): each bit has a 2:1 MUX choosing between its current position and the position shifted by 1.<br>'
+        + '\u2022 <strong>Stage 1</strong> (S[1]): each bit has a 2:1 MUX choosing between its current position and the position shifted by 2.<br>'
+        + '\u2022 <strong>Stage 2</strong> (S[2]): each bit has a 2:1 MUX choosing between its current position and the position shifted by 4.<br><br>'
+        + 'The shift amount 5 = 101\u2082 activates stages 0 and 2, shifting by 1 then by 4, for a total shift of 5. Total delay: log\u2082(n) MUX delays, regardless of the shift amount.<br><br>'
+        + '<strong>Area:</strong> n \u00D7 log\u2082(n) multiplexers. For 32-bit: 32 \u00D7 5 = 160 MUXes.',
+      keyInsight: 'By decomposing the shift into power-of-2 stages, a barrel shifter achieves any shift amount in O(log n) time instead of O(n).',
+    },
+    interactive: barrelShifterWidget,
+    relatedTopics: ['priority-encoder', 'logic-gates'],
+    order: 12,
+  },
+
+  /* ── Timing & Performance ── */
+  {
+    id: 'critical-path',
+    title: 'Critical Path',
+    shortDescription: 'The slowest signal path that limits clock speed.',
+    type: 'concept',
+    tags: ['timing', 'performance'],
+    category: 'timing',
+    tool: 'adders',
+    content: {
+      problem: 'What determines the maximum clock frequency of a digital circuit?',
+      howItWorks: 'The <strong>critical path</strong> is the longest combinational delay between any register output and any register input (or between primary inputs and outputs in purely combinational circuits). The clock period must be at least as long as this worst-case delay, or the circuit produces incorrect results.<br><br>'
+        + 'To find the critical path: trace every possible signal path through the combinational logic, sum the gate delays along each path, and identify the maximum. That path is the bottleneck.<br><br>'
+        + '<strong>Example \u2014 RCA vs CLA:</strong> In a 16-bit RCA, the critical path is the carry chain from bit 0 to bit 15: 32 gate delays. In a 16-bit CLA, the lookahead logic computes all carries in parallel, so the critical path is only ~8 gate delays. Same function, vastly different critical paths.<br><br>'
+        + 'Reducing the critical path is the central goal of most hardware optimization. Techniques include pipelining (insert registers to break long paths), parallelism (CLA instead of RCA), and speculation (Carry Select).',
+      keyInsight: 'The critical path is the single bottleneck that limits your clock speed. Every optimization technique in digital design is ultimately about shortening it.',
+    },
+    tryItLink: '/adders/',
+    relatedTopics: ['gate-delay', 'pipelining', 'area-vs-speed', 'rca', 'cla'],
+    order: 1,
+  },
+  {
+    id: 'gate-delay',
+    title: 'Gate Delay & Propagation',
+    shortDescription: 'Why outputs don\u2019t change instantly when inputs change.',
+    type: 'concept',
+    tags: ['timing', 'fundamentals'],
+    category: 'timing',
+    tool: 'adders',
+    content: {
+      problem: 'When an input changes, why doesn\u2019t the output change immediately?',
+      howItWorks: 'Every logic gate has a finite <strong>propagation delay</strong> (t<sub>pd</sub>) \u2014 the time from when an input changes to when the output settles to its new value. This delay exists because transistors need time to charge and discharge internal capacitances.<br><br>'
+        + 'Typical values in modern CMOS: an inverter is ~10\u201320 ps, a 2-input NAND is ~15\u201330 ps. Larger fan-in gates (e.g., 4-input AND) are slower because more transistors are stacked in series.<br><br>'
+        + '<strong>Rise vs fall time:</strong> t<sub>pLH</sub> (low-to-high) and t<sub>pHL</sub> (high-to-low) are often different because PMOS and NMOS transistors have different drive strengths. Datasheets usually report the worst case.<br><br>'
+        + '<strong>Contamination delay</strong> (t<sub>cd</sub>) is the <em>minimum</em> delay \u2014 the earliest the output <em>might</em> start changing. This matters for hold-time analysis. The window between t<sub>cd</sub> and t<sub>pd</sub> is when the output is potentially unstable.<br><br>'
+        + 'In our abstract models, we count "gate delays" as uniform units. In real design, each gate type has a different delay, and synthesis tools optimize by choosing gate sizes and topologies.',
+      keyInsight: 'Gate delay is the atomic unit of hardware speed. Every timing analysis \u2014 critical path, setup/hold, pipelining \u2014 starts with knowing how long each gate takes.',
+    },
+    tryItLink: '/adders/',
+    relatedTopics: ['critical-path', 'setup-hold', 'conventions'],
+    order: 2,
+  },
+  {
+    id: 'setup-hold',
+    title: 'Setup & Hold Time',
+    shortDescription: 'When data must be stable relative to the clock edge.',
+    type: 'concept',
+    tags: ['timing', 'sequential'],
+    category: 'timing',
+    content: {
+      problem: 'A flip-flop captures data on the clock edge. How long must the data be stable before and after that edge?',
+      howItWorks: '<strong>Setup time</strong> (t<sub>su</sub>) \u2014 the minimum time data must be stable <em>before</em> the active clock edge. If data changes too close to the edge, the flip-flop may capture the wrong value or enter metastability.<br><br>'
+        + '<strong>Hold time</strong> (t<sub>hold</sub>) \u2014 the minimum time data must remain stable <em>after</em> the active clock edge. Changing data too soon after the edge can corrupt the captured value.<br><br>'
+        + '<strong>The timing window:</strong> data must be stable during the interval [t<sub>clk</sub> \u2212 t<sub>su</sub>, t<sub>clk</sub> + t<sub>hold</sub>]. Outside this window, data is free to change.<br><br>'
+        + '<strong>Setup violation</strong> means the combinational logic between two flip-flops is too slow \u2014 the fix is a faster critical path or a slower clock. <strong>Hold violation</strong> means the logic is too fast \u2014 signals race through before the capturing flip-flop is done. The fix is adding delay (buffer insertion).<br><br>'
+        + '<strong>Metastability:</strong> if setup or hold is violated, the flip-flop output may hover at an intermediate voltage for an unpredictable time before eventually settling to 0 or 1. This is especially dangerous at clock domain crossings.',
+      keyInsight: 'Setup time constrains how fast your clock can run. Hold time constrains how fast your logic can be. Both must be satisfied simultaneously for correct operation.',
+    },
+    relatedTopics: ['gate-delay', 'critical-path', 'pipelining'],
+    order: 3,
+  },
+  {
+    id: 'pipelining',
+    title: 'Pipelining',
+    shortDescription: 'Increasing throughput by breaking a slow path into register stages.',
+    type: 'concept',
+    tags: ['timing', 'performance', 'architecture'],
+    category: 'timing',
+    tool: 'multipliers',
+    content: {
+      problem: 'A combinational circuit has a long critical path limiting your clock speed. How do you increase throughput without redesigning the logic?',
+      howItWorks: 'Insert registers at intermediate points in the combinational logic to split one long path into K shorter stages. Each stage completes in 1/(K) of the original delay, so the clock can run K\u00D7 faster.<br><br>'
+        + '<strong>Throughput vs latency:</strong> pipelining increases <em>throughput</em> (results per second) but not <em>latency</em> (time for one result). A 4-stage pipeline produces one result per cycle at a 4\u00D7 faster clock, but each individual result still takes 4 cycles to complete.<br><br>'
+        + '<strong>Example \u2014 multiplier:</strong> A combinational array multiplier for 16-bit operands might have a critical path of 60 gate delays. Splitting it into 4 pipeline stages (15 gate delays each) allows the clock to run 4\u00D7 faster. Once the pipeline is full, you get one 16-bit product every cycle.<br><br>'
+        + '<strong>Cost:</strong> each pipeline stage adds a register (N flip-flops wide), increasing area and power. There\u2019s also a diminishing return \u2014 register overhead (setup time + clock-to-Q delay) eats into the speedup as stages get very short.',
+      keyInsight: 'Pipelining doesn\u2019t make any single computation faster \u2014 it lets you overlap multiple computations so the throughput increases by the number of stages.',
+    },
+    tryItLink: '/multipliers/',
+    relatedTopics: ['critical-path', 'setup-hold', 'area-vs-speed'],
+    order: 4,
+  },
+  {
+    id: 'area-vs-speed',
+    title: 'Area vs Speed Tradeoffs',
+    shortDescription: 'Why making a circuit faster usually costs more hardware.',
+    type: 'concept',
+    tags: ['timing', 'performance', 'design'],
+    category: 'timing',
+    tool: 'adders',
+    content: {
+      problem: 'Can you make any circuit arbitrarily fast? What are the limits?',
+      howItWorks: 'Nearly every technique for reducing critical path delay adds hardware:<br><br>'
+        + '\u2022 <strong>RCA \u2192 CLA:</strong> eliminates ripple delay by adding lookahead logic. Area goes from n FA to ~2.25n FA-eq, but delay drops from O(n) to O(log n).<br>'
+        + '\u2022 <strong>Carry Select:</strong> duplicates every block (one for carry=0, one for carry=1) and adds MUXes. ~2.5\u00D7 the area of RCA for \u221An delay.<br>'
+        + '\u2022 <strong>Pipelining:</strong> adds N flip-flops per stage. More stages = higher throughput but more registers.<br>'
+        + '\u2022 <strong>Tree vs Array multiplier:</strong> same FA count, but tree wiring is irregular and harder to lay out, consuming more routing area.<br><br>'
+        + 'The fundamental reason: reducing delay means computing things in <em>parallel</em> instead of <em>sequentially</em>. Parallel computation requires duplicated or additional hardware.<br><br>'
+        + '<strong>Diminishing returns:</strong> the first optimization (e.g., RCA to CLA) gives a dramatic speedup. Further optimization (e.g., deeper pipelining, speculative logic) gives smaller incremental gains at increasing area and power cost.',
+      keyInsight: 'Speed costs silicon. The art of hardware design is finding the sweet spot \u2014 the architecture that meets your timing target with minimum area and power.',
+    },
+    tryItLink: '/adders/',
+    relatedTopics: ['critical-path', 'pipelining', 'rca', 'cla', 'carry-select'],
+    order: 5,
   },
 
   /* ── Multiplier Architectures ── */
@@ -764,6 +1208,34 @@ const TOPICS = [
     relatedTopics: ['rca', 'cla'],
     order: 3,
   },
+
+  /* ── Number Systems ── */
+  {
+    id: 'ieee754',
+    title: 'IEEE 754 Floating Point',
+    shortDescription: 'How hardware represents real numbers with wide dynamic range.',
+    type: 'concept',
+    tags: ['numbers', 'representation'],
+    category: 'numbers',
+    content: {
+      problem: 'Fixed-point has limited range. How does hardware represent very large and very small numbers with the same format?',
+      howItWorks: 'IEEE 754 single precision (32 bits) splits the bits into three fields:<br><br>'
+        + '<strong>Sign</strong> (1 bit) \u2014 0 = positive, 1 = negative.<br>'
+        + '<strong>Exponent</strong> (8 bits) \u2014 biased by 127. Stored value E, actual exponent = E \u2212 127. Range: \u2212126 to +127.<br>'
+        + '<strong>Mantissa</strong> (23 bits) \u2014 the fractional part after an implied leading 1. The actual significand is 1.mantissa (24 bits of precision).<br><br>'
+        + 'Value = (\u22121)<sup>sign</sup> \u00D7 2<sup>(E\u2212127)</sup> \u00D7 1.mantissa<br><br>'
+        + '<strong>Special values:</strong><br>'
+        + '\u2022 E=0, mantissa=0 \u2192 \u00B10 (positive or negative zero)<br>'
+        + '\u2022 E=0, mantissa\u22600 \u2192 denormalized (subnormal): value = (\u22121)<sup>s</sup> \u00D7 2<sup>\u2212126</sup> \u00D7 0.mantissa<br>'
+        + '\u2022 E=255, mantissa=0 \u2192 \u00B1Infinity<br>'
+        + '\u2022 E=255, mantissa\u22600 \u2192 NaN (Not a Number)<br><br>'
+        + '<strong>Double precision</strong> (64 bits): 1 sign + 11 exponent (bias 1023) + 52 mantissa.',
+      keyInsight: 'The exponent gives huge dynamic range (~10<sup>\u00B138</sup> for single, ~10<sup>\u00B1308</sup> for double) while the mantissa gives ~7 or ~16 decimal digits of precision. The tradeoff vs fixed-point: much more complex hardware (FPU) for much more flexible range.',
+    },
+    interactive: ieeeWidget,
+    relatedTopics: ['fixed-point', 'sign-extension', 'twos-complement'],
+    order: 1,
+  },
 ];
 
 /* ═══════════════════════ Interactive Widgets ═══════════════════════ */
@@ -849,6 +1321,285 @@ function boothWidget(container) {
     });
   }
 
+  render();
+}
+
+function overflowWidget(container) {
+  let bits = 8;
+  let valA = 100;
+  let valB = 50;
+
+  function toSigned(v, n) {
+    v = v & ((1 << n) - 1);
+    if (v >= (1 << (n - 1))) v -= (1 << n);
+    return v;
+  }
+
+  function render() {
+    const mask = (1 << bits) - 1;
+    const a = valA & mask;
+    const b = valB & mask;
+    const sum = (a + b) & mask;
+    const signedA = toSigned(a, bits);
+    const signedB = toSigned(b, bits);
+    const signedSum = toSigned(sum, bits);
+    const trueSum = signedA + signedB;
+    const overflow = trueSum !== signedSum;
+
+    // Carry into MSB and carry out of MSB
+    const msbMask = 1 << (bits - 1);
+    const lowerMask = msbMask - 1;
+    const lowerSum = (a & lowerMask) + (b & lowerMask);
+    const cIn = (lowerSum >> (bits - 1)) & 1;
+    const fullSum = a + b;
+    const cOut = (fullSum >> bits) & 1;
+
+    let html = '<div class="widget-label">Try it \u2014 Overflow Detection</div>';
+    html += '<div class="overflow-row">';
+    html += `<select class="overflow-input" style="width:60px;" id="ovBits">`;
+    for (const b of [4, 8]) {
+      html += `<option value="${b}" ${b === bits ? 'selected' : ''}>${b}-bit</option>`;
+    }
+    html += '</select>';
+    html += `<span style="font-size:12px;">A:</span><input class="overflow-input" id="ovA" value="${valA}" type="number">`;
+    html += `<span style="font-size:12px;">B:</span><input class="overflow-input" id="ovB" value="${valB}" type="number">`;
+    html += '</div>';
+
+    function renderBits(val, label) {
+      let h = `<div style="font-size:12px;color:#767676;margin-bottom:2px;">${label} (signed: ${toSigned(val, bits)}):</div>`;
+      h += '<div class="overflow-bits">';
+      for (let i = bits - 1; i >= 0; i--) {
+        const cls = i === bits - 1 ? ' sign' : '';
+        h += `<div class="overflow-bit${cls}">${(val >>> i) & 1}</div>`;
+      }
+      h += '</div>';
+      return h;
+    }
+
+    html += renderBits(a, 'A');
+    html += renderBits(b, 'B');
+    html += '<div style="border-top:1px solid #ddd;margin:6px 0;"></div>';
+    html += renderBits(sum, 'A + B');
+
+    html += '<div class="overflow-result">';
+    html += `C<sub>in</sub>[MSB] = ${cIn}, C<sub>out</sub>[MSB] = ${cOut}, XOR = ${cIn ^ cOut}<br>`;
+    if (overflow) {
+      html += `<span class="overflow-bad">Overflow! True result ${trueSum} doesn\u2019t fit in ${bits} bits (range ${-(1<<(bits-1))} to ${(1<<(bits-1))-1}).</span>`;
+    } else {
+      html += `<span class="overflow-ok">No overflow. Result ${signedSum} is correct.</span>`;
+    }
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    container.querySelector('#ovBits').addEventListener('change', e => { bits = parseInt(e.target.value); render(); });
+    container.querySelector('#ovA').addEventListener('input', e => { valA = parseInt(e.target.value) || 0; render(); });
+    container.querySelector('#ovB').addEventListener('input', e => { valB = parseInt(e.target.value) || 0; render(); });
+  }
+  render();
+}
+
+function fixedPointWidget(container) {
+  let decimal = 3.75;
+  let intBits = 4;
+  let fracBits = 4;
+
+  function render() {
+    const totalBits = intBits + fracBits;
+    const scale = 1 << fracBits;
+    const maxVal = (1 << (totalBits - 1)) - 1;
+    const minVal = -(1 << (totalBits - 1));
+    const maxDecimal = maxVal / scale;
+    const minDecimal = minVal / scale;
+
+    // Clamp and quantize
+    let clamped = Math.max(minDecimal, Math.min(maxDecimal, decimal));
+    let raw = Math.round(clamped * scale);
+    if (raw > maxVal) raw = maxVal;
+    if (raw < minVal) raw = minVal;
+    const actual = raw / scale;
+
+    // Convert to unsigned representation for bit display
+    const unsigned = raw < 0 ? raw + (1 << totalBits) : raw;
+
+    let html = '<div class="widget-label">Try it \u2014 Fixed-Point Converter</div>';
+    html += '<div class="fp-row">';
+    html += `<input class="fp-input" id="fpVal" value="${decimal}" placeholder="decimal" type="text" style="width:100px;">`;
+    html += `<select class="fp-select" id="fpFmt">`;
+    for (const [m, f] of [[4,4],[8,8],[4,12],[12,4]]) {
+      const sel = m === intBits && f === fracBits ? 'selected' : '';
+      html += `<option value="${m},${f}" ${sel}>Q${m}.${f} (${m+f}-bit)</option>`;
+    }
+    html += '</select>';
+    html += '</div>';
+
+    // Bit display with radix point
+    html += '<div class="fp-bits">';
+    for (let i = totalBits - 1; i >= 0; i--) {
+      const bit = (unsigned >>> i) & 1;
+      const cls = i >= fracBits ? 'int-part' : 'frac-part';
+      html += `<div class="fp-bit ${cls}">${bit}</div>`;
+      if (i === fracBits) html += '<span class="fp-radix">.</span>';
+    }
+    html += '</div>';
+
+    html += '<div class="fp-info">';
+    html += `<strong>Q${intBits}.${fracBits}</strong> \u2014 ${intBits} integer bits, ${fracBits} fractional bits (${totalBits} bits total)<br>`;
+    html += `Stored integer: ${raw} \u2192 value: ${raw} / 2<sup>${fracBits}</sup> = <strong>${actual}</strong>`;
+    if (actual !== clamped || actual !== decimal) html += ` (input ${decimal} quantized)`;
+    html += `<br>Range: [${minDecimal}, ${maxDecimal}], resolution: ${(1/scale).toFixed(fracBits <= 8 ? fracBits : 8)}`;
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    container.querySelector('#fpVal').addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      if (!isNaN(v)) { decimal = v; render(); }
+    });
+    container.querySelector('#fpFmt').addEventListener('change', e => {
+      const [m, f] = e.target.value.split(',').map(Number);
+      intBits = m; fracBits = f; render();
+    });
+  }
+  render();
+}
+
+function barrelShifterWidget(container) {
+  const n = 8;
+  let shift = 5;
+
+  function render() {
+    const stages = Math.ceil(Math.log2(n));
+    let html = '<div class="widget-label">Barrel Shifter \u2014 8-bit, 3 stages</div>';
+    html += '<div class="barrel-diagram">';
+
+    // Input row
+    html += '<div class="barrel-stage"><div class="barrel-label">Input</div><div class="barrel-muxes">';
+    for (let i = n - 1; i >= 0; i--) html += `<div class="barrel-mux pass">d${i}</div>`;
+    html += '</div></div>';
+
+    // Each stage
+    let current = [];
+    for (let i = 0; i < n; i++) current[i] = i;
+
+    for (let s = 0; s < stages; s++) {
+      const shiftAmt = 1 << s;
+      const active = (shift >> s) & 1;
+      const next = [];
+
+      html += `<div class="barrel-stage"><div class="barrel-label">Stage ${s}<br>shift ${shiftAmt}${active ? ' \u2713' : ''}</div><div class="barrel-muxes">`;
+      for (let i = n - 1; i >= 0; i--) {
+        if (active && i - shiftAmt >= 0) {
+          next[i] = current[i - shiftAmt];
+          html += `<div class="barrel-mux">d${next[i]}</div>`;
+        } else if (active && i - shiftAmt < 0) {
+          next[i] = -1;
+          html += '<div class="barrel-mux">0</div>';
+        } else {
+          next[i] = current[i];
+          html += `<div class="barrel-mux pass">d${next[i]}</div>`;
+        }
+      }
+      html += '</div></div>';
+      current = next;
+    }
+
+    // Output row
+    html += '<div class="barrel-stage"><div class="barrel-label">Output</div><div class="barrel-muxes">';
+    for (let i = n - 1; i >= 0; i--) {
+      const v = current[i] < 0 ? '0' : 'd' + current[i];
+      html += `<div class="barrel-mux">${v}</div>`;
+    }
+    html += '</div></div>';
+    html += '</div>';
+
+    html += '<div class="barrel-note">';
+    html += `Shift amount: <input class="overflow-input" id="barrelShift" type="number" min="0" max="${n-1}" value="${shift}" style="width:50px;"> `;
+    html += `= ${shift.toString(2).padStart(stages, '0')}<sub>2</sub>`;
+    html += `<br>Each stage: if control bit is 1, shift by 2<sup>k</sup>; if 0, pass through. Active stages highlighted.`;
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    container.querySelector('#barrelShift').addEventListener('input', e => {
+      const v = parseInt(e.target.value);
+      if (!isNaN(v) && v >= 0 && v < n) { shift = v; render(); }
+    });
+  }
+  render();
+}
+
+function ieeeWidget(container) {
+  let inputStr = '3.14';
+
+  function render() {
+    const val = parseFloat(inputStr);
+    let html = '<div class="widget-label">Try it \u2014 IEEE 754 Single Precision</div>';
+    html += '<div class="ieee-row">';
+    html += `<input class="ieee-input" id="ieeeVal" value="${inputStr}" placeholder="decimal number" type="text">`;
+    html += '</div>';
+
+    if (isNaN(val) && inputStr.toLowerCase() !== 'nan') {
+      html += '<div class="ieee-info">Enter a number, "Infinity", "-Infinity", or "NaN".</div>';
+      container.innerHTML = html;
+      container.querySelector('#ieeeVal').addEventListener('input', e => { inputStr = e.target.value; render(); });
+      return;
+    }
+
+    // Get the IEEE 754 bits via DataView
+    const buf = new ArrayBuffer(4);
+    const dv = new DataView(buf);
+    if (inputStr.toLowerCase() === 'nan') dv.setFloat32(0, NaN);
+    else dv.setFloat32(0, val);
+    const bits32 = dv.getUint32(0);
+
+    const sign = (bits32 >>> 31) & 1;
+    const exp = (bits32 >>> 23) & 0xFF;
+    const mant = bits32 & 0x7FFFFF;
+
+    // Field labels
+    html += '<div class="ieee-field-labels">';
+    html += '<div class="ieee-field-label sign">S</div>';
+    html += '<div class="ieee-field-label exp">Exponent (8 bits)</div>';
+    html += '<div class="ieee-field-label mant">Mantissa (23 bits)</div>';
+    html += '</div>';
+
+    // Bit display
+    html += '<div class="ieee-bits">';
+    html += `<div class="ieee-bit ieee-sign">${sign}</div>`;
+    for (let i = 7; i >= 0; i--) {
+      html += `<div class="ieee-bit ieee-exp">${(exp >>> i) & 1}</div>`;
+    }
+    for (let i = 22; i >= 0; i--) {
+      html += `<div class="ieee-bit ieee-mant">${(mant >>> i) & 1}</div>`;
+    }
+    html += '</div>';
+
+    // Interpretation
+    html += '<div class="ieee-info">';
+    html += `<span style="color:#dc3545;">Sign:</span> ${sign} (${sign ? 'negative' : 'positive'})<br>`;
+    html += `<span style="color:#0066cc;">Exponent:</span> ${exp} (biased) = ${exp - 127} (actual)<br>`;
+    html += `<span style="color:#28a745;">Mantissa:</span> 0x${mant.toString(16).toUpperCase().padStart(6, '0')} = ${mant} / 2<sup>23</sup><br>`;
+
+    if (exp === 0 && mant === 0) {
+      html += `<span class="ieee-special">${sign ? '\u2212' : '+'}0 (zero)</span>`;
+    } else if (exp === 0) {
+      const denorm = mant / (1 << 23);
+      const value = (sign ? -1 : 1) * Math.pow(2, -126) * denorm;
+      html += `<span class="ieee-special">Denormalized:</span> (\u22121)<sup>${sign}</sup> \u00D7 2<sup>\u2212126</sup> \u00D7 0.${mant.toString(2).padStart(23,'0')} = ${value.toExponential(6)}`;
+    } else if (exp === 255 && mant === 0) {
+      html += `<span class="ieee-special">${sign ? '\u2212' : '+'}Infinity</span>`;
+    } else if (exp === 255) {
+      html += '<span class="ieee-special">NaN (Not a Number)</span>';
+    } else {
+      const significand = 1 + mant / (1 << 23);
+      html += `Value = (\u22121)<sup>${sign}</sup> \u00D7 2<sup>${exp - 127}</sup> \u00D7 ${significand.toFixed(8)} = <strong>${dv.getFloat32(0)}</strong>`;
+    }
+    html += '</div>';
+
+    container.innerHTML = html;
+    container.querySelector('#ieeeVal').addEventListener('input', e => { inputStr = e.target.value; render(); });
+  }
   render();
 }
 
