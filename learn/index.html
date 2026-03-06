@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Learn hardware architecture concepts — multiplier and adder architectures, digital logic, and computer engineering fundamentals.">
+  <meta property="og:title" content="Learn | p14m.com">
+  <meta property="og:description" content="Hardware architecture concepts — multiplier and adder design, area-speed tradeoffs, and interactive explanations.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://p14m.com/learn/">
+  <title>Learn | p14m.com</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    /* ── Learn-specific styles ── */
+
+    /* ── Filter Tabs ── */
+    .filter-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: transparent;
+      border: 1px solid #cccccc;
+      color: #595959;
+      border-radius: 16px;
+      padding: 5px 14px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .filter-btn:hover { border-color: #999999; color: #333333; }
+    .filter-btn.on { background: #0066cc; color: white; border-color: #0066cc; }
+    body.dark .filter-btn { border-color: #444444; color: #888888; }
+    body.dark .filter-btn:hover { border-color: #666666; color: #cccccc; }
+    body.dark .filter-btn.on { background: #87ceeb; color: #1a1a1a; border-color: #87ceeb; }
+
+    /* ── Category Header ── */
+    .cat-header {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 24px 0 6px 0;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #0066cc;
+    }
+    .cat-header:first-of-type { margin-top: 0; }
+    body.dark .cat-header { border-bottom-color: grey; }
+
+    .cat-intro {
+      font-size: 13px;
+      color: #595959;
+      margin-bottom: 14px;
+      line-height: 1.6;
+    }
+    body.dark .cat-intro { color: #888888; }
+
+    /* ── Topic Cards ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .topic-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .topic-card:hover { border-color: #0066cc; box-shadow: 0 2px 8px rgba(0,102,204,0.08); }
+    .topic-card:visited { color: inherit; }
+    body.dark .topic-card { border-color: #333333; }
+    body.dark .topic-card:hover { border-color: #87ceeb; box-shadow: 0 2px 8px rgba(135,206,235,0.08); }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .card-desc {
+      font-size: 12px;
+      color: #595959;
+      line-height: 1.5;
+    }
+    body.dark .card-desc { color: #888888; }
+
+    .card-meta {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Tags / Badges ── */
+    .tag {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .tag-tool {
+      background: rgba(0,102,204,0.08);
+      color: #0066cc;
+      border: 1px solid rgba(0,102,204,0.2);
+    }
+    body.dark .tag-tool {
+      background: rgba(135,206,235,0.1);
+      color: #87ceeb;
+      border-color: rgba(135,206,235,0.2);
+    }
+    .tag-concept {
+      background: rgba(40,167,69,0.08);
+      color: #28a745;
+      border: 1px solid rgba(40,167,69,0.2);
+    }
+    body.dark .tag-concept {
+      background: rgba(76,175,80,0.1);
+      color: #4caf50;
+      border-color: rgba(76,175,80,0.2);
+    }
+    .tag-breakdown {
+      background: rgba(255,193,7,0.1);
+      color: #856404;
+      border: 1px solid rgba(255,193,7,0.25);
+    }
+    body.dark .tag-breakdown {
+      background: rgba(255,193,7,0.08);
+      color: #ffc107;
+      border-color: rgba(255,193,7,0.2);
+    }
+
+    /* ── Topic Detail View ── */
+    .back-btn {
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+
+    .topic-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+    }
+
+    .topic-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 12px;
+      color: #767676;
+    }
+    body.dark .topic-meta { color: #9a9a9a; }
+
+    .topic-section {
+      margin-bottom: 18px;
+    }
+    .topic-section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #0066cc;
+      margin-bottom: 4px;
+    }
+    body.dark .topic-section-label { color: #87ceeb; }
+
+    .topic-section-body {
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* ── Key Insight Box ── */
+    .insight-box {
+      border-left: 3px solid #0066cc;
+      background: rgba(0,102,204,0.04);
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+    body.dark .insight-box {
+      border-left-color: #87ceeb;
+      background: rgba(135,206,235,0.05);
+    }
+
+    /* ── Tradeoffs Table ── */
+    .tradeoffs-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 14px;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+    .tradeoff-key {
+      font-weight: 600;
+      color: #555555;
+      white-space: nowrap;
+    }
+    body.dark .tradeoff-key { color: #aaaaaa; }
+    .tradeoff-val {
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .tradeoff-best {
+      font-style: italic;
+      color: #595959;
+      grid-column: 1 / -1;
+      margin-top: 4px;
+      font-size: 12px;
+    }
+    body.dark .tradeoff-best { color: #888888; }
+
+    /* ── Action Buttons ── */
+    .action-row {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 18px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .action-btn:hover { background: #0052a3; text-decoration: none; }
+    .action-btn:visited { color: white; }
+    body.dark .action-btn { background: #87ceeb; color: #1a1a1a; }
+    body.dark .action-btn:hover { background: #6bb8d9; }
+    body.dark .action-btn:visited { color: #1a1a1a; }
+
+    .action-btn-secondary {
+      background: transparent;
+      border: 1px solid #cccccc;
+      color: #595959;
+    }
+    .action-btn-secondary:hover { border-color: #999999; color: #333333; background: transparent; }
+    .action-btn-secondary:visited { color: #595959; }
+    body.dark .action-btn-secondary { border-color: #444444; color: #888888; background: transparent; }
+    body.dark .action-btn-secondary:hover { border-color: #666666; color: #cccccc; background: transparent; }
+    body.dark .action-btn-secondary:visited { color: #888888; }
+
+    /* ── Related Topics ── */
+    .related-section {
+      border-top: 1px solid #e0e0e0;
+      padding-top: 16px;
+      margin-top: 24px;
+    }
+    body.dark .related-section { border-top-color: #333333; }
+    .related-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #767676;
+      margin-bottom: 8px;
+    }
+    body.dark .related-label { color: #9a9a9a; }
+    .related-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .related-link {
+      font-size: 13px;
+      padding: 4px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      text-decoration: none;
+      transition: border-color 0.15s;
+    }
+    .related-link:hover { border-color: #0066cc; text-decoration: none; }
+    body.dark .related-link { border-color: #333333; }
+    body.dark .related-link:hover { border-color: #87ceeb; }
+
+    /* ── Interactive Widget Container ── */
+    .widget-container {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 18px;
+    }
+    body.dark .widget-container { border-color: #333333; }
+
+    .widget-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #0066cc;
+      margin-bottom: 10px;
+    }
+    body.dark .widget-label { color: #87ceeb; }
+
+    /* Booth widget */
+    .booth-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .booth-input {
+      width: 100px;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #000000;
+      outline: none;
+    }
+    .booth-input:focus { border-color: #0066cc; }
+    body.dark .booth-input { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
+    body.dark .booth-input:focus { border-color: #87ceeb; }
+
+    .booth-bits {
+      font-family: monospace;
+      font-size: 13px;
+      display: flex;
+      gap: 1px;
+    }
+    .booth-bit {
+      width: 22px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+    .booth-bit-label {
+      font-size: 9px;
+      color: #999999;
+      text-align: center;
+      width: 22px;
+    }
+    .booth-result-row {
+      margin-top: 8px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .booth-pos { color: #28a745; }
+    .booth-neg { color: #dc3545; }
+    .booth-zero { color: #999999; }
+    body.dark .booth-pos { color: #4caf50; }
+    body.dark .booth-neg { color: #ff6b6b; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .card-grid { grid-template-columns: 1fr; }
+      .topic-title { font-size: 18px; }
+      .tradeoffs-grid { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+  <main class="container">
+    <div class="nav-row">
+      <div class="nav-links">
+        <a href="/" class="back-link">&larr; p14m.com</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/kmap/">K-Map</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/bits/">Bits</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/adders/">Adders</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/multipliers/">Multipliers</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/learn/">Learn</a>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-text">&#9790;</span>
+      </button>
+    </div>
+
+    <h1>Learn</h1>
+    <p class="subtitle">Hardware architecture concepts and design tradeoffs</p>
+
+    <div id="content"></div>
+
+    <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
+  </main>
+
+<script>
+/* ═══════════════════════ Theme ═══════════════════════ */
+
+function toggleTheme() {
+  const body = document.body;
+  const themeText = document.getElementById('theme-text');
+  if (body.classList.contains('dark')) {
+    body.classList.remove('dark');
+    themeText.innerHTML = '&#9790;';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark');
+    themeText.innerHTML = '&#9788;';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const themeText = document.getElementById('theme-text');
+  if (document.body.classList.contains('dark')) {
+    themeText.innerHTML = '&#9788;';
+  }
+});
+
+/* ═══════════════════════ Content Definitions ═══════════════════════ */
+
+/*
+ * HOW TO ADD A NEW TOPIC:
+ * 1. Add an entry to the TOPICS array below following the schema.
+ * 2. If it belongs to a new category, add the category to CATEGORIES first.
+ * 3. Set `type` to "tool", "concept", or "breakdown".
+ * 4. Fill in whichever `content` fields fit the topic — the renderer adapts.
+ * 5. Optionally add an `interactive` function (receives a container DOM element).
+ * 6. That's it. No other code changes needed.
+ */
+
+const CATEGORIES = {
+  multipliers: {
+    name: 'Multiplier Architectures',
+    order: 1,
+    intro: 'Binary multiplication in hardware has three stages: partial product generation (AND gates), partial product reduction (the core architectural choice), and final addition (carry-propagate adder). Architectures differ in how they organize reduction \u2014 sequentially reusing one adder, or in parallel across a 2D array or tree. The fundamental tradeoff: more combinational hardware buys less delay.',
+  },
+  adders: {
+    name: 'Final-stage Adders',
+    order: 2,
+    intro: 'The final stage of any parallel multiplier is a carry-propagate addition of two rows. The choice of adder directly impacts total delay. These architectures also stand alone as general-purpose binary adders.',
+  },
+};
+
+const TOPICS = [
+  /* ── Multiplier Architectures ── */
+  {
+    id: 'shift-and-add',
+    title: 'Shift-and-Add',
+    shortDescription: 'Sequential multiplication using one adder, reused n times.',
+    type: 'tool',
+    tags: ['sequential', 'multipliers'],
+    category: 'multipliers',
+    tool: 'multipliers',
+    content: {
+      problem: 'How do you multiply two n-bit numbers with minimal hardware?',
+      howItWorks: 'Processes one multiplier bit per clock cycle. If the bit is 1, the shifted multiplicand is added to a running accumulator; if 0, just shift. After n cycles, the accumulator holds the 2n-bit product.',
+      keyInsight: 'One n-bit adder, reused n times \u2014 trades time for silicon area.',
+      tradeoffs: {
+        'Area': '2n FA-eq (smallest)',
+        'Delay': '2n\u00B2 gate delays (slowest)',
+        bestWhen: 'Area is critical and latency is acceptable.',
+      },
+    },
+    tryItLink: '/multipliers/',
+    relatedTopics: ['booth-algorithm', 'array-multiplier'],
+    order: 1,
+  },
+  {
+    id: 'booth-algorithm',
+    title: "Booth's Algorithm (Radix-2)",
+    shortDescription: 'Recodes the multiplier to skip runs of 1s and handle signed natively.',
+    type: 'tool',
+    tags: ['sequential', 'multipliers', 'signed'],
+    category: 'multipliers',
+    tool: 'multipliers',
+    content: {
+      problem: 'How do you reduce additions in sequential multiplication and handle signed operands natively?',
+      howItWorks: 'Recodes each multiplier bit from {0,1} to {\u22121, 0, +1} using d[i] = b[i\u22121] \u2212 b[i]. Each iteration adds, subtracts, or skips the multiplicand. Runs of consecutive 1s collapse: 0111 becomes +1000 \u22120001 (two operations instead of three).',
+      keyInsight: 'Signed multiplication for free \u2014 two\u2019s complement just works because the recoding naturally handles the sign bit.',
+      tradeoffs: {
+        'Area': '2n FA-eq (same as S&A)',
+        'Delay': '2n\u00B2 gate delays (same worst case)',
+        bestWhen: 'Signed multiplication, or multipliers with long runs of 1s.',
+      },
+    },
+    interactive: boothWidget,
+    tryItLink: '/multipliers/',
+    relatedTopics: ['shift-and-add', 'array-multiplier'],
+    order: 2,
+  },
+  {
+    id: 'array-multiplier',
+    title: 'Array Multiplier',
+    shortDescription: 'Parallel n\u00D7n grid of adders with regular, layout-friendly structure.',
+    type: 'tool',
+    tags: ['parallel', 'multipliers', 'combinational'],
+    category: 'multipliers',
+    tool: 'multipliers',
+    content: {
+      problem: 'How do you multiply in parallel without complex tree routing?',
+      howItWorks: 'A regular n\u00D7n grid of AND gates generates all partial products simultaneously. Full adders arranged in rows reduce partial products \u2014 carries propagate diagonally through the array, then ripple across the bottom row.',
+      keyInsight: 'The perfectly regular 2D structure maps directly to silicon layout \u2014 easy to design, route, and manufacture.',
+      tradeoffs: {
+        'Area': 'n\u00B2 FA-eq',
+        'Delay': '4(n\u22121) gate delays',
+        bestWhen: 'Layout regularity matters more than absolute speed.',
+      },
+    },
+    tryItLink: '/multipliers/',
+    relatedTopics: ['wallace-tree', 'shift-and-add', 'rca'],
+    order: 3,
+  },
+  {
+    id: 'wallace-tree',
+    title: 'Wallace Tree',
+    shortDescription: 'Logarithmic reduction tree \u2014 fastest with a CLA final adder.',
+    type: 'tool',
+    tags: ['parallel', 'multipliers', 'combinational', 'tree'],
+    category: 'multipliers',
+    tool: 'multipliers',
+    content: {
+      problem: 'How do you minimize reduction delay from n partial products to a final sum?',
+      howItWorks: 'Groups partial product bits in threes and compresses each group with a 3:2 counter (full adder) \u2014 all groups in parallel. Each level reduces the row count by factor ~1.5. After \u2308log\u2081.\u2085(n)\u2309 levels, only 2 rows remain. A final carry-propagate adder (RCA or CLA) produces the product.',
+      keyInsight: 'O(log n) reduction levels instead of O(n) \u2014 but the irregular wiring makes layout harder than an array.',
+      tradeoffs: {
+        'Area': 'n\u00B2 FA-eq (same as array)',
+        'Delay': '1 + 2L + CPA(2n) gate delays',
+        bestWhen: 'Speed is critical \u2014 fastest multiplier architecture when paired with CLA.',
+      },
+    },
+    tryItLink: '/multipliers/',
+    relatedTopics: ['array-multiplier', 'cla', 'rca'],
+    order: 4,
+  },
+
+  /* ── Final-stage Adders ── */
+  {
+    id: 'rca',
+    title: 'Ripple Carry Adder (RCA)',
+    shortDescription: 'Simplest adder \u2014 carry ripples bit-by-bit from LSB to MSB.',
+    type: 'tool',
+    tags: ['adders', 'sequential'],
+    category: 'adders',
+    tool: 'adders',
+    content: {
+      problem: 'Add two n-bit binary numbers with minimum hardware.',
+      howItWorks: 'Chain n full adders in series. Bit 0\u2019s carry-out feeds bit 1\u2019s carry-in, and so on. Each FA must wait for the previous carry \u2014 the carry ripples from LSB to MSB sequentially.',
+      keyInsight: 'Delay grows linearly with width \u2014 doubling n doubles the delay.',
+      tradeoffs: {
+        'Area': 'n FA (minimum possible)',
+        'Delay': '2n gate delays',
+        bestWhen: 'n is small or area is the primary constraint.',
+      },
+    },
+    tryItLink: '/adders/',
+    relatedTopics: ['cla', 'carry-select', 'wallace-tree'],
+    order: 1,
+  },
+  {
+    id: 'cla',
+    title: 'Carry Lookahead Adder (CLA)',
+    shortDescription: 'Computes all carries in parallel using generate/propagate logic.',
+    type: 'tool',
+    tags: ['adders', 'parallel', 'lookahead'],
+    category: 'adders',
+    tool: 'adders',
+    content: {
+      problem: 'How do you eliminate the sequential carry chain in addition?',
+      howItWorks: 'Each bit precomputes generate G = A\u00B7B and propagate P = A\u2295B. A carry lookahead unit (CLU) uses G and P to compute all carries simultaneously as Boolean functions of inputs and C\u2080. Groups of 4 bits share one CLU; larger adders stack CLU levels hierarchically.',
+      keyInsight: 'Every carry is just a Boolean function of the inputs \u2014 C\u2081 = G\u2080 + P\u2080\u00B7C\u2080 can be computed in constant time, no ripple needed.',
+      tradeoffs: {
+        'Area': '~2.25n FA-eq',
+        'Delay': '4 + 2(\u2308log\u2084n\u2309\u22121) gate delays',
+        bestWhen: 'Speed is critical and ~2\u00D7 area overhead is acceptable.',
+      },
+    },
+    tryItLink: '/adders/',
+    relatedTopics: ['rca', 'carry-select', 'wallace-tree'],
+    order: 2,
+  },
+  {
+    id: 'carry-select',
+    title: 'Carry Select Adder (CSeA)',
+    shortDescription: 'Speculates on carry-in, computes both options, selects with a MUX.',
+    type: 'tool',
+    tags: ['adders', 'speculative'],
+    category: 'adders',
+    tool: 'adders',
+    content: {
+      problem: 'How do you speed up addition without full lookahead complexity?',
+      howItWorks: 'Splits the operand into k-bit blocks. Each block computes two sums in parallel \u2014 one assuming carry-in = 0, one assuming carry-in = 1. When the actual carry arrives from the previous block, a multiplexer instantly selects the correct result.',
+      keyInsight: 'Speculative computation: do both possibilities, then pick. Doubles the adders but MUX selection is nearly instant.',
+      tradeoffs: {
+        'Area': '~2.5n FA-eq',
+        'Delay': '2k + 2(\u2308n/k\u2309\u22121) gate delays',
+        bestWhen: 'Moderate speedup needed with predictable, regular layout.',
+      },
+    },
+    tryItLink: '/adders/',
+    relatedTopics: ['rca', 'cla'],
+    order: 3,
+  },
+];
+
+/* ═══════════════════════ Interactive Widgets ═══════════════════════ */
+
+function boothWidget(container) {
+  let bits = 8;
+  let val = 11;
+
+  function encode(v, n) {
+    const digits = [];
+    for (let i = 0; i < n; i++) {
+      const prev = i === 0 ? 0 : (v >>> (i - 1)) & 1;
+      const curr = (v >>> i) & 1;
+      digits.push(prev - curr);
+    }
+    return digits;
+  }
+
+  function render() {
+    const clamped = val & ((1 << bits) - 1);
+    const digits = encode(clamped, bits);
+
+    let html = '<div class="widget-label">Try it \u2014 Booth Encoding</div>';
+    html += '<div class="booth-input-row">';
+    html += '<select class="booth-input" style="width:60px;" id="boothBits">';
+    for (const b of [4, 8]) {
+      html += `<option value="${b}" ${b === bits ? 'selected' : ''}>${b}-bit</option>`;
+    }
+    html += '</select>';
+    html += `<input class="booth-input" id="boothVal" value="${val}" placeholder="integer" type="number">`;
+    html += '</div>';
+
+    // Binary
+    html += '<div style="margin-bottom:6px;font-size:12px;color:#767676;">Binary:</div>';
+    html += '<div class="booth-bits">';
+    for (let i = bits - 1; i >= 0; i--) {
+      html += `<div class="booth-bit" style="background:rgba(0,0,0,0.04);border:1px solid #ddd;">${(clamped >>> i) & 1}</div>`;
+    }
+    html += '</div>';
+    html += '<div class="booth-bits" style="margin-bottom:8px;">';
+    for (let i = bits - 1; i >= 0; i--) {
+      html += `<div class="booth-bit-label">b${i}</div>`;
+    }
+    html += '</div>';
+
+    // Booth encoding
+    html += '<div style="margin-bottom:6px;font-size:12px;color:#767676;">Booth encoding (d[i] = b[i\u22121] \u2212 b[i]):</div>';
+    html += '<div class="booth-bits">';
+    for (let i = bits - 1; i >= 0; i--) {
+      const d = digits[i];
+      const cls = d === 1 ? 'booth-pos' : d === -1 ? 'booth-neg' : 'booth-zero';
+      const label = d === 1 ? '+1' : d === -1 ? '\u22121' : ' 0';
+      html += `<div class="booth-bit ${cls}" style="font-size:11px;">${label}</div>`;
+    }
+    html += '</div>';
+    html += '<div class="booth-bits" style="margin-bottom:10px;">';
+    for (let i = bits - 1; i >= 0; i--) {
+      html += `<div class="booth-bit-label">d${i}</div>`;
+    }
+    html += '</div>';
+
+    // Operations
+    html += '<div class="booth-result-row">';
+    const ops = digits.map((d, i) => {
+      if (d === 1) return `<span class="booth-pos">+A\u00AB${i}</span>`;
+      if (d === -1) return `<span class="booth-neg">\u2212A\u00AB${i}</span>`;
+      return null;
+    }).filter(Boolean);
+    if (ops.length === 0) html += 'All digits zero \u2014 result is 0.';
+    else html += 'Operations: ' + ops.join(' ');
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    // Wire events
+    container.querySelector('#boothBits').addEventListener('change', e => {
+      bits = parseInt(e.target.value);
+      render();
+    });
+    container.querySelector('#boothVal').addEventListener('input', e => {
+      val = parseInt(e.target.value) || 0;
+      render();
+    });
+  }
+
+  render();
+}
+
+/* ═══════════════════════ Rendering ═══════════════════════ */
+
+const TYPE_LABELS = { tool: 'Tool Topic', concept: 'Concept', breakdown: 'Breakdown' };
+const TYPE_CLASSES = { tool: 'tag-tool', concept: 'tag-concept', breakdown: 'tag-breakdown' };
+
+function topicById(id) {
+  return TOPICS.find(t => t.id === id);
+}
+
+function renderLanding(categoryFilter) {
+  const content = document.getElementById('content');
+  let html = '';
+
+  // Filter bar
+  const cats = Object.entries(CATEGORIES).sort((a, b) => a[1].order - b[1].order);
+  html += '<div class="filter-bar">';
+  html += `<button class="filter-btn ${!categoryFilter ? 'on' : ''}" data-filter="">All</button>`;
+  for (const [key, cat] of cats) {
+    html += `<button class="filter-btn ${categoryFilter === key ? 'on' : ''}" data-filter="${key}">${cat.name}</button>`;
+  }
+  html += '</div>';
+
+  // Categories
+  for (const [key, cat] of cats) {
+    if (categoryFilter && categoryFilter !== key) continue;
+    const catTopics = TOPICS.filter(t => t.category === key).sort((a, b) => a.order - b.order);
+    if (catTopics.length === 0) continue;
+
+    html += `<h2 class="cat-header">${cat.name}</h2>`;
+    if (cat.intro) html += `<p class="cat-intro">${cat.intro}</p>`;
+
+    html += '<div class="card-grid">';
+    for (const topic of catTopics) {
+      html += `<a class="topic-card" href="#${topic.id}">`;
+      html += `<div class="card-title">${topic.title}</div>`;
+      html += `<div class="card-desc">${topic.shortDescription}</div>`;
+      html += '<div class="card-meta">';
+      html += `<span class="tag ${TYPE_CLASSES[topic.type]}">${TYPE_LABELS[topic.type]}</span>`;
+      if (topic.tool) {
+        html += `<span class="tag tag-tool">${topic.tool}</span>`;
+      }
+      html += '</div>';
+      html += '</a>';
+    }
+    html += '</div>';
+  }
+
+  content.innerHTML = html;
+
+  // Wire filter buttons
+  content.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = btn.dataset.filter || null;
+      renderLanding(f);
+    });
+  });
+}
+
+function renderTopic(id) {
+  const topic = topicById(id);
+  if (!topic) {
+    renderLanding();
+    return;
+  }
+
+  const content = document.getElementById('content');
+  const c = topic.content;
+  let html = '';
+
+  // Back link
+  html += '<a href="#" class="back-btn">&larr; All topics</a>';
+
+  // Title + meta
+  html += `<h2 class="topic-title">${topic.title}</h2>`;
+  html += '<div class="topic-meta">';
+  html += `<span class="tag ${TYPE_CLASSES[topic.type]}">${TYPE_LABELS[topic.type]}</span>`;
+  if (topic.tool) html += `<span class="tag tag-tool">${topic.tool}</span>`;
+  const cat = CATEGORIES[topic.category];
+  if (cat) html += `<span>${cat.name}</span>`;
+  html += '</div>';
+
+  // Problem
+  if (c.problem) {
+    html += '<div class="topic-section">';
+    html += '<div class="topic-section-label">Problem</div>';
+    html += `<div class="topic-section-body">${c.problem}</div>`;
+    html += '</div>';
+  }
+
+  // How It Works
+  if (c.howItWorks) {
+    html += '<div class="topic-section">';
+    html += '<div class="topic-section-label">How It Works</div>';
+    html += `<div class="topic-section-body">${c.howItWorks}</div>`;
+    html += '</div>';
+  }
+
+  // Key Insight
+  if (c.keyInsight) {
+    html += `<div class="insight-box">\u{1F4A1} <strong>Key insight:</strong> ${c.keyInsight}</div>`;
+  }
+
+  // Interactive widget placeholder
+  if (topic.interactive) {
+    html += '<div class="widget-container" id="widgetMount"></div>';
+  }
+
+  // Context (concepts)
+  if (c.context) {
+    html += '<div class="topic-section">';
+    html += '<div class="topic-section-label">Context</div>';
+    html += `<div class="topic-section-body">${c.context}</div>`;
+    html += '</div>';
+  }
+
+  // Structure (breakdowns)
+  if (c.structure) {
+    html += '<div class="topic-section">';
+    html += '<div class="topic-section-label">Architecture</div>';
+    html += `<div class="topic-section-body">${c.structure}</div>`;
+    html += '</div>';
+  }
+
+  // Sections (breakdowns with multiple parts)
+  if (c.sections) {
+    for (const sec of c.sections) {
+      html += '<div class="topic-section">';
+      html += `<div class="topic-section-label">${sec.heading}</div>`;
+      html += `<div class="topic-section-body">${sec.body}</div>`;
+      html += '</div>';
+    }
+  }
+
+  // Tradeoffs
+  if (c.tradeoffs) {
+    html += '<div class="topic-section">';
+    html += '<div class="topic-section-label">Tradeoffs</div>';
+    html += '<div class="tradeoffs-grid">';
+    for (const [k, v] of Object.entries(c.tradeoffs)) {
+      if (k === 'bestWhen') continue;
+      html += `<div class="tradeoff-key">${k}</div>`;
+      html += `<div class="tradeoff-val">${v}</div>`;
+    }
+    if (c.tradeoffs.bestWhen) {
+      html += `<div class="tradeoff-best"><strong>Best when:</strong> ${c.tradeoffs.bestWhen}</div>`;
+    }
+    html += '</div>';
+    html += '</div>';
+  }
+
+  // Action buttons
+  const hasActions = topic.tryItLink || topic.sourceUrl;
+  if (hasActions) {
+    html += '<div class="action-row">';
+    if (topic.tryItLink) {
+      html += `<a class="action-btn" href="${topic.tryItLink}">Try it \u2192</a>`;
+    }
+    if (topic.sourceUrl) {
+      html += `<a class="action-btn action-btn-secondary" href="${topic.sourceUrl}" target="_blank">View source \u2192</a>`;
+    }
+    html += '</div>';
+  }
+
+  // Related topics
+  if (topic.relatedTopics && topic.relatedTopics.length > 0) {
+    html += '<div class="related-section">';
+    html += '<div class="related-label">Related</div>';
+    html += '<div class="related-list">';
+    for (const rid of topic.relatedTopics) {
+      const rel = topicById(rid);
+      if (rel) {
+        html += `<a class="related-link" href="#${rel.id}">${rel.title}</a>`;
+      }
+    }
+    html += '</div>';
+    html += '</div>';
+  }
+
+  content.innerHTML = html;
+
+  // Mount interactive widget
+  if (topic.interactive) {
+    const mount = document.getElementById('widgetMount');
+    if (mount) topic.interactive(mount);
+  }
+
+  // Scroll to top
+  window.scrollTo(0, 0);
+}
+
+/* ═══════════════════════ Router ═══════════════════════ */
+
+function route() {
+  const hash = location.hash.slice(1);
+  if (!hash) {
+    renderLanding();
+  } else if (hash.startsWith('category/')) {
+    renderLanding(hash.slice(9));
+  } else {
+    renderTopic(hash);
+  }
+}
+
+window.addEventListener('hashchange', route);
+document.addEventListener('DOMContentLoaded', route);
+</script>
+</body>
+</html>
