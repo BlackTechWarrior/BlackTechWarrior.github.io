@@ -451,8 +451,8 @@
           <li>Enter two operands (A and B) in <strong>decimal or hex</strong> (<code>0xFF</code>).</li>
           <li>Select <strong>bit width</strong> (4, 8, 12, or 16) and check which <strong>architectures</strong> to compare.</li>
           <li>Click <strong>Compute</strong> to see the result, then use playback controls to <strong>animate</strong> partial product reduction.</li>
-          <li>The <strong>race view</strong> shows all selected architectures simultaneously &mdash; watch Wallace Tree finish before Array Multiplier.</li>
-          <li><strong>Step</strong> (&#9654;|) advances one step at a time. The description below each diagram explains the current step.</li>
+          <li>The <strong>race view</strong> shows all selected architectures simultaneously &mdash; each finishes proportional to its actual gate delay.</li>
+          <li><strong>Step</strong> (&#9654;|) advances one gate delay at a time. The description below each diagram explains the current step.</li>
           <li>The <strong>summary table</strong> compares area (full-adder equivalents), delay (gate delays), and area&times;delay product.</li>
           <li><strong>Booth's (Radix-2)</strong> encodes the multiplier into {&minus;1, 0, +1} digits, skipping runs of 1s. Partial products shown in <span style="color:#dc3545;">red</span> are subtracted. Handles signed multiplication natively.</li>
           <li><strong>Wallace Tree</strong> uses a selectable final carry-propagation adder (RCA or CLA).</li>
@@ -643,7 +643,7 @@ let state = {
   animStep: -1,
   animPlaying: false,
   animTimer: null,
-  maxSteps: 0,
+  maxTime: 0,
 };
 
 /* ═══════════════════════ Helpers ═══════════════════════ */
@@ -739,7 +739,8 @@ function multiply(a, b, n) {
 /* ═══════════════════════ Simulation ═══════════════════════ */
 
 /* Each simulator returns { steps: [...], result: Number, partialProducts: [[...], ...] }
-   A step = { stepIdx, desc, ppState: {row: {col: 'idle'|'active'|'done'}}, resultBits: {col: true} } */
+   A step = { time, desc, ppState: {row: {col: 'idle'|'active'|'done'}}, resultBits: {col: true} }
+   time = gate-delay timestamp matching actual propagation delay */
 
 function generatePartialProducts(a, b, n) {
   const pp = [];
@@ -758,8 +759,10 @@ function simulateSAA(a, b, n) {
   const pp = generatePartialProducts(a, b, n);
   const resultWidth = 2 * n;
   const result = multiply(a, b, n);
+  const totalDelay = MULTIPLIERS.saa.delay(n); // 2n²
+  const delayPerRow = 2 * n; // each row accumulation takes 2n gate delays (n-bit add + shift)
 
-  // Step 0: show all partial products
+  // Step 0: show all partial products (time 0)
   const ppState0 = {};
   for (let i = 0; i < n; i++) {
     ppState0[i] = {};
@@ -768,7 +771,7 @@ function simulateSAA(a, b, n) {
     }
   }
   steps.push({
-    stepIdx: 0,
+    time: 0,
     desc: 'Generate all partial products: PP[i][j] = A[j] \u00D7 B[i]',
     ppState: JSON.parse(JSON.stringify(ppState0)),
     resultBits: {},
@@ -801,7 +804,7 @@ function simulateSAA(a, b, n) {
     }
 
     steps.push({
-      stepIdx: i + 1,
+      time: (i + 1) * delayPerRow,
       desc: i === 0
         ? `Add row 0 (B[0]=${bitAt(b,0)}): accumulator = ${accumulator}`
         : `Shift and add row ${i} (B[${i}]=${bitAt(b,i)}): accumulator = ${accumulator}`,
@@ -817,7 +820,7 @@ function simulateSAA(a, b, n) {
     for (let j = 0; j < n; j++) ppFinal[i][j] = 'done';
   }
   steps.push({
-    stepIdx: n + 1,
+    time: totalDelay,
     desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
     ppState: ppFinal,
     resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
@@ -862,15 +865,17 @@ function simulateBooth(a, b, n) {
   const { pp, digits } = generateBoothPP(a, b, n);
   const resultWidth = 2 * n;
   const result = multiply(a, b, n);
+  const totalDelay = MULTIPLIERS.booth.delay(n); // 2n²
+  const delayPerRow = 2 * n; // each digit processing takes 2n gate delays
 
-  // Step 0: show Booth encoding
+  // Step 0: show Booth encoding (time 0)
   const ppState0 = {};
   for (let i = 0; i < n; i++) {
     ppState0[i] = {};
     for (let j = 0; j < n; j++) ppState0[i][j] = 'idle';
   }
   steps.push({
-    stepIdx: 0,
+    time: 0,
     desc: 'Booth encoding of B: [' + digits.map((d,i) => (d === -1 ? '\u20131' : d === 1 ? '+1' : ' 0')).join(', ') + '] (b[i\u22121] \u2212 b[i])',
     ppState: JSON.parse(JSON.stringify(ppState0)),
     resultBits: {},
@@ -903,7 +908,7 @@ function simulateBooth(a, b, n) {
     }
 
     steps.push({
-      stepIdx: i + 1,
+      time: (i + 1) * delayPerRow,
       desc: `Digit ${i}: ${action}, shift \u2190 ${i}. Accumulator = ${accumulator}`,
       ppState: ppS,
       resultBits: rBits,
@@ -918,7 +923,7 @@ function simulateBooth(a, b, n) {
     for (let j = 0; j < n; j++) ppFinal[i][j] = digits[i] < 0 ? 'neg-done' : 'done';
   }
   steps.push({
-    stepIdx: n + 1,
+    time: totalDelay,
     desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
     ppState: ppFinal,
     resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
@@ -933,15 +938,17 @@ function simulateArray(a, b, n) {
   const pp = generatePartialProducts(a, b, n);
   const resultWidth = 2 * n;
   const result = multiply(a, b, n);
+  const totalDelay = MULTIPLIERS.array.delay(n); // 4(n-1)
+  const delayPerRow = 4; // each row of adders takes 4 gate delays (2 for sum, 2 for carry through FA)
 
-  // Step 0: show all partial products
+  // Step 0: show all partial products (time 0 — AND gates, ~1Δ but we use 0 as start)
   const ppState0 = {};
   for (let i = 0; i < n; i++) {
     ppState0[i] = {};
     for (let j = 0; j < n; j++) ppState0[i][j] = 'idle';
   }
   steps.push({
-    stepIdx: 0,
+    time: 0,
     desc: 'All AND gates generate partial products in parallel',
     ppState: JSON.parse(JSON.stringify(ppState0)),
     resultBits: {},
@@ -965,7 +972,7 @@ function simulateArray(a, b, n) {
     for (let b2 = 0; b2 <= i; b2++) rBits[b2] = true;
 
     steps.push({
-      stepIdx: i + 1,
+      time: (i + 1) * delayPerRow,
       desc: i === 0
         ? 'Row 0 of adders: add PP[0] + PP[1], produces S[0] and carries'
         : `Row ${i}: ripple carries through adder row, bit ${i} finalized`,
@@ -981,7 +988,7 @@ function simulateArray(a, b, n) {
     for (let j = 0; j < n; j++) ppFinal[i][j] = 'done';
   }
   steps.push({
-    stepIdx: n,
+    time: totalDelay,
     desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
     ppState: ppFinal,
     resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
@@ -995,22 +1002,24 @@ function simulateWallace(a, b, n, finalType) {
   const pp = generatePartialProducts(a, b, n);
   const resultWidth = 2 * n;
   const result = multiply(a, b, n);
+  const levels = wallaceLevels(n);
+  const cpaD = cpaDelay(finalType, 2 * n);
+  const totalDelay = MULTIPLIERS.wallace.delay(n, finalType); // 1 + 2*levels + cpaDelay
 
-  // Step 0: generate partial products
+  // Step 0: generate partial products (time 0 — AND gates, 1Δ)
   const ppState0 = {};
   for (let i = 0; i < n; i++) {
     ppState0[i] = {};
     for (let j = 0; j < n; j++) ppState0[i][j] = 'idle';
   }
   steps.push({
-    stepIdx: 0,
+    time: 0,
     desc: 'All AND gates generate partial products in parallel',
     ppState: JSON.parse(JSON.stringify(ppState0)),
     resultBits: {},
   });
 
-  // Wallace tree reduction levels
-  const levels = wallaceLevels(n);
+  // Wallace tree reduction levels — each level takes 2 gate delays (FA: sum + carry)
   let rowCount = n;
   for (let l = 0; l < levels; l++) {
     const groups3 = Math.floor(rowCount / 3);
@@ -1028,7 +1037,7 @@ function simulateWallace(a, b, n, finalType) {
     }
 
     steps.push({
-      stepIdx: l + 1,
+      time: 1 + (l + 1) * 2, // AND gate (1Δ) + 2Δ per reduction level
       desc: `Reduction level ${l + 1}: ${rowCount} rows \u2192 ${newCount} rows (${groups3} groups of 3${remaining ? ' + ' + remaining + ' pass-through' : ''})`,
       ppState: ppS,
       resultBits: {},
@@ -1038,13 +1047,14 @@ function simulateWallace(a, b, n, finalType) {
   }
 
   // CPA step: final 2 rows added with carry-propagate adder
+  const cpaStartTime = 1 + levels * 2;
   const ppCPA = {};
   for (let i = 0; i < n; i++) {
     ppCPA[i] = {};
     for (let j = 0; j < n; j++) ppCPA[i][j] = 'done';
   }
   steps.push({
-    stepIdx: levels + 1,
+    time: cpaStartTime + Math.floor(cpaD / 2), // midway through CPA
     desc: `Final ${MULTIPLIERS.wallace.short} CPA (${finalType.toUpperCase()}): add last 2 rows with ${resultWidth}-bit ${finalType.toUpperCase()}`,
     ppState: ppCPA,
     resultBits: {},
@@ -1052,7 +1062,7 @@ function simulateWallace(a, b, n, finalType) {
 
   // Done
   steps.push({
-    stepIdx: levels + 2,
+    time: totalDelay,
     desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
     ppState: ppCPA,
     resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
@@ -1167,7 +1177,7 @@ function buildRaceLanes() {
     lane.innerHTML = `
       <div class="lane-header">
         <span class="lane-title">${info.name}${key === 'wallace' ? ' + ' + state.wtFinal.toUpperCase() : ''}</span>
-        <span class="lane-stats">Area: ${areaVal} FA &middot; Delay: ${delayVal}&Delta; &middot; Steps: ${sim.steps.length}</span>
+        <span class="lane-stats">Area: ${areaVal} FA &middot; Delay: ${delayVal}&Delta;</span>
       </div>
       ${renderPPMatrix(sim.pp, n, resultWidth, sim.boothDigits)}
       <div class="progress-bar"><div class="progress-fill" data-pf="${key}" style="width:0%"></div></div>
@@ -1177,7 +1187,7 @@ function buildRaceLanes() {
   }
 }
 
-function updateRaceStep(stepIdx) {
+function updateRaceStep(currentTime) {
   for (const key of state.selected) {
     const sim = state.simulations[key];
     if (!sim) continue;
@@ -1185,18 +1195,21 @@ function updateRaceStep(stepIdx) {
     if (!lane) continue;
 
     const totalSteps = sim.steps.length;
-    // Find the step matching stepIdx
+    const finalTime = sim.steps[totalSteps - 1].time;
+
+    // Find the step whose time is <= currentTime
     let activeStep = sim.steps[0];
     let activeIdx = 0;
     for (let i = 0; i < totalSteps; i++) {
-      if (sim.steps[i].stepIdx <= stepIdx) {
+      if (sim.steps[i].time <= currentTime) {
         activeStep = sim.steps[i];
         activeIdx = i;
       }
     }
 
-    const isFinished = activeIdx >= totalSteps - 1 && stepIdx >= sim.steps[totalSteps - 1].stepIdx;
-    const pct = Math.min(100, ((activeIdx + 1) / totalSteps) * 100);
+    const isFinished = currentTime >= finalTime;
+    // Progress based on time, not step count
+    const pct = Math.min(100, (currentTime / finalTime) * 100);
 
     updatePPForStep(lane, activeStep, sim, state.bitWidth);
 
@@ -1212,12 +1225,12 @@ function updateRaceStep(stepIdx) {
         const resultWidth = 2 * state.bitWidth;
         if (state.signed) {
           const sv = toSigned2n(sim.result, resultWidth);
-          desc.textContent = `Done \u2014 Result: ${sv} (${toHex2n(sim.result, resultWidth)})`;
+          desc.textContent = `Done at ${finalTime}\u0394 \u2014 Result: ${sv} (${toHex2n(sim.result, resultWidth)})`;
         } else {
-          desc.textContent = `Done \u2014 Result: ${sim.result} (${toHex2n(sim.result, resultWidth)})`;
+          desc.textContent = `Done at ${finalTime}\u0394 \u2014 Result: ${sim.result} (${toHex2n(sim.result, resultWidth)})`;
         }
       } else {
-        desc.textContent = `[Step ${activeStep.stepIdx}] ${activeStep.desc}`;
+        desc.textContent = `[${activeStep.time}\u0394] ${activeStep.desc}`;
       }
     }
 
@@ -1289,7 +1302,7 @@ function animPause() {
 
 function animTick() {
   if (!state.animPlaying) return;
-  if (state.animStep >= state.maxSteps) {
+  if (state.animStep >= state.maxTime) {
     animPause();
     return;
   }
@@ -1300,7 +1313,7 @@ function animTick() {
 
 function animStep() {
   animPause();
-  if (state.animStep >= state.maxSteps) return;
+  if (state.animStep >= state.maxTime) return;
   state.animStep++;
   updateRaceStep(state.animStep);
 }
@@ -1368,13 +1381,13 @@ function compute() {
     else if (key === 'wallace') state.simulations.wallace = simulateWallace(a, b, n, state.wtFinal);
   }
 
-  // Find max steps across all simulations
-  state.maxSteps = 0;
+  // Find max time across all simulations (based on actual gate delay)
+  state.maxTime = 0;
   for (const key of state.selected) {
     const sim = state.simulations[key];
     if (sim) {
-      const lastStep = sim.steps[sim.steps.length - 1].stepIdx;
-      state.maxSteps = Math.max(state.maxSteps, lastStep);
+      const lastTime = sim.steps[sim.steps.length - 1].time;
+      state.maxTime = Math.max(state.maxTime, lastTime);
     }
   }
 
@@ -1479,7 +1492,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('playBtn').addEventListener('click', () => {
     if (state.animPlaying) animPause();
     else {
-      if (state.animStep >= state.maxSteps) animReset();
+      if (state.animStep >= state.maxTime) animReset();
       animPlay();
     }
   });

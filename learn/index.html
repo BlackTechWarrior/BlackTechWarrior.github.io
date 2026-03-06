@@ -639,7 +639,7 @@ const TOPICS = [
     tool: 'multipliers',
     content: {
       problem: 'How do you reduce additions in sequential multiplication and handle signed operands natively?',
-      howItWorks: 'Recodes each multiplier bit from {0,1} to {\u22121, 0, +1} using d[i] = b[i\u22121] \u2212 b[i]. Each iteration adds, subtracts, or skips the multiplicand. Runs of consecutive 1s collapse: 0111 becomes +1000 \u22120001 (two operations instead of three).',
+      howItWorks: 'Recodes multiplier B from binary {0,1} to signed digits {-1, 0, +1} using d[i] = b[i-1] - b[i] (where b[-1] = 0). Each d[i] means: add A (+1), subtract A (-1), or skip (0). Runs of consecutive 1s collapse: 0111 becomes +1000 -0001 (two operations instead of three).',
       keyInsight: 'Signed multiplication for free \u2014 two\u2019s complement just works because the recoding naturally handles the sign bit.',
       tradeoffs: {
         'Area': '2n FA-eq (same as S&A)',
