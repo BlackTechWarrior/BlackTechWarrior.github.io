@@ -397,6 +397,8 @@
         <a href="/adders/">Adders</a>
         <span style="color:#cccccc;">|</span>
         <a href="/multipliers/">Multipliers</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/circuitgen/">CircuitGen</a>
       </div>
       <button class="theme-toggle" onclick="toggleTheme()">
         <span id="theme-text">&#9790;</span>
@@ -585,6 +587,23 @@ const TOPICS = [
     },
     relatedTopics: ['wallace-tree', 'array-multiplier', 'full-adder', 'partial-products'],
     order: 6,
+  },
+  {
+    id: 'circuit-diagrams',
+    title: 'Circuit Diagrams',
+    shortDescription: 'From boolean expressions to gate-level circuits.',
+    type: 'tool',
+    tags: ['digital-logic', 'gates', 'circuits'],
+    category: 'foundations',
+    tool: 'circuitgen',
+    content: {
+      problem: 'How do you go from a boolean expression to actual hardware?',
+      howItWorks: 'Every boolean expression maps directly to a circuit. Each operator becomes a gate, each variable becomes an input wire. The expression\u2019s AST (abstract syntax tree) <em>is</em> the circuit topology \u2014 depth in the tree corresponds to columns of gates from input to output.',
+      keyInsight: 'A boolean expression and its circuit diagram are the same structure drawn two different ways.',
+    },
+    tryItLink: '/circuitgen/',
+    relatedTopics: ['logic-gates', 'full-adder'],
+    order: 7,
   },
 
   /* ── Multiplier Architectures ── */

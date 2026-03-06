@@ -178,6 +178,8 @@
         <a href="/multipliers/">Multipliers</a>
         <span style="color:#cccccc;">|</span>
         <a href="/learn/">Learn</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/circuitgen/">CircuitGen</a>
       </div>
       <button class="theme-toggle" onclick="toggleTheme()">
         <span id="theme-text">&#9790;</span>
@@ -1626,6 +1628,7 @@ function render() {
       <div class="expr-box">
         <span class="expr-text">${sopExpr}</span>
         <button class="btn-copy" data-copy="${encodeURIComponent(sopExpr)}" data-label="SOP">Copy</button>
+        <a class="btn-copy" href="/circuitgen/?expr=${encodeURIComponent(sopExpr)}" style="text-decoration:none;">View Circuit &rarr;</a>
       </div>`;
   }
 
