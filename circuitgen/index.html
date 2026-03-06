@@ -124,14 +124,8 @@
 
     <div class="section" id="helpSection">
       <div class="ref-section" style="border-top:none; padding-top:0;">
-        <strong>Operators</strong><br>
-        AND: <code>*</code> <code>&amp;</code> <code>&middot;</code> &nbsp;
-        OR: <code>+</code> <code>|</code> &nbsp;
-        NOT: <code>'</code> <code>!</code> <code>~</code> &nbsp;
-        XOR: <code>^</code> <code>&#8853;</code> &nbsp;
-        NAND: <code>%</code> &nbsp;
-        NOR: <code>#</code> &nbsp;
-        XNOR: <code>@</code><br>
+        <strong>Operators:</strong> ' ~ ! (NOT) &middot; . * &amp; (AND) &middot; + | (OR) &middot; ^ (XOR) &middot; @ (XNOR) &middot; % (NAND) &middot; # (NOR)<br>
+        <strong>Keywords:</strong> and, or, not, nand, nor, xor, xnor &middot; <strong>Precedence:</strong> NOT &rarr; AND/NAND &rarr; XOR/XNOR &rarr; OR/NOR<br>
         Variables: any letter (A-Z, a-z). Use parentheses for grouping.
       </div>
     </div>
@@ -346,7 +340,7 @@ function updateKmapLink() {
   var link = document.getElementById('kmapLink');
   var expr = document.getElementById('exprInput').value.trim();
   if (expr && currentVars.length >= 2 && currentVars.length <= 6) {
-    link.href = '/kmap/#expr=' + encodeURIComponent(expr) + '&vars=' + encodeURIComponent(currentVars.join(','));
+    link.href = '/kmap/?expr=' + encodeURIComponent(expr) + '&vars=' + encodeURIComponent(currentVars.join(','));
     link.style.opacity = '1'; link.style.pointerEvents = '';
   } else {
     link.href = '/kmap/'; link.style.opacity = '0.4'; link.style.pointerEvents = 'none';

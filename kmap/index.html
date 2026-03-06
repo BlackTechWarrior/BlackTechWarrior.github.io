@@ -1859,6 +1859,11 @@ circuitBtn.addEventListener('click', () => {
   render();
 });
 
+// Pre-fill from URL params (e.g. from CircuitGen's "Simplify with K-Map" link)
+const urlParams = new URLSearchParams(location.search);
+if (urlParams.get('vars')) varInput.value = urlParams.get('vars');
+if (urlParams.get('expr')) exprInput.value = urlParams.get('expr');
+
 generate();
 </script>
 </body>
