@@ -486,6 +486,7 @@
       gap: 12px;
       font-family: monospace;
       font-size: 12px;
+      overflow-x: auto;
     }
     .barrel-stage {
       display: flex;
@@ -1369,6 +1370,15 @@ function boothWidget(container) {
   let bits = 8;
   let val = 11;
 
+  function parseNum(s) {
+    s = s.trim();
+    if (/^-/.test(s)) return -parseNum(s.slice(1));
+    if (/^0[xX]/.test(s)) return parseInt(s.substring(2), 16);
+    if (/^0[bB]/.test(s)) return parseInt(s.substring(2), 2);
+    if (/^0[oO]/.test(s)) return parseInt(s.substring(2), 8);
+    return parseInt(s, 10);
+  }
+
   function encode(v, n) {
     const digits = [];
     for (let i = 0; i < n; i++) {
@@ -1379,74 +1389,77 @@ function boothWidget(container) {
     return digits;
   }
 
-  function render() {
+  // Build inputs once
+  let html = '<div class="widget-label">Try it \u2014 Booth Encoding</div>';
+  html += '<div class="booth-input-row">';
+  html += '<select class="booth-input" style="width:60px;" id="boothBits">';
+  for (const b of [4, 8]) {
+    html += `<option value="${b}" ${b === bits ? 'selected' : ''}>${b}-bit</option>`;
+  }
+  html += '</select>';
+  html += `<input class="booth-input" id="boothVal" value="${val}" placeholder="e.g. 11, 0xFF, 0b1010" type="text">`;
+  html += '</div>';
+  html += '<div id="boothOutput"></div>';
+  container.innerHTML = html;
+
+  const boothOutput = container.querySelector('#boothOutput');
+
+  function updateOutput() {
     const clamped = val & ((1 << bits) - 1);
     const digits = encode(clamped, bits);
 
-    let html = '<div class="widget-label">Try it \u2014 Booth Encoding</div>';
-    html += '<div class="booth-input-row">';
-    html += '<select class="booth-input" style="width:60px;" id="boothBits">';
-    for (const b of [4, 8]) {
-      html += `<option value="${b}" ${b === bits ? 'selected' : ''}>${b}-bit</option>`;
-    }
-    html += '</select>';
-    html += `<input class="booth-input" id="boothVal" value="${val}" placeholder="integer" type="number">`;
-    html += '</div>';
-
-    // Binary
-    html += '<div style="margin-bottom:6px;font-size:12px;color:#767676;">Binary:</div>';
-    html += '<div class="booth-bits">';
+    let h = '<div style="margin-bottom:6px;font-size:12px;color:#767676;">Binary:</div>';
+    h += '<div class="booth-bits" style="overflow-x:auto;">';
     for (let i = bits - 1; i >= 0; i--) {
-      html += `<div class="booth-bit" style="background:rgba(0,0,0,0.04);border:1px solid #ddd;">${(clamped >>> i) & 1}</div>`;
+      h += `<div class="booth-bit" style="background:rgba(0,0,0,0.04);border:1px solid #ddd;">${(clamped >>> i) & 1}</div>`;
     }
-    html += '</div>';
-    html += '<div class="booth-bits" style="margin-bottom:8px;">';
+    h += '</div>';
+    h += '<div class="booth-bits" style="margin-bottom:8px;">';
     for (let i = bits - 1; i >= 0; i--) {
-      html += `<div class="booth-bit-label">b${i}</div>`;
+      h += `<div class="booth-bit-label">b${i}</div>`;
     }
-    html += '</div>';
+    h += '</div>';
 
     // Booth encoding
-    html += '<div style="margin-bottom:6px;font-size:12px;color:#767676;">Booth encoding (d[i] = b[i\u22121] \u2212 b[i]):</div>';
-    html += '<div class="booth-bits">';
+    h += '<div style="margin-bottom:6px;font-size:12px;color:#767676;">Booth encoding (d[i] = b[i\u22121] \u2212 b[i]):</div>';
+    h += '<div class="booth-bits" style="overflow-x:auto;">';
     for (let i = bits - 1; i >= 0; i--) {
       const d = digits[i];
       const cls = d === 1 ? 'booth-pos' : d === -1 ? 'booth-neg' : 'booth-zero';
       const label = d === 1 ? '+1' : d === -1 ? '\u22121' : ' 0';
-      html += `<div class="booth-bit ${cls}" style="font-size:11px;">${label}</div>`;
+      h += `<div class="booth-bit ${cls}" style="font-size:11px;">${label}</div>`;
     }
-    html += '</div>';
-    html += '<div class="booth-bits" style="margin-bottom:10px;">';
+    h += '</div>';
+    h += '<div class="booth-bits" style="margin-bottom:10px;">';
     for (let i = bits - 1; i >= 0; i--) {
-      html += `<div class="booth-bit-label">d${i}</div>`;
+      h += `<div class="booth-bit-label">d${i}</div>`;
     }
-    html += '</div>';
+    h += '</div>';
 
     // Operations
-    html += '<div class="booth-result-row">';
+    h += '<div class="booth-result-row">';
     const ops = digits.map((d, i) => {
       if (d === 1) return `<span class="booth-pos">+A\u00AB${i}</span>`;
       if (d === -1) return `<span class="booth-neg">\u2212A\u00AB${i}</span>`;
       return null;
     }).filter(Boolean);
-    if (ops.length === 0) html += 'All digits zero \u2014 result is 0.';
-    else html += 'Operations: ' + ops.join(' ');
-    html += '</div>';
+    if (ops.length === 0) h += 'All digits zero \u2014 result is 0.';
+    else h += 'Operations: ' + ops.join(' ');
+    h += '</div>';
 
-    container.innerHTML = html;
-
-    // Wire events
-    container.querySelector('#boothBits').addEventListener('change', e => {
-      bits = parseInt(e.target.value);
-      render();
-    });
-    container.querySelector('#boothVal').addEventListener('input', e => {
-      val = parseInt(e.target.value) || 0;
-      render();
-    });
+    boothOutput.innerHTML = h;
   }
 
-  render();
+  container.querySelector('#boothBits').addEventListener('change', e => {
+    bits = parseInt(e.target.value);
+    updateOutput();
+  });
+  container.querySelector('#boothVal').addEventListener('input', e => {
+    const v = parseNum(e.target.value);
+    if (!isNaN(v)) { val = v; updateOutput(); }
+  });
+
+  updateOutput();
 }
 
 function overflowWidget(container) {
@@ -1460,7 +1473,34 @@ function overflowWidget(container) {
     return v;
   }
 
-  function render() {
+  // Build inputs once
+  let html = '<div class="widget-label">Try it \u2014 Overflow Detection</div>';
+  html += '<div class="overflow-row">';
+  html += `<select class="overflow-input" style="width:60px;" id="ovBits">`;
+  for (const b of [4, 8]) {
+    html += `<option value="${b}" ${b === bits ? 'selected' : ''}>${b}-bit</option>`;
+  }
+  html += '</select>';
+  html += `<span style="font-size:12px;">A:</span><input class="overflow-input" id="ovA" value="${valA}" type="number">`;
+  html += `<span style="font-size:12px;">B:</span><input class="overflow-input" id="ovB" value="${valB}" type="number">`;
+  html += '</div>';
+  html += '<div id="ovOutput"></div>';
+  container.innerHTML = html;
+
+  const ovOutput = container.querySelector('#ovOutput');
+
+  function renderBits(val, label) {
+    let h = `<div style="font-size:12px;color:#767676;margin-bottom:2px;">${label} (signed: ${toSigned(val, bits)}):</div>`;
+    h += '<div class="overflow-bits" style="overflow-x:auto;">';
+    for (let i = bits - 1; i >= 0; i--) {
+      const cls = i === bits - 1 ? ' sign' : '';
+      h += `<div class="overflow-bit${cls}">${(val >>> i) & 1}</div>`;
+    }
+    h += '</div>';
+    return h;
+  }
+
+  function updateOutput() {
     const mask = (1 << bits) - 1;
     const a = valA & mask;
     const b = valB & mask;
@@ -1471,7 +1511,6 @@ function overflowWidget(container) {
     const trueSum = signedA + signedB;
     const overflow = trueSum !== signedSum;
 
-    // Carry into MSB and carry out of MSB
     const msbMask = 1 << (bits - 1);
     const lowerMask = msbMask - 1;
     const lowerSum = (a & lowerMask) + (b & lowerMask);
@@ -1479,49 +1518,28 @@ function overflowWidget(container) {
     const fullSum = a + b;
     const cOut = (fullSum >> bits) & 1;
 
-    let html = '<div class="widget-label">Try it \u2014 Overflow Detection</div>';
-    html += '<div class="overflow-row">';
-    html += `<select class="overflow-input" style="width:60px;" id="ovBits">`;
-    for (const b of [4, 8]) {
-      html += `<option value="${b}" ${b === bits ? 'selected' : ''}>${b}-bit</option>`;
-    }
-    html += '</select>';
-    html += `<span style="font-size:12px;">A:</span><input class="overflow-input" id="ovA" value="${valA}" type="number">`;
-    html += `<span style="font-size:12px;">B:</span><input class="overflow-input" id="ovB" value="${valB}" type="number">`;
-    html += '</div>';
+    let h = renderBits(a, 'A');
+    h += renderBits(b, 'B');
+    h += '<div style="border-top:1px solid #ddd;margin:6px 0;"></div>';
+    h += renderBits(sum, 'A + B');
 
-    function renderBits(val, label) {
-      let h = `<div style="font-size:12px;color:#767676;margin-bottom:2px;">${label} (signed: ${toSigned(val, bits)}):</div>`;
-      h += '<div class="overflow-bits">';
-      for (let i = bits - 1; i >= 0; i--) {
-        const cls = i === bits - 1 ? ' sign' : '';
-        h += `<div class="overflow-bit${cls}">${(val >>> i) & 1}</div>`;
-      }
-      h += '</div>';
-      return h;
-    }
-
-    html += renderBits(a, 'A');
-    html += renderBits(b, 'B');
-    html += '<div style="border-top:1px solid #ddd;margin:6px 0;"></div>';
-    html += renderBits(sum, 'A + B');
-
-    html += '<div class="overflow-result">';
-    html += `C<sub>in</sub>[MSB] = ${cIn}, C<sub>out</sub>[MSB] = ${cOut}, XOR = ${cIn ^ cOut}<br>`;
+    h += '<div class="overflow-result">';
+    h += `C<sub>in</sub>[MSB] = ${cIn}, C<sub>out</sub>[MSB] = ${cOut}, XOR = ${cIn ^ cOut}<br>`;
     if (overflow) {
-      html += `<span class="overflow-bad">Overflow! True result ${trueSum} doesn\u2019t fit in ${bits} bits (range ${-(1<<(bits-1))} to ${(1<<(bits-1))-1}).</span>`;
+      h += `<span class="overflow-bad">Overflow! True result ${trueSum} doesn\u2019t fit in ${bits} bits (range ${-(1<<(bits-1))} to ${(1<<(bits-1))-1}).</span>`;
     } else {
-      html += `<span class="overflow-ok">No overflow. Result ${signedSum} is correct.</span>`;
+      h += `<span class="overflow-ok">No overflow. Result ${signedSum} is correct.</span>`;
     }
-    html += '</div>';
+    h += '</div>';
 
-    container.innerHTML = html;
-
-    container.querySelector('#ovBits').addEventListener('change', e => { bits = parseInt(e.target.value); render(); });
-    container.querySelector('#ovA').addEventListener('input', e => { valA = parseInt(e.target.value) || 0; render(); });
-    container.querySelector('#ovB').addEventListener('input', e => { valB = parseInt(e.target.value) || 0; render(); });
+    ovOutput.innerHTML = h;
   }
-  render();
+
+  container.querySelector('#ovBits').addEventListener('change', e => { bits = parseInt(e.target.value); updateOutput(); });
+  container.querySelector('#ovA').addEventListener('input', e => { valA = parseInt(e.target.value) || 0; updateOutput(); });
+  container.querySelector('#ovB').addEventListener('input', e => { valB = parseInt(e.target.value) || 0; updateOutput(); });
+
+  updateOutput();
 }
 
 function fixedPointWidget(container) {
@@ -1529,7 +1547,23 @@ function fixedPointWidget(container) {
   let intBits = 4;
   let fracBits = 4;
 
-  function render() {
+  // Build inputs once
+  let html = '<div class="widget-label">Try it \u2014 Fixed-Point Converter</div>';
+  html += '<div class="fp-row">';
+  html += `<input class="fp-input" id="fpVal" value="${decimal}" placeholder="decimal" type="text" style="width:100px;">`;
+  html += `<select class="fp-select" id="fpFmt">`;
+  for (const [m, f] of [[4,4],[8,8],[4,12],[12,4]]) {
+    const sel = m === intBits && f === fracBits ? 'selected' : '';
+    html += `<option value="${m},${f}" ${sel}>Q${m}.${f} (${m+f}-bit)</option>`;
+  }
+  html += '</select>';
+  html += '</div>';
+  html += '<div id="fpOutput"></div>';
+  container.innerHTML = html;
+
+  const fpOutput = container.querySelector('#fpOutput');
+
+  function updateOutput() {
     const totalBits = intBits + fracBits;
     const scale = 1 << fracBits;
     const maxVal = (1 << (totalBits - 1)) - 1;
@@ -1537,71 +1571,70 @@ function fixedPointWidget(container) {
     const maxDecimal = maxVal / scale;
     const minDecimal = minVal / scale;
 
-    // Clamp and quantize
     let clamped = Math.max(minDecimal, Math.min(maxDecimal, decimal));
     let raw = Math.round(clamped * scale);
     if (raw > maxVal) raw = maxVal;
     if (raw < minVal) raw = minVal;
     const actual = raw / scale;
 
-    // Convert to unsigned representation for bit display
     const unsigned = raw < 0 ? raw + (1 << totalBits) : raw;
 
-    let html = '<div class="widget-label">Try it \u2014 Fixed-Point Converter</div>';
-    html += '<div class="fp-row">';
-    html += `<input class="fp-input" id="fpVal" value="${decimal}" placeholder="decimal" type="text" style="width:100px;">`;
-    html += `<select class="fp-select" id="fpFmt">`;
-    for (const [m, f] of [[4,4],[8,8],[4,12],[12,4]]) {
-      const sel = m === intBits && f === fracBits ? 'selected' : '';
-      html += `<option value="${m},${f}" ${sel}>Q${m}.${f} (${m+f}-bit)</option>`;
-    }
-    html += '</select>';
-    html += '</div>';
-
-    // Bit display with radix point
-    html += '<div class="fp-bits">';
+    let h = '<div class="fp-bits" style="overflow-x:auto;">';
     for (let i = totalBits - 1; i >= 0; i--) {
       const bit = (unsigned >>> i) & 1;
       const cls = i >= fracBits ? 'int-part' : 'frac-part';
-      html += `<div class="fp-bit ${cls}">${bit}</div>`;
-      if (i === fracBits) html += '<span class="fp-radix">.</span>';
+      h += `<div class="fp-bit ${cls}">${bit}</div>`;
+      if (i === fracBits) h += '<span class="fp-radix">.</span>';
     }
-    html += '</div>';
+    h += '</div>';
 
-    html += '<div class="fp-info">';
-    html += `<strong>Q${intBits}.${fracBits}</strong> \u2014 ${intBits} integer bits, ${fracBits} fractional bits (${totalBits} bits total)<br>`;
-    html += `Stored integer: ${raw} \u2192 value: ${raw} / 2<sup>${fracBits}</sup> = <strong>${actual}</strong>`;
-    if (actual !== clamped || actual !== decimal) html += ` (input ${decimal} quantized)`;
-    html += `<br>Range: [${minDecimal}, ${maxDecimal}], resolution: ${(1/scale).toFixed(fracBits <= 8 ? fracBits : 8)}`;
-    html += '</div>';
+    h += '<div class="fp-info">';
+    h += `<strong>Q${intBits}.${fracBits}</strong> \u2014 ${intBits} integer bits, ${fracBits} fractional bits (${totalBits} bits total)<br>`;
+    h += `Stored integer: ${raw} \u2192 value: ${raw} / 2<sup>${fracBits}</sup> = <strong>${actual}</strong>`;
+    if (actual !== clamped || actual !== decimal) h += ` (input ${decimal} quantized)`;
+    h += `<br>Range: [${minDecimal}, ${maxDecimal}], resolution: ${(1/scale).toFixed(fracBits <= 8 ? fracBits : 8)}`;
+    h += '</div>';
 
-    container.innerHTML = html;
-
-    container.querySelector('#fpVal').addEventListener('input', e => {
-      const v = parseFloat(e.target.value);
-      if (!isNaN(v)) { decimal = v; render(); }
-    });
-    container.querySelector('#fpFmt').addEventListener('change', e => {
-      const [m, f] = e.target.value.split(',').map(Number);
-      intBits = m; fracBits = f; render();
-    });
+    fpOutput.innerHTML = h;
   }
-  render();
+
+  container.querySelector('#fpVal').addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) { decimal = v; updateOutput(); }
+  });
+  container.querySelector('#fpFmt').addEventListener('change', e => {
+    const [m, f] = e.target.value.split(',').map(Number);
+    intBits = m; fracBits = f; updateOutput();
+  });
+
+  updateOutput();
 }
 
 function barrelShifterWidget(container) {
   const n = 8;
   let shift = 5;
+  const stages = Math.ceil(Math.log2(n));
 
-  function render() {
-    const stages = Math.ceil(Math.log2(n));
-    let html = '<div class="widget-label">Barrel Shifter \u2014 8-bit, 3 stages</div>';
-    html += '<div class="barrel-diagram">';
+  // Build inputs once
+  let html = '<div class="widget-label">Barrel Shifter \u2014 8-bit, 3 stages</div>';
+  html += '<div id="barrelOutput" style="overflow-x:auto;"></div>';
+  html += '<div class="barrel-note">';
+  html += `Shift amount: <input class="overflow-input" id="barrelShift" type="number" min="0" max="${n-1}" value="${shift}" style="width:50px;"> `;
+  html += `<span id="barrelBinary">= ${shift.toString(2).padStart(stages, '0')}<sub>2</sub></span>`;
+  html += `<br>Each stage: if control bit is 1, shift by 2<sup>k</sup>; if 0, pass through. Active stages highlighted.`;
+  html += '</div>';
+  container.innerHTML = html;
+
+  const barrelOutput = container.querySelector('#barrelOutput');
+  const barrelBinary = container.querySelector('#barrelBinary');
+
+  function updateOutput() {
+    let h = '<div class="barrel-diagram">';
 
     // Input row
-    html += '<div class="barrel-stage"><div class="barrel-label">Input</div><div class="barrel-muxes">';
-    for (let i = n - 1; i >= 0; i--) html += `<div class="barrel-mux pass">d${i}</div>`;
-    html += '</div></div>';
+    h += '<div class="barrel-stage"><div class="barrel-label">Input</div><div class="barrel-muxes">';
+    for (let i = n - 1; i >= 0; i--) h += `<div class="barrel-mux pass">d${i}</div>`;
+    h += '</div></div>';
 
     // Each stage
     let current = [];
@@ -1612,62 +1645,62 @@ function barrelShifterWidget(container) {
       const active = (shift >> s) & 1;
       const next = [];
 
-      html += `<div class="barrel-stage"><div class="barrel-label">Stage ${s}<br>shift ${shiftAmt}${active ? ' \u2713' : ''}</div><div class="barrel-muxes">`;
+      h += `<div class="barrel-stage"><div class="barrel-label">Stage ${s}<br>shift ${shiftAmt}${active ? ' \u2713' : ''}</div><div class="barrel-muxes">`;
       for (let i = n - 1; i >= 0; i--) {
         if (active && i - shiftAmt >= 0) {
           next[i] = current[i - shiftAmt];
-          html += `<div class="barrel-mux">d${next[i]}</div>`;
+          h += `<div class="barrel-mux">d${next[i]}</div>`;
         } else if (active && i - shiftAmt < 0) {
           next[i] = -1;
-          html += '<div class="barrel-mux">0</div>';
+          h += '<div class="barrel-mux">0</div>';
         } else {
           next[i] = current[i];
-          html += `<div class="barrel-mux pass">d${next[i]}</div>`;
+          h += `<div class="barrel-mux pass">d${next[i]}</div>`;
         }
       }
-      html += '</div></div>';
+      h += '</div></div>';
       current = next;
     }
 
     // Output row
-    html += '<div class="barrel-stage"><div class="barrel-label">Output</div><div class="barrel-muxes">';
+    h += '<div class="barrel-stage"><div class="barrel-label">Output</div><div class="barrel-muxes">';
     for (let i = n - 1; i >= 0; i--) {
       const v = current[i] < 0 ? '0' : 'd' + current[i];
-      html += `<div class="barrel-mux">${v}</div>`;
+      h += `<div class="barrel-mux">${v}</div>`;
     }
-    html += '</div></div>';
-    html += '</div>';
+    h += '</div></div>';
+    h += '</div>';
 
-    html += '<div class="barrel-note">';
-    html += `Shift amount: <input class="overflow-input" id="barrelShift" type="number" min="0" max="${n-1}" value="${shift}" style="width:50px;"> `;
-    html += `= ${shift.toString(2).padStart(stages, '0')}<sub>2</sub>`;
-    html += `<br>Each stage: if control bit is 1, shift by 2<sup>k</sup>; if 0, pass through. Active stages highlighted.`;
-    html += '</div>';
-
-    container.innerHTML = html;
-
-    container.querySelector('#barrelShift').addEventListener('input', e => {
-      const v = parseInt(e.target.value);
-      if (!isNaN(v) && v >= 0 && v < n) { shift = v; render(); }
-    });
+    barrelOutput.innerHTML = h;
+    barrelBinary.innerHTML = `= ${shift.toString(2).padStart(stages, '0')}<sub>2</sub>`;
   }
-  render();
+
+  container.querySelector('#barrelShift').addEventListener('input', e => {
+    const v = parseInt(e.target.value);
+    if (!isNaN(v) && v >= 0 && v < n) { shift = v; updateOutput(); }
+  });
+
+  updateOutput();
 }
 
 function ieeeWidget(container) {
   let inputStr = '3.14';
 
-  function render() {
+  // Build input once
+  let html = '<div class="widget-label">Try it \u2014 IEEE 754 Single Precision</div>';
+  html += '<div class="ieee-row">';
+  html += `<input class="ieee-input" id="ieeeVal" value="${inputStr}" placeholder="decimal number" type="text">`;
+  html += '</div>';
+  html += '<div id="ieeeOutput"></div>';
+  container.innerHTML = html;
+
+  const ieeeOutput = container.querySelector('#ieeeOutput');
+
+  function updateOutput() {
     const val = parseFloat(inputStr);
-    let html = '<div class="widget-label">Try it \u2014 IEEE 754 Single Precision</div>';
-    html += '<div class="ieee-row">';
-    html += `<input class="ieee-input" id="ieeeVal" value="${inputStr}" placeholder="decimal number" type="text">`;
-    html += '</div>';
 
     if (isNaN(val) && inputStr.toLowerCase() !== 'nan') {
-      html += '<div class="ieee-info">Enter a number, "Infinity", "-Infinity", or "NaN".</div>';
-      container.innerHTML = html;
-      container.querySelector('#ieeeVal').addEventListener('input', e => { inputStr = e.target.value; render(); });
+      ieeeOutput.innerHTML = '<div class="ieee-info">Enter a number, "Infinity", "-Infinity", or "NaN".</div>';
       return;
     }
 
@@ -1682,50 +1715,54 @@ function ieeeWidget(container) {
     const exp = (bits32 >>> 23) & 0xFF;
     const mant = bits32 & 0x7FFFFF;
 
+    let h = '';
+
     // Field labels
-    html += '<div class="ieee-field-labels">';
-    html += '<div class="ieee-field-label sign">S</div>';
-    html += '<div class="ieee-field-label exp">Exponent (8 bits)</div>';
-    html += '<div class="ieee-field-label mant">Mantissa (23 bits)</div>';
-    html += '</div>';
+    h += '<div class="ieee-field-labels" style="overflow-x:auto;">';
+    h += '<div class="ieee-field-label sign">S</div>';
+    h += '<div class="ieee-field-label exp">Exponent (8 bits)</div>';
+    h += '<div class="ieee-field-label mant">Mantissa (23 bits)</div>';
+    h += '</div>';
 
     // Bit display
-    html += '<div class="ieee-bits">';
-    html += `<div class="ieee-bit ieee-sign">${sign}</div>`;
+    h += '<div class="ieee-bits" style="overflow-x:auto;">';
+    h += `<div class="ieee-bit ieee-sign">${sign}</div>`;
     for (let i = 7; i >= 0; i--) {
-      html += `<div class="ieee-bit ieee-exp">${(exp >>> i) & 1}</div>`;
+      h += `<div class="ieee-bit ieee-exp">${(exp >>> i) & 1}</div>`;
     }
     for (let i = 22; i >= 0; i--) {
-      html += `<div class="ieee-bit ieee-mant">${(mant >>> i) & 1}</div>`;
+      h += `<div class="ieee-bit ieee-mant">${(mant >>> i) & 1}</div>`;
     }
-    html += '</div>';
+    h += '</div>';
 
     // Interpretation
-    html += '<div class="ieee-info">';
-    html += `<span style="color:#dc3545;">Sign:</span> ${sign} (${sign ? 'negative' : 'positive'})<br>`;
-    html += `<span style="color:#0066cc;">Exponent:</span> ${exp} (biased) = ${exp - 127} (actual)<br>`;
-    html += `<span style="color:#28a745;">Mantissa:</span> 0x${mant.toString(16).toUpperCase().padStart(6, '0')} = ${mant} / 2<sup>23</sup><br>`;
+    h += '<div class="ieee-info">';
+    h += `<span style="color:#dc3545;">Sign:</span> ${sign} (${sign ? 'negative' : 'positive'})<br>`;
+    h += `<span style="color:#0066cc;">Exponent:</span> ${exp} (biased) = ${exp - 127} (actual)<br>`;
+    h += `<span style="color:#28a745;">Mantissa:</span> 0x${mant.toString(16).toUpperCase().padStart(6, '0')} = ${mant} / 2<sup>23</sup><br>`;
 
     if (exp === 0 && mant === 0) {
-      html += `<span class="ieee-special">${sign ? '\u2212' : '+'}0 (zero)</span>`;
+      h += `<span class="ieee-special">${sign ? '\u2212' : '+'}0 (zero)</span>`;
     } else if (exp === 0) {
       const denorm = mant / (1 << 23);
       const value = (sign ? -1 : 1) * Math.pow(2, -126) * denorm;
-      html += `<span class="ieee-special">Denormalized:</span> (\u22121)<sup>${sign}</sup> \u00D7 2<sup>\u2212126</sup> \u00D7 0.${mant.toString(2).padStart(23,'0')} = ${value.toExponential(6)}`;
+      h += `<span class="ieee-special">Denormalized:</span> (\u22121)<sup>${sign}</sup> \u00D7 2<sup>\u2212126</sup> \u00D7 0.${mant.toString(2).padStart(23,'0')} = ${value.toExponential(6)}`;
     } else if (exp === 255 && mant === 0) {
-      html += `<span class="ieee-special">${sign ? '\u2212' : '+'}Infinity</span>`;
+      h += `<span class="ieee-special">${sign ? '\u2212' : '+'}Infinity</span>`;
     } else if (exp === 255) {
-      html += '<span class="ieee-special">NaN (Not a Number)</span>';
+      h += '<span class="ieee-special">NaN (Not a Number)</span>';
     } else {
       const significand = 1 + mant / (1 << 23);
-      html += `Value = (\u22121)<sup>${sign}</sup> \u00D7 2<sup>${exp - 127}</sup> \u00D7 ${significand.toFixed(8)} = <strong>${dv.getFloat32(0)}</strong>`;
+      h += `Value = (\u22121)<sup>${sign}</sup> \u00D7 2<sup>${exp - 127}</sup> \u00D7 ${significand.toFixed(8)} = <strong>${dv.getFloat32(0)}</strong>`;
     }
-    html += '</div>';
+    h += '</div>';
 
-    container.innerHTML = html;
-    container.querySelector('#ieeeVal').addEventListener('input', e => { inputStr = e.target.value; render(); });
+    ieeeOutput.innerHTML = h;
   }
-  render();
+
+  container.querySelector('#ieeeVal').addEventListener('input', e => { inputStr = e.target.value; updateOutput(); });
+
+  updateOutput();
 }
 
 /* ═══════════════════════ Rendering ═══════════════════════ */
