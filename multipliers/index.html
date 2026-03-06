@@ -593,9 +593,9 @@ const MULTIPLIERS = {
     name: 'Shift-and-Add',
     short: 'S&A',
     area: n => 2 * n,
-    delay: n => 4 * n * n,
+    delay: n => 2 * n * n,
     areaFormula: '2n',
-    delayFormula: '4n\u00B2',
+    delayFormula: '2n\u00B2',
   },
   array: {
     name: 'Array Multiplier',
@@ -609,9 +609,9 @@ const MULTIPLIERS = {
     name: "Booth's (Radix-2)",
     short: 'Booth',
     area: n => 2 * n,
-    delay: n => 4 * n * n,
+    delay: n => 2 * n * n,
     areaFormula: '2n',
-    delayFormula: '4n\u00B2',
+    delayFormula: '2n\u00B2',
   },
   wallace: {
     name: 'Wallace Tree',
@@ -619,7 +619,7 @@ const MULTIPLIERS = {
     area: (n, ft) => n * n,
     delay: (n, ft) => {
       const wl = wallaceLevels(n);
-      return 2 + 2 * wl + cpaDelay(ft || 'rca', 2 * n);
+      return 1 + 2 * wl + cpaDelay(ft || 'rca', 2 * n);
     },
     areaFormula: 'n\u00B2',
     delayFormula: '2+2L+CPA(2n)',
