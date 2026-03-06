@@ -11,6 +11,8 @@
   <title>Learn | p14m.com</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/shared.css">
+  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore-compat.js"></script>
   <style>
     /* ── Learn-specific styles ── */
 
@@ -594,6 +596,69 @@
     .ieee-special { font-weight: 600; color: #856404; }
     body.dark .ieee-special { color: #ffc107; }
 
+    /* ── Feedback widget ── */
+    .feedback-box {
+      border-top: 1px solid #e0e0e0;
+      padding-top: 16px;
+      margin-top: 24px;
+      text-align: center;
+    }
+    body.dark .feedback-box { border-top-color: #333333; }
+    .feedback-q {
+      font-size: 13px;
+      color: #595959;
+      margin-bottom: 10px;
+    }
+    body.dark .feedback-q { color: #888888; }
+    .feedback-btns {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .feedback-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: transparent;
+      border: 1px solid #cccccc;
+      border-radius: 20px;
+      padding: 6px 18px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: #595959;
+    }
+    .feedback-btn:hover { border-color: #0066cc; color: #0066cc; }
+    body.dark .feedback-btn { border-color: #444444; color: #888888; }
+    body.dark .feedback-btn:hover { border-color: #87ceeb; color: #87ceeb; }
+    .feedback-btn.voted {
+      border-color: #0066cc;
+      background: rgba(0,102,204,0.08);
+      color: #0066cc;
+      cursor: default;
+    }
+    body.dark .feedback-btn.voted {
+      border-color: #87ceeb;
+      background: rgba(135,206,235,0.1);
+      color: #87ceeb;
+    }
+    .feedback-btn.dimmed {
+      opacity: 0.4;
+      cursor: default;
+    }
+    .feedback-count {
+      font-size: 11px;
+      color: #999999;
+      font-weight: 600;
+    }
+    .feedback-thanks {
+      font-size: 12px;
+      color: #28a745;
+      margin-top: 8px;
+    }
+    body.dark .feedback-thanks { color: #4caf50; }
+
     /* ── Responsive ── */
     @media (max-width: 600px) {
       .card-grid { grid-template-columns: 1fr; }
@@ -644,6 +709,79 @@
   </main>
 
 <script>
+/* ═══════════════════════ Firebase ═══════════════════════ */
+
+firebase.initializeApp({
+  apiKey: "AIzaSyDjXO28mfjl3L85F91DhWuaYNMIvYcDdPM",
+  authDomain: "p14m-helpful-counter.firebaseapp.com",
+  projectId: "p14m-helpful-counter",
+  storageBucket: "p14m-helpful-counter.firebasestorage.app",
+  messagingSenderId: "109214087494",
+  appId: "1:109214087494:web:6affe1ce6be75c1d298d47",
+});
+
+const db = firebase.firestore();
+
+function getVote(topicId) {
+  return localStorage.getItem('feedback_' + topicId);
+}
+
+function setVote(topicId, vote) {
+  localStorage.setItem('feedback_' + topicId, vote);
+}
+
+function submitFeedback(topicId, vote) {
+  if (getVote(topicId)) return;
+  setVote(topicId, vote);
+  const ref = db.collection('feedback').doc(topicId);
+  ref.set({ [vote]: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+}
+
+function mountFeedback(topicId) {
+  const mount = document.getElementById('feedbackMount');
+  if (!mount) return;
+
+  const existing = getVote(topicId);
+
+  function renderFeedback(yes, no) {
+    let html = '<div class="feedback-q">Was this helpful?</div>';
+    html += '<div class="feedback-btns">';
+    if (existing) {
+      const yClass = existing === 'yes' ? 'voted' : 'dimmed';
+      const nClass = existing === 'no' ? 'voted' : 'dimmed';
+      html += `<span class="feedback-btn ${yClass}">Yes <span class="feedback-count">${yes}</span></span>`;
+      html += `<span class="feedback-btn ${nClass}">No <span class="feedback-count">${no}</span></span>`;
+      html += '</div>';
+      html += '<div class="feedback-thanks">Thanks for your feedback!</div>';
+    } else {
+      html += `<button class="feedback-btn" data-vote="yes">Yes <span class="feedback-count">${yes}</span></button>`;
+      html += `<button class="feedback-btn" data-vote="no">No <span class="feedback-count">${no}</span></button>`;
+      html += '</div>';
+    }
+    mount.innerHTML = html;
+
+    if (!existing) {
+      mount.querySelectorAll('.feedback-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const vote = btn.dataset.vote;
+          submitFeedback(topicId, vote);
+          const counts = { yes, no };
+          counts[vote]++;
+          renderFeedback(counts.yes, counts.no);
+        });
+      });
+    }
+  }
+
+  // Load counts from Firestore
+  db.collection('feedback').doc(topicId).get().then(doc => {
+    const data = doc.exists ? doc.data() : {};
+    renderFeedback(data.yes || 0, data.no || 0);
+  }).catch(() => {
+    renderFeedback(0, 0);
+  });
+}
+
 /* ═══════════════════════ Theme ═══════════════════════ */
 
 function toggleTheme() {
@@ -1785,6 +1923,9 @@ function renderTopic(id) {
     html += '</div>';
   }
 
+  // Feedback
+  html += '<div class="feedback-box" id="feedbackMount"></div>';
+
   html += '</div>'; // close .section
 
   content.innerHTML = html;
@@ -1794,6 +1935,9 @@ function renderTopic(id) {
     const mount = document.getElementById('widgetMount');
     if (mount) topic.interactive(mount);
   }
+
+  // Mount feedback widget
+  mountFeedback(topic.id);
 
   // Scroll to top
   window.scrollTo(0, 0);
