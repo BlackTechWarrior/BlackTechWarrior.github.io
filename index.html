@@ -135,5 +135,230 @@
         }
     });
 </script>
+<!-- 🍪 Cookie Easter Egg — drop this anywhere inside <body>, before closing </body> tag -->
+<!-- First-visit only. Self-contained: styles + markup + script. -->
+
+<div id="cookie-easter-egg"></div>
+
+<style>
+  /* ── Cookie Easter Egg ── */
+  #cookie-easter-egg {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .cookie-falling {
+    position: absolute;
+    font-size: 38px;
+    top: -50px;
+    will-change: transform;
+    z-index: 10001;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+  }
+
+  /* Gentle wobble while falling */
+  @keyframes cookieWobble {
+    0%, 100% { transform: rotate(-8deg); }
+    50%      { transform: rotate(8deg); }
+  }
+
+  /* Crumble particle */
+  .crumb {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    will-change: transform, opacity;
+    z-index: 10001;
+  }
+
+  /* Banner */
+  .cookie-banner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.7);
+    opacity: 0;
+    z-index: 10002;
+    background: #ffffff;
+    border: 2px solid #cccccc;
+    border-radius: 12px;
+    padding: 22px 38px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #000000;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    pointer-events: none;
+    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    line-height: 1.5;
+  }
+
+  .cookie-banner.visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  .cookie-banner.fade-out {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+
+  .cookie-banner .banner-sub {
+    font-size: 13px;
+    font-weight: 400;
+    color: #767676;
+    margin-top: 4px;
+  }
+
+  /* Dark mode */
+  body.dark .cookie-banner {
+    background: #1a1a1a;
+    border-color: #444444;
+    color: #e0e0e0;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  body.dark .cookie-banner .banner-sub {
+    color: #888888;
+  }
+</style>
+
+<script>
+(function() {
+  // ── First visit gate ──
+  if (localStorage.getItem('p14m_cookie_seen')) return;
+  localStorage.setItem('p14m_cookie_seen', '1');
+
+  var container = document.getElementById('cookie-easter-egg');
+  if (!container) return;
+
+  var COOKIE_COUNT  = 10;
+  var FALL_DURATION_MIN = 2200; // ms
+  var FALL_DURATION_MAX = 3200;
+  var CRUMBS_PER_COOKIE = 8;
+  var BANNER_DELAY  = 600;  // ms after last cookie lands
+  var BANNER_LINGER = 2200; // ms banner stays visible
+  var FADE_OUT_MS   = 500;
+
+  var crumbColors = ['#d2691e', '#8b5e3c', '#c4a35a', '#a0522d', '#e8c07a', '#6b3a2a'];
+  var isDark = document.body.classList.contains('dark');
+
+  var landedCount = 0;
+  var totalCookies = COOKIE_COUNT;
+
+  // ── Spawn cookies with staggered delays ──
+  for (var i = 0; i < COOKIE_COUNT; i++) {
+    spawnCookie(i * 220 + Math.random() * 180);
+  }
+
+  function spawnCookie(delay) {
+    setTimeout(function() {
+      var el = document.createElement('div');
+      el.className = 'cookie-falling';
+      el.textContent = '🍪';
+
+      // Random horizontal position (10%–90% viewport)
+      var xPct = 10 + Math.random() * 80;
+      el.style.left = xPct + '%';
+
+      // Wobble
+      el.style.animation = 'cookieWobble ' + (0.4 + Math.random() * 0.3).toFixed(2) + 's ease-in-out infinite';
+
+      container.appendChild(el);
+
+      // Fall animation via JS (CSS transition)
+      var fallDur = FALL_DURATION_MIN + Math.random() * (FALL_DURATION_MAX - FALL_DURATION_MIN);
+      var landY = window.innerHeight - 50;
+
+      el.style.transition = 'top ' + (fallDur / 1000).toFixed(2) + 's cubic-bezier(0.25, 0.1, 0.35, 1)';
+
+      // Force reflow then animate
+      el.getBoundingClientRect();
+      el.style.top = landY + 'px';
+
+      // On landing → crumble
+      setTimeout(function() {
+        var rect = el.getBoundingClientRect();
+        var cx = rect.left + rect.width / 2;
+        var cy = rect.top + rect.height / 2;
+
+        el.remove();
+        spawnCrumbs(cx, cy);
+
+        landedCount++;
+        if (landedCount >= totalCookies) {
+          setTimeout(showBanner, BANNER_DELAY);
+        }
+      }, fallDur + 30);
+
+    }, delay);
+  }
+
+  function spawnCrumbs(cx, cy) {
+    for (var j = 0; j < CRUMBS_PER_COOKIE; j++) {
+      var crumb = document.createElement('div');
+      crumb.className = 'crumb';
+
+      var size = 4 + Math.random() * 5;
+      crumb.style.width = size + 'px';
+      crumb.style.height = size + 'px';
+      crumb.style.background = crumbColors[Math.floor(Math.random() * crumbColors.length)];
+      crumb.style.left = cx + 'px';
+      crumb.style.top = cy + 'px';
+      crumb.style.opacity = '1';
+
+      container.appendChild(crumb);
+
+      // Animate outward + fade
+      var angle = (Math.PI * 2 * j) / CRUMBS_PER_COOKIE + (Math.random() - 0.5) * 0.8;
+      var dist = 30 + Math.random() * 50;
+      var dx = Math.cos(angle) * dist;
+      var dy = Math.sin(angle) * dist - (20 + Math.random() * 30); // bias upward first
+
+      var dur = 400 + Math.random() * 300;
+
+      crumb.style.transition = 'transform ' + dur + 'ms cubic-bezier(0.25, 0, 0.5, 1), opacity ' + dur + 'ms ease-out';
+
+      crumb.getBoundingClientRect();
+      crumb.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+      crumb.style.opacity = '0';
+
+      // Cleanup
+      (function(c, d) {
+        setTimeout(function() { c.remove(); }, d + 50);
+      })(crumb, dur);
+    }
+  }
+
+  function showBanner() {
+    var banner = document.createElement('div');
+    banner.className = 'cookie-banner';
+    banner.innerHTML = '<div>no cookies here 🍪✨</div><div class="banner-sub">those were the last ones</div>';
+    container.appendChild(banner);
+
+    // Trigger entrance
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        banner.classList.add('visible');
+      });
+    });
+
+    // Fade out after linger
+    setTimeout(function() {
+      banner.classList.remove('visible');
+      banner.classList.add('fade-out');
+
+      setTimeout(function() {
+        container.remove();
+      }, FADE_OUT_MS + 50);
+    }, BANNER_LINGER);
+  }
+})();
+</script>
 </body>
 </html>
