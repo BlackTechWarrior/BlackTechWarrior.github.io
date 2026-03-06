@@ -11,8 +11,8 @@
   <title>Learn | p14m.com</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/shared.css">
-  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore-compat.js"></script>
   <style>
     /* ── Learn-specific styles ── */
 
@@ -701,16 +701,18 @@
 <script>
 /* ═══════════════════════ Firebase ═══════════════════════ */
 
-firebase.initializeApp({
-  apiKey: "AIzaSyDjXO28mfjl3L85F91DhWuaYNMIvYcDdPM",
-  authDomain: "p14m-helpful-counter.firebaseapp.com",
-  projectId: "p14m-helpful-counter",
-  storageBucket: "p14m-helpful-counter.firebasestorage.app",
-  messagingSenderId: "109214087494",
-  appId: "1:109214087494:web:6affe1ce6be75c1d298d47",
-});
-
-const db = firebase.firestore();
+var db = null;
+try {
+  firebase.initializeApp({
+    apiKey: "AIzaSyDjXO28mfjl3L85F91DhWuaYNMIvYcDdPM",
+    authDomain: "p14m-helpful-counter.firebaseapp.com",
+    projectId: "p14m-helpful-counter",
+    storageBucket: "p14m-helpful-counter.firebasestorage.app",
+    messagingSenderId: "109214087494",
+    appId: "1:109214087494:web:6affe1ce6be75c1d298d47",
+  });
+  db = firebase.firestore();
+} catch(e) {}
 
 function getVote(topicId) {
   return localStorage.getItem('feedback_' + topicId);
@@ -742,7 +744,7 @@ function mountFeedback(topicId) {
       html += '<div class="feedback-thanks">Thanks for your feedback!</div>';
     } else {
       html += '<div class="feedback-btns">';
-      html += `<button class="feedback-btn" id="helpfulBtn">\uD83D\uDC4D Helpful <span class="feedback-count">${count}</span></button>`;
+      html += `<button class="feedback-btn" id="helpfulBtn">\uD83D\uDC4D Helpful? <span class="feedback-count">${count}</span></button>`;
       html += '</div>';
     }
     mount.innerHTML = html;
@@ -755,12 +757,16 @@ function mountFeedback(topicId) {
     }
   }
 
-  db.collection('feedback').doc(topicId).get().then(doc => {
-    const data = doc.exists ? doc.data() : {};
-    renderFeedback(data.helpful || 0);
-  }).catch(() => {
+  if (db) {
+    db.collection('feedback').doc(topicId).get().then(doc => {
+      const data = doc.exists ? doc.data() : {};
+      renderFeedback(data.helpful || 0);
+    }).catch(() => {
+      renderFeedback(0);
+    });
+  } else {
     renderFeedback(0);
-  });
+  }
 }
 
 /* ═══════════════════════ Theme ═══════════════════════ */
