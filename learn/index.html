@@ -1447,6 +1447,19 @@ function boothWidget(container) {
     else h += 'Operations: ' + ops.join(' ');
     h += '</div>';
 
+    // Booth efficiency note
+    const nonZero = digits.filter(d => d !== 0).length;
+    const onesInBinary = clamped.toString(2).split('').filter(c => c === '1').length;
+    h += '<div class="booth-result-row" style="color:#767676;font-size:11px;margin-top:4px;">';
+    if (nonZero < onesInBinary) {
+      h += `Booth wins: ${nonZero} op${nonZero !== 1 ? 's' : ''} vs ${onesInBinary} with standard binary. Ideal when bits have long runs of 1s (e.g. 0b0111110), since Booth collapses each run into just a subtract and an add.`;
+    } else if (nonZero > onesInBinary) {
+      h += `Booth hurts: ${nonZero} ops vs ${onesInBinary} with standard binary. Alternating bit patterns (e.g. 0b01010101) break Booth\u2019s advantage \u2014 every transition creates an operation instead of collapsing runs.`;
+    } else {
+      h += `Neutral: ${nonZero} ops either way. Booth shines on long runs of 1s; it loses on alternating 0/1 patterns.`;
+    }
+    h += '</div>';
+
     boothOutput.innerHTML = h;
   }
 
