@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive order book simulator with step-by-step matching visualization. Learn how limit order books, price-time priority, and order matching work.">
+  <meta property="og:title" content="Order Book Simulator | p14m.com">
+  <meta property="og:description" content="Interactive order book simulator with step-by-step matching visualization.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://p14m.com/orderbook/">
+  <title>Order Book Simulator | p14m.com</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    /* ── Order Book specific styles ── */
+
+    .ob-spread-bar {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      padding: 10px 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+    body.dark .ob-spread-bar { border-color: #333; }
+    .ob-spread-bar .ob-metric { text-align: center; }
+    .ob-spread-bar .ob-metric-label { color: #767676; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    body.dark .ob-spread-bar .ob-metric-label { color: #888; }
+    .ob-spread-bar .ob-metric-value { font-weight: 600; font-family: monospace; font-size: 14px; }
+
+    .ob-layout {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 700px) {
+      .ob-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── Book ladder ── */
+    .ob-book { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    body.dark .ob-book { border-color: #333; }
+
+    .ob-book-header {
+      display: grid;
+      grid-template-columns: 90px 1fr 70px 60px;
+      padding: 6px 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #767676;
+      border-bottom: 1px solid #e0e0e0;
+      background: #fafafa;
+    }
+    body.dark .ob-book-header { background: #222; border-bottom-color: #333; color: #888; }
+    .ob-book-header span:nth-child(3),
+    .ob-book-header span:nth-child(4) { text-align: right; }
+
+    .ob-book-body { max-height: 440px; overflow-y: auto; }
+
+    .ob-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 70px 60px;
+      padding: 3px 10px;
+      font-size: 13px;
+      font-family: monospace;
+      position: relative;
+      transition: background 0.15s;
+      align-items: center;
+      min-height: 26px;
+    }
+    .ob-row { cursor: pointer; }
+    .ob-row:hover { background: rgba(0,0,0,0.03); }
+    body.dark .ob-row:hover { background: rgba(255,255,255,0.03); }
+
+    .ob-row .ob-depth-bar {
+      position: absolute;
+      top: 0; bottom: 0;
+      opacity: 0.10;
+      pointer-events: none;
+      transition: width 0.3s;
+    }
+    .ob-row-ask .ob-depth-bar { right: 0; background: #e74c3c; }
+    .ob-row-bid .ob-depth-bar { right: 0; background: #2ecc71; }
+
+    .ob-row span:nth-child(2) { padding-left: 4px; }
+    .ob-row span:nth-child(3),
+    .ob-row span:nth-child(4) { text-align: right; }
+
+    .ob-row-ask .ob-price { color: #c0392b; }
+    .ob-row-bid .ob-price { color: #0a7c42; }
+    body.dark .ob-row-ask .ob-price { color: #e74c3c; }
+    body.dark .ob-row-bid .ob-price { color: #2ecc71; }
+
+    .ob-row-best { font-weight: 700; }
+
+    .ob-spread-row {
+      padding: 6px 10px;
+      text-align: center;
+      font-size: 12px;
+      color: #767676;
+      border-top: 1px dashed #e0e0e0;
+      border-bottom: 1px dashed #e0e0e0;
+      background: #fafafa;
+      font-family: monospace;
+    }
+    body.dark .ob-spread-row { background: #222; border-color: #333; color: #888; }
+
+    .ob-row.ob-flash { animation: obFlash 0.4s ease-out; }
+    @keyframes obFlash {
+      0% { background: rgba(230,126,34,0.3); }
+      100% { background: transparent; }
+    }
+
+    /* ── Side panel ── */
+    .ob-panel { display: flex; flex-direction: column; gap: 12px; }
+
+    .ob-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    body.dark .ob-card { border-color: #333; }
+    .ob-card-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #767676;
+      margin-bottom: 10px;
+    }
+    body.dark .ob-card-title { color: #888; }
+
+    /* Side toggle */
+    .ob-side-toggle {
+      display: flex;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+      margin-bottom: 8px;
+    }
+    body.dark .ob-side-toggle { border-color: #444; }
+    .ob-side-btn {
+      flex: 1;
+      padding: 7px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: #767676;
+      transition: all 0.15s;
+    }
+    .ob-side-btn.ob-buy-active { background: #0a7c42; color: white; }
+    .ob-side-btn.ob-sell-active { background: #c0392b; color: white; }
+    body.dark .ob-side-btn { color: #888; }
+    body.dark .ob-side-btn.ob-buy-active { background: #2ecc71; color: #1a1a1a; }
+    body.dark .ob-side-btn.ob-sell-active { background: #e74c3c; color: #1a1a1a; }
+
+    .ob-type-toggle {
+      display: flex;
+      gap: 0;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+      margin-bottom: 8px;
+    }
+    body.dark .ob-type-toggle { border-color: #444; }
+    .ob-type-btn {
+      flex: 1;
+      padding: 6px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      color: #767676;
+      transition: all 0.15s;
+    }
+    .ob-type-btn.active { background: #0066cc; color: white; }
+    body.dark .ob-type-btn { color: #888; }
+    body.dark .ob-type-btn.active { background: #87ceeb; color: #1a1a1a; }
+
+    .ob-field { margin-bottom: 8px; }
+    .ob-field label {
+      display: block;
+      font-size: 11px;
+      color: #767676;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    body.dark .ob-field label { color: #888; }
+    .ob-field input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      background: #fff;
+      color: #000;
+    }
+    body.dark .ob-field input { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+    .ob-field input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .ob-submit-btn {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      margin-bottom: 4px;
+    }
+    .ob-submit-btn:hover { opacity: 0.85; }
+    .ob-submit-buy { background: #0a7c42; color: white; }
+    .ob-submit-sell { background: #c0392b; color: white; }
+    body.dark .ob-submit-buy { background: #2ecc71; color: #1a1a1a; }
+    body.dark .ob-submit-sell { background: #e74c3c; color: #1a1a1a; }
+
+    .ob-reset-btn {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: transparent;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      color: inherit;
+      transition: border-color 0.15s;
+    }
+    .ob-reset-btn:hover { border-color: #999; }
+    body.dark .ob-reset-btn { border-color: #444; }
+    body.dark .ob-reset-btn:hover { border-color: #666; }
+
+    /* Step mode */
+    .ob-step-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .ob-step-toggle input[type="checkbox"] { cursor: pointer; }
+
+    .ob-step-btn {
+      width: 100%;
+      padding: 7px;
+      border: 1px solid #e67e22;
+      border-radius: 6px;
+      background: transparent;
+      color: #e67e22;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: none;
+    }
+    .ob-step-btn:hover { background: #e67e22; color: white; }
+    body.dark .ob-step-btn { border-color: #f39c12; color: #f39c12; }
+    body.dark .ob-step-btn:hover { background: #f39c12; color: #1a1a1a; }
+    .ob-step-btn.visible { display: block; }
+
+    .ob-step-narration {
+      font-family: monospace;
+      font-size: 12px;
+      padding: 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background: #fafafa;
+      min-height: 36px;
+      line-height: 1.5;
+      display: none;
+    }
+    .ob-step-narration.visible { display: block; }
+    body.dark .ob-step-narration { background: #222; border-color: #333; }
+
+    /* Scenarios */
+    .ob-scenario-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .ob-scenario-btn {
+      padding: 8px 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      color: inherit;
+      transition: border-color 0.15s;
+      line-height: 1.4;
+    }
+    .ob-scenario-btn:hover { border-color: #0066cc; }
+    body.dark .ob-scenario-btn { border-color: #333; }
+    body.dark .ob-scenario-btn:hover { border-color: #87ceeb; }
+    .ob-scenario-btn strong { display: block; font-size: 13px; margin-bottom: 2px; }
+
+    /* ── Bottom panels ── */
+    .ob-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 700px) {
+      .ob-bottom { grid-template-columns: 1fr; }
+    }
+
+    .ob-trades-list, .ob-orders-list {
+      max-height: 220px;
+      overflow-y: auto;
+      font-size: 12px;
+      font-family: monospace;
+    }
+
+    .ob-trade-row, .ob-order-row {
+      display: grid;
+      padding: 3px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 12px;
+      align-items: center;
+    }
+    body.dark .ob-trade-row, body.dark .ob-order-row { border-bottom-color: #2a2a2a; }
+    .ob-trade-row { grid-template-columns: 60px 70px 60px 50px; }
+    .ob-order-row { grid-template-columns: 30px 35px 35px 60px 45px 45px 40px 55px; gap: 2px; }
+
+    .ob-trade-buy { color: #0a7c42; }
+    .ob-trade-sell { color: #c0392b; }
+    body.dark .ob-trade-buy { color: #2ecc71; }
+    body.dark .ob-trade-sell { color: #e74c3c; }
+
+    .ob-th {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: #767676;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 4px;
+    }
+    body.dark .ob-th { color: #888; border-bottom-color: #333; }
+    .ob-trades-th { display: grid; grid-template-columns: 60px 70px 60px 50px; }
+    .ob-orders-th { display: grid; grid-template-columns: 30px 35px 35px 60px 45px 45px 40px 55px; gap: 2px; }
+
+    .ob-status-new { color: #0066cc; }
+    .ob-status-partial { color: #e67e22; }
+    .ob-status-filled { color: #0a7c42; }
+    .ob-status-cancelled { color: #999; }
+    body.dark .ob-status-new { color: #87ceeb; }
+    body.dark .ob-status-partial { color: #f39c12; }
+    body.dark .ob-status-filled { color: #2ecc71; }
+
+    .ob-empty { color: #999; font-style: italic; padding: 12px 0; font-family: inherit; font-size: 12px; }
+  </style>
+</head>
+<body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+<main class="container">
+  <div class="nav-row">
+    <div class="nav-links">
+      <a href="/" class="back-link">&larr; p14m.com</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/adders/">Adders</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/bits/">Bits</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/circuitgen/">CircuitGen</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/kmap/">K-Map</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/multipliers/">Multipliers</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/learn/">Learn</a>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-text">&#9790;</span>
+    </button>
+  </div>
+
+  <h1>Order Book Simulator</h1>
+  <p class="subtitle">Interactive limit order book with step-by-step matching visualization &mdash; instrument: ALPHA</p>
+
+  <details class="how-to">
+    <summary>How to use</summary>
+    <div class="how-to-body">
+      <p><strong>The book</strong> shows all resting buy orders (bids, green) and sell orders (asks, red) for a fictional instrument. Asks are on top, bids on bottom, with the spread in the middle. Each row shows the price, total quantity and number of orders at that level, cumulative depth, and a depth bar.</p>
+      <p><strong>Place orders</strong> using the entry panel. Choose Buy/Sell, Limit/Market, set a price (for limit orders) and quantity, then submit. Click any price level in the book to auto-fill the price input.</p>
+      <p><strong>Limit orders</strong> rest in the book if they don't cross the spread. If they do cross (buy price &ge; best ask, or sell price &le; best bid), they match against resting orders at each level using FIFO (first in, first out) priority.</p>
+      <p><strong>Market orders</strong> fill immediately at the best available price(s), walking through levels if needed. If there's no liquidity on the other side, the order is rejected.</p>
+      <p><strong>Step Mode</strong> is the key educational feature. Toggle it on, then submit an order or load a scenario. Each step of the matching algorithm is shown one at a time &mdash; press "Next Step" or spacebar to advance. Watch how the engine checks prices, fills quantities, and handles partial fills.</p>
+      <p><strong>Scenarios</strong> preset the book and queue specific orders to demonstrate interesting behaviors. Each auto-enables step mode so you can walk through what happens.</p>
+      <p><strong>Reset</strong> generates a fresh random book. The shape, depth, spread width, and order distribution will be different each time.</p>
+    </div>
+  </details>
+
+  <!-- Spread indicator bar -->
+  <div class="ob-spread-bar">
+    <div class="ob-metric"><div class="ob-metric-label">Best Bid</div><div class="ob-metric-value" id="ob-best-bid">--</div></div>
+    <div class="ob-metric"><div class="ob-metric-label">Spread</div><div class="ob-metric-value" id="ob-spread">--</div></div>
+    <div class="ob-metric"><div class="ob-metric-label">Best Ask</div><div class="ob-metric-value" id="ob-best-ask">--</div></div>
+    <div class="ob-metric"><div class="ob-metric-label">Mid Price</div><div class="ob-metric-value" id="ob-mid">--</div></div>
+    <div class="ob-metric"><div class="ob-metric-label">Spread (bps)</div><div class="ob-metric-value" id="ob-spread-bps">--</div></div>
+  </div>
+
+  <!-- Main layout -->
+  <div class="ob-layout">
+    <!-- Book ladder -->
+    <div class="ob-book">
+      <div class="ob-book-header">
+        <span>Price</span>
+        <span>Qty (orders)</span>
+        <span>Cumulative</span>
+        <span>Depth</span>
+      </div>
+      <div class="ob-book-body" id="ob-book-body"></div>
+    </div>
+
+    <!-- Side panel -->
+    <div class="ob-panel">
+      <!-- Order entry -->
+      <div class="ob-card">
+        <div class="ob-card-title">Place Order</div>
+        <div class="ob-side-toggle">
+          <button class="ob-side-btn ob-buy-active" id="ob-side-buy" onclick="setSide('buy')">Buy</button>
+          <button class="ob-side-btn" id="ob-side-sell" onclick="setSide('sell')">Sell</button>
+        </div>
+        <div class="ob-type-toggle">
+          <button class="ob-type-btn active" id="ob-type-limit" onclick="setType('limit')">Limit</button>
+          <button class="ob-type-btn" id="ob-type-market" onclick="setType('market')">Market</button>
+        </div>
+        <div class="ob-field" id="ob-price-field">
+          <label>Price</label>
+          <input type="number" id="ob-price" step="0.01" min="0.01" placeholder="100.00">
+        </div>
+        <div class="ob-field">
+          <label>Quantity</label>
+          <input type="number" id="ob-qty" step="1" min="1" value="50">
+        </div>
+        <button class="ob-submit-btn ob-submit-buy" id="ob-submit" onclick="submitOrder()">Submit Buy</button>
+        <button class="ob-reset-btn" onclick="resetBook()">Reset Book</button>
+      </div>
+
+      <!-- Step mode -->
+      <div class="ob-card">
+        <div class="ob-card-title">Step Mode</div>
+        <div class="ob-step-toggle">
+          <input type="checkbox" id="ob-step-check" onchange="toggleStepMode()">
+          <label for="ob-step-check" style="font-size:13px;cursor:pointer;">Walk through matching step-by-step</label>
+        </div>
+        <button class="ob-step-btn" id="ob-step-next" onclick="nextStep()">Next Step (Space)</button>
+        <div class="ob-step-narration" id="ob-narration"></div>
+      </div>
+
+      <!-- Scenarios -->
+      <div class="ob-card">
+        <div class="ob-card-title">Scenarios</div>
+        <div class="ob-scenario-grid">
+          <button class="ob-scenario-btn" onclick="loadScenario('sweep')">
+            <strong>Market Order Sweeping Levels</strong>
+            Large market order eats through multiple thin price levels.
+          </button>
+          <button class="ob-scenario-btn" onclick="loadScenario('collapse')">
+            <strong>Spread Collapse</strong>
+            Aggressive limit orders narrow the spread to zero and cross.
+          </button>
+          <button class="ob-scenario-btn" onclick="loadScenario('largefill')">
+            <strong>Large Limit Fill</strong>
+            Big resting order gets partially filled by multiple smaller orders.
+          </button>
+          <button class="ob-scenario-btn" onclick="loadScenario('iceberg')">
+            <strong>Iceberg Reveal</strong>
+            Hidden reserve order refills after each partial fill.
+          </button>
+          <button class="ob-scenario-btn" onclick="loadScenario('empty')">
+            <strong>Empty Side</strong>
+            Market order into an empty side &mdash; shows order rejection.
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom panels -->
+  <div class="ob-bottom">
+    <div class="ob-card">
+      <div class="ob-card-title">Trade History</div>
+      <div class="ob-trades-th ob-th">
+        <span>Time</span><span>Price</span><span>Qty</span><span>Side</span>
+      </div>
+      <div class="ob-trades-list" id="ob-trades"></div>
+    </div>
+    <div class="ob-card">
+      <div class="ob-card-title">Order Log</div>
+      <div class="ob-orders-th ob-th">
+        <span>ID</span><span>Side</span><span>Type</span><span>Price</span><span>Qty</span><span>Filled</span><span>Rem</span><span>Status</span>
+      </div>
+      <div class="ob-orders-list" id="ob-orders"></div>
+    </div>
+  </div>
+
+  <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
+</main>
+
+<div id="toast" class="toast" style="display:none;"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   ORDER BOOK ENGINE
+   ════════════════════════════════════════════════════════════ */
+
+let nextOrderId = 1;
+let book = { bids: [], asks: [] };
+let allOrders = {};
+let trades = [];
+let stepMode = false;
+let stepQueue = [];
+let pendingSteps = [];
+let flashLevels = new Set();
+
+// ── Order creation ──
+function createOrder(side, type, price, qty, opts = {}) {
+  const id = nextOrderId++;
+  const order = {
+    id, side, type,
+    price: type === 'market' ? null : round2(price),
+    qty, filled: 0, remaining: qty,
+    timestamp: Date.now() + id, // ensure unique ordering
+    status: 'new',
+    visibleQty: opts.visibleQty || null,
+    totalQty: opts.totalQty || null,
+  };
+  allOrders[id] = order;
+  return order;
+}
+
+function round2(n) { return Math.round(n * 100) / 100; }
+
+// ── Book helpers ──
+function findLevel(side, price) {
+  const levels = side === 'buy' ? book.bids : book.asks;
+  return levels.find(l => l.price === price);
+}
+
+function addToBook(order) {
+  const levels = order.side === 'buy' ? book.bids : book.asks;
+  let level = levels.find(l => l.price === order.price);
+  if (!level) {
+    level = { price: order.price, orders: [] };
+    levels.push(level);
+    if (order.side === 'buy') {
+      levels.sort((a, b) => b.price - a.price); // highest first
+    } else {
+      levels.sort((a, b) => a.price - b.price); // lowest first
+    }
+  }
+  level.orders.push(order);
+}
+
+function removeFromBook(order) {
+  const levels = order.side === 'buy' ? book.bids : book.asks;
+  const level = levels.find(l => l.price === order.price);
+  if (!level) return;
+  level.orders = level.orders.filter(o => o.id !== order.id);
+  if (level.orders.length === 0) {
+    const idx = levels.indexOf(level);
+    if (idx !== -1) levels.splice(idx, 1);
+  }
+}
+
+function bestBid() { return book.bids.length > 0 ? book.bids[0].price : null; }
+function bestAsk() { return book.asks.length > 0 ? book.asks[0].price : null; }
+function levelQty(level) { return level.orders.reduce((s, o) => s + o.remaining, 0); }
+
+// Iceberg: get visible quantity for display
+function levelVisibleQty(level) {
+  return level.orders.reduce((s, o) => {
+    if (o.visibleQty !== null) return s + Math.min(o.remaining, o.visibleQty);
+    return s + o.remaining;
+  }, 0);
+}
+
+// ── Matching engine ──
+function matchOrder(order) {
+  const steps = [];
+  const isMarket = order.type === 'market';
+
+  if (order.side === 'buy') {
+    steps.push({ type: 'NEW', text: `New ${order.side.toUpperCase()} ${order.type.toUpperCase()} order: ${order.remaining} ${isMarket ? '@ market' : '@ ' + order.price.toFixed(2)}`, orderId: order.id });
+
+    while (order.remaining > 0 && book.asks.length > 0) {
+      const askLevel = book.asks[0];
+      if (!isMarket && order.price < askLevel.price) {
+        steps.push({ type: 'NO_CROSS', text: `Best ask ${askLevel.price.toFixed(2)} > order price ${order.price.toFixed(2)} — no cross`, price: askLevel.price });
+        break;
+      }
+
+      while (order.remaining > 0 && askLevel.orders.length > 0) {
+        const resting = askLevel.orders[0];
+        const fillQty = Math.min(order.remaining, resting.remaining);
+        const fillPrice = resting.price;
+
+        order.filled += fillQty;
+        order.remaining -= fillQty;
+        resting.filled += fillQty;
+        resting.remaining -= fillQty;
+
+        const trade = { buyOrderId: order.id, sellOrderId: resting.id, price: fillPrice, qty: fillQty, timestamp: Date.now(), aggressor: 'buy' };
+        trades.push(trade);
+
+        steps.push({ type: 'FILL', text: `FILL ${fillQty} @ ${fillPrice.toFixed(2)} (vs order #${resting.id})`, price: fillPrice, qty: fillQty, trade });
+
+        if (resting.remaining <= 0) {
+          resting.status = 'filled';
+          askLevel.orders.shift();
+          // Iceberg refill
+          if (resting.visibleQty !== null && resting.totalQty !== null && resting.filled < resting.totalQty) {
+            const refillQty = Math.min(resting.visibleQty, resting.totalQty - resting.filled);
+            resting.remaining = refillQty;
+            resting.status = 'partial';
+            askLevel.orders.push(resting);
+            steps.push({ type: 'ICEBERG', text: `Iceberg refill: order #${resting.id} reveals ${refillQty} more @ ${resting.price.toFixed(2)}`, price: resting.price });
+          }
+        } else {
+          resting.status = 'partial';
+        }
+
+        if (order.remaining > 0) {
+          steps.push({ type: 'REMAINING', text: `Remaining: ${order.remaining}` });
+        }
+      }
+
+      if (askLevel.orders.length === 0) {
+        book.asks.shift();
+      }
+    }
+  } else {
+    // SELL side
+    steps.push({ type: 'NEW', text: `New ${order.side.toUpperCase()} ${order.type.toUpperCase()} order: ${order.remaining} ${isMarket ? '@ market' : '@ ' + order.price.toFixed(2)}`, orderId: order.id });
+
+    while (order.remaining > 0 && book.bids.length > 0) {
+      const bidLevel = book.bids[0];
+      if (!isMarket && order.price > bidLevel.price) {
+        steps.push({ type: 'NO_CROSS', text: `Best bid ${bidLevel.price.toFixed(2)} < order price ${order.price.toFixed(2)} — no cross`, price: bidLevel.price });
+        break;
+      }
+
+      while (order.remaining > 0 && bidLevel.orders.length > 0) {
+        const resting = bidLevel.orders[0];
+        const fillQty = Math.min(order.remaining, resting.remaining);
+        const fillPrice = resting.price;
+
+        order.filled += fillQty;
+        order.remaining -= fillQty;
+        resting.filled += fillQty;
+        resting.remaining -= fillQty;
+
+        const trade = { buyOrderId: resting.id, sellOrderId: order.id, price: fillPrice, qty: fillQty, timestamp: Date.now(), aggressor: 'sell' };
+        trades.push(trade);
+
+        steps.push({ type: 'FILL', text: `FILL ${fillQty} @ ${fillPrice.toFixed(2)} (vs order #${resting.id})`, price: fillPrice, qty: fillQty, trade });
+
+        if (resting.remaining <= 0) {
+          resting.status = 'filled';
+          bidLevel.orders.shift();
+          if (resting.visibleQty !== null && resting.totalQty !== null && resting.filled < resting.totalQty) {
+            const refillQty = Math.min(resting.visibleQty, resting.totalQty - resting.filled);
+            resting.remaining = refillQty;
+            resting.status = 'partial';
+            bidLevel.orders.push(resting);
+            steps.push({ type: 'ICEBERG', text: `Iceberg refill: order #${resting.id} reveals ${refillQty} more @ ${resting.price.toFixed(2)}`, price: resting.price });
+          }
+        } else {
+          resting.status = 'partial';
+        }
+
+        if (order.remaining > 0) {
+          steps.push({ type: 'REMAINING', text: `Remaining: ${order.remaining}` });
+        }
+      }
+
+      if (bidLevel.orders.length === 0) {
+        book.bids.shift();
+      }
+    }
+  }
+
+  // Market order with no liquidity
+  if (isMarket && order.remaining > 0) {
+    steps.push({ type: 'REJECT', text: `No liquidity — ${order.remaining} unfilled, order rejected` });
+    order.status = 'cancelled';
+  }
+
+  // Resting or filled
+  if (order.remaining > 0 && order.status !== 'cancelled') {
+    if (order.type === 'limit') {
+      addToBook(order);
+      order.status = order.filled > 0 ? 'partial' : 'new';
+      steps.push({ type: 'REST', text: `Order #${order.id} rests in book: ${order.remaining} @ ${order.price.toFixed(2)}`, price: order.price });
+    }
+  } else if (order.remaining === 0) {
+    order.status = 'filled';
+    steps.push({ type: 'DONE', text: `Order #${order.id} fully filled` });
+  }
+
+  return steps;
+}
+
+// ── Cancel ──
+function cancelOrder(id) {
+  const order = allOrders[id];
+  if (!order || order.status === 'filled' || order.status === 'cancelled') return;
+  removeFromBook(order);
+  order.status = 'cancelled';
+  render();
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOOK SEEDING
+   ════════════════════════════════════════════════════════════ */
+
+function seedBook(refPrice, opts = {}) {
+  const {
+    askLevels = 15 + Math.floor(Math.random() * 12),   // 15-26 levels
+    bidLevels = 15 + Math.floor(Math.random() * 12),
+    spreadTicks = Math.random() < 0.3 ? 1 : Math.random() < 0.6 ? Math.ceil(Math.random() * 3) : Math.ceil(Math.random() * 8),
+    baseQty = 40 + Math.floor(Math.random() * 120),    // 40-160 base
+    decay = 0.82 + Math.random() * 0.12,               // 0.82-0.94
+  } = opts;
+
+  nextOrderId = 1;
+  book = { bids: [], asks: [] };
+  allOrders = {};
+  trades = [];
+  stepQueue = [];
+  pendingSteps = [];
+
+  const halfSpread = (spreadTicks * 0.01) / 2;
+  const bestAskPrice = round2(refPrice + halfSpread);
+  const bestBidPrice = round2(refPrice - halfSpread);
+
+  // Decide if this book has a "wall" (large qty at one random level)
+  const askWall = Math.random() < 0.4 ? 3 + Math.floor(Math.random() * (askLevels - 4)) : -1;
+  const bidWall = Math.random() < 0.4 ? 3 + Math.floor(Math.random() * (bidLevels - 4)) : -1;
+  // Decide if there are gaps (empty levels)
+  const askGaps = new Set();
+  const bidGaps = new Set();
+  if (Math.random() < 0.35) {
+    const numGaps = 1 + Math.floor(Math.random() * 3);
+    for (let g = 0; g < numGaps; g++) askGaps.add(4 + Math.floor(Math.random() * (askLevels - 5)));
+  }
+  if (Math.random() < 0.35) {
+    const numGaps = 1 + Math.floor(Math.random() * 3);
+    for (let g = 0; g < numGaps; g++) bidGaps.add(4 + Math.floor(Math.random() * (bidLevels - 5)));
+  }
+
+  function seedSide(side, levels, bestPrice, step, wall, gaps) {
+    for (let i = 0; i < levels; i++) {
+      if (gaps.has(i)) continue; // skip this level — gap
+      const price = round2(bestPrice + i * step);
+      if (price <= 0) break;
+      const isWall = i === wall;
+      const numOrders = isWall
+        ? 2 + Math.floor(Math.random() * 4)
+        : i < 3 ? 1 + Math.ceil(Math.random() * 3) : Math.ceil(Math.random() * 2);
+      for (let j = 0; j < numOrders; j++) {
+        const wallMult = isWall ? 3 + Math.random() * 4 : 1;
+        const qty = Math.max(1, Math.round(baseQty * (0.3 + Math.random() * 0.9) * Math.pow(decay, i) * wallMult));
+        const order = createOrder(side, 'limit', price, qty);
+        order.status = 'new';
+        addToBook(order);
+      }
+    }
+  }
+
+  seedSide('sell', askLevels, bestAskPrice, 0.01, askWall, askGaps);
+  seedSide('buy', bidLevels, bestBidPrice, -0.01, bidWall, bidGaps);
+}
+
+function resetBook() {
+  seedBook(100.00);
+  document.getElementById('ob-narration').textContent = '';
+  document.getElementById('ob-narration').classList.remove('visible');
+  document.getElementById('ob-step-next').classList.remove('visible');
+  render();
+  showToast('Book reset');
+}
+
+/* ════════════════════════════════════════════════════════════
+   SCENARIOS
+   ════════════════════════════════════════════════════════════ */
+
+function loadScenario(name) {
+  // Enable step mode
+  stepMode = true;
+  document.getElementById('ob-step-check').checked = true;
+
+  switch (name) {
+    case 'sweep': {
+      // Thin asks, large market buy
+      nextOrderId = 1;
+      book = { bids: [], asks: [] };
+      allOrders = {};
+      trades = [];
+      stepQueue = [];
+      pendingSteps = [];
+
+      // Build thin asks: 8 levels, 10-25 qty each
+      for (let i = 0; i < 8; i++) {
+        const price = round2(100.00 + i * 0.01);
+        const qty = 10 + Math.floor(Math.random() * 16);
+        const o = createOrder('sell', 'limit', price, qty);
+        o.status = 'new';
+        addToBook(o);
+      }
+      // Some bids for realism
+      for (let i = 0; i < 5; i++) {
+        const price = round2(99.99 - i * 0.01);
+        const qty = 30 + Math.floor(Math.random() * 50);
+        const o = createOrder('buy', 'limit', price, qty);
+        o.status = 'new';
+        addToBook(o);
+      }
+      render();
+      // Queue market buy
+      queueStepOrder('buy', 'market', null, 120);
+      showToast('Scenario: Market Order Sweeping Levels');
+      break;
+    }
+    case 'collapse': {
+      nextOrderId = 1;
+      book = { bids: [], asks: [] };
+      allOrders = {};
+      trades = [];
+      stepQueue = [];
+      pendingSteps = [];
+
+      // Wide spread: bid 99.90, ask 100.10
+      for (let i = 0; i < 6; i++) {
+        const o = createOrder('buy', 'limit', round2(99.90 - i * 0.01), 40 + Math.floor(Math.random() * 30));
+        o.status = 'new'; addToBook(o);
+      }
+      for (let i = 0; i < 6; i++) {
+        const o = createOrder('sell', 'limit', round2(100.10 + i * 0.01), 40 + Math.floor(Math.random() * 30));
+        o.status = 'new'; addToBook(o);
+      }
+      render();
+      // Queue aggressive orders that cross
+      queueStepOrder('buy', 'limit', 100.08, 30);
+      queueStepOrder('sell', 'limit', 99.92, 25);
+      queueStepOrder('buy', 'limit', 100.12, 50);
+      showToast('Scenario: Spread Collapse');
+      break;
+    }
+    case 'largefill': {
+      nextOrderId = 1;
+      book = { bids: [], asks: [] };
+      allOrders = {};
+      trades = [];
+      stepQueue = [];
+      pendingSteps = [];
+
+      // Large resting bid
+      const big = createOrder('buy', 'limit', 99.95, 500);
+      big.status = 'new'; addToBook(big);
+      // Some other bids
+      for (let i = 1; i < 5; i++) {
+        const o = createOrder('buy', 'limit', round2(99.95 - i * 0.01), 50 + Math.floor(Math.random() * 30));
+        o.status = 'new'; addToBook(o);
+      }
+      // Some asks
+      for (let i = 0; i < 5; i++) {
+        const o = createOrder('sell', 'limit', round2(100.00 + i * 0.01), 60 + Math.floor(Math.random() * 40));
+        o.status = 'new'; addToBook(o);
+      }
+      render();
+      // Queue small sells that hit the big bid
+      queueStepOrder('sell', 'limit', 99.95, 80);
+      queueStepOrder('sell', 'limit', 99.95, 120);
+      queueStepOrder('sell', 'limit', 99.95, 100);
+      showToast('Scenario: Large Limit Fill');
+      break;
+    }
+    case 'iceberg': {
+      nextOrderId = 1;
+      book = { bids: [], asks: [] };
+      allOrders = {};
+      trades = [];
+      stepQueue = [];
+      pendingSteps = [];
+
+      // Iceberg ask: visible 50, total 500
+      const ice = createOrder('sell', 'limit', 100.00, 50, { visibleQty: 50, totalQty: 500 });
+      ice.status = 'new'; addToBook(ice);
+      // Some other asks
+      for (let i = 1; i < 4; i++) {
+        const o = createOrder('sell', 'limit', round2(100.00 + i * 0.01), 30 + Math.floor(Math.random() * 20));
+        o.status = 'new'; addToBook(o);
+      }
+      // Bids
+      for (let i = 0; i < 5; i++) {
+        const o = createOrder('buy', 'limit', round2(99.99 - i * 0.01), 40 + Math.floor(Math.random() * 30));
+        o.status = 'new'; addToBook(o);
+      }
+      render();
+      // Queue market buys that each hit the iceberg
+      queueStepOrder('buy', 'market', null, 50);
+      queueStepOrder('buy', 'market', null, 50);
+      queueStepOrder('buy', 'market', null, 50);
+      showToast('Scenario: Iceberg Reveal');
+      break;
+    }
+    case 'empty': {
+      nextOrderId = 1;
+      book = { bids: [], asks: [] };
+      allOrders = {};
+      trades = [];
+      stepQueue = [];
+      pendingSteps = [];
+
+      // Only bids, no asks
+      for (let i = 0; i < 6; i++) {
+        const o = createOrder('buy', 'limit', round2(99.99 - i * 0.01), 50 + Math.floor(Math.random() * 50));
+        o.status = 'new'; addToBook(o);
+      }
+      render();
+      // Queue market buy into empty ask side
+      queueStepOrder('buy', 'market', null, 30);
+      showToast('Scenario: Empty Side');
+      break;
+    }
+  }
+}
+
+function queueStepOrder(side, type, price, qty, opts) {
+  stepQueue.push({ side, type, price, qty, opts });
+  processStepQueue();
+}
+
+function processStepQueue() {
+  if (pendingSteps.length > 0 || stepQueue.length === 0) return;
+  const next = stepQueue.shift();
+  const order = createOrder(next.side, next.type, next.price, next.qty, next.opts || {});
+  pendingSteps = matchOrder(order);
+  currentStepIndex = 0;
+  showStepUI();
+}
+
+/* ════════════════════════════════════════════════════════════
+   STEP MODE UI
+   ════════════════════════════════════════════════════════════ */
+
+let currentStepIndex = 0;
+
+function toggleStepMode() {
+  stepMode = document.getElementById('ob-step-check').checked;
+  if (!stepMode) {
+    document.getElementById('ob-step-next').classList.remove('visible');
+    document.getElementById('ob-narration').classList.remove('visible');
+    // Execute any remaining steps instantly
+    finishPendingSteps();
+  }
+}
+
+function showStepUI() {
+  if (!stepMode) {
+    // Instant mode: just render
+    pendingSteps = [];
+    render();
+    processStepQueue();
+    return;
+  }
+  const narr = document.getElementById('ob-narration');
+  const btn = document.getElementById('ob-step-next');
+  narr.classList.add('visible');
+  btn.classList.add('visible');
+  // Show first step
+  if (currentStepIndex < pendingSteps.length) {
+    narr.textContent = pendingSteps[currentStepIndex].text;
+    render();
+  }
+}
+
+function nextStep() {
+  if (pendingSteps.length === 0) return;
+  currentStepIndex++;
+  const narr = document.getElementById('ob-narration');
+  if (currentStepIndex < pendingSteps.length) {
+    const step = pendingSteps[currentStepIndex];
+    narr.textContent = step.text;
+    if (step.price != null) flashLevels.add(step.price);
+    render();
+    setTimeout(() => { flashLevels.delete(step.price); }, 500);
+  } else {
+    // Done with this order's steps
+    narr.textContent = 'Matching complete.';
+    pendingSteps = [];
+    currentStepIndex = 0;
+    render();
+    // Check for queued scenario orders
+    setTimeout(() => {
+      if (stepQueue.length > 0) {
+        processStepQueue();
+      } else {
+        document.getElementById('ob-step-next').classList.remove('visible');
+      }
+    }, 300);
+  }
+}
+
+function finishPendingSteps() {
+  pendingSteps = [];
+  currentStepIndex = 0;
+  // Also process any queued orders instantly
+  while (stepQueue.length > 0) {
+    const next = stepQueue.shift();
+    const order = createOrder(next.side, next.type, next.price, next.qty, next.opts || {});
+    matchOrder(order);
+  }
+  render();
+}
+
+// Spacebar for step
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Space' && pendingSteps.length > 0 && stepMode) {
+    e.preventDefault();
+    nextStep();
+  }
+});
+
+/* ════════════════════════════════════════════════════════════
+   UI STATE & CONTROLS
+   ════════════════════════════════════════════════════════════ */
+
+let currentSide = 'buy';
+let currentType = 'limit';
+
+function setSide(side) {
+  currentSide = side;
+  document.getElementById('ob-side-buy').className = 'ob-side-btn' + (side === 'buy' ? ' ob-buy-active' : '');
+  document.getElementById('ob-side-sell').className = 'ob-side-btn' + (side === 'sell' ? ' ob-sell-active' : '');
+  const btn = document.getElementById('ob-submit');
+  btn.textContent = 'Submit ' + (side === 'buy' ? 'Buy' : 'Sell');
+  btn.className = 'ob-submit-btn ' + (side === 'buy' ? 'ob-submit-buy' : 'ob-submit-sell');
+}
+
+function setType(type) {
+  currentType = type;
+  document.getElementById('ob-type-limit').className = 'ob-type-btn' + (type === 'limit' ? ' active' : '');
+  document.getElementById('ob-type-market').className = 'ob-type-btn' + (type === 'market' ? ' active' : '');
+  const priceInput = document.getElementById('ob-price');
+  priceInput.disabled = type === 'market';
+  if (type === 'market') priceInput.value = '';
+}
+
+function submitOrder() {
+  const qty = parseInt(document.getElementById('ob-qty').value);
+  if (!qty || qty < 1) { showToast('Enter a valid quantity'); return; }
+
+  let price = null;
+  if (currentType === 'limit') {
+    price = parseFloat(document.getElementById('ob-price').value);
+    if (!price || price <= 0) { showToast('Enter a valid price'); return; }
+  }
+
+  const order = createOrder(currentSide, currentType, price, qty);
+
+  if (stepMode) {
+    pendingSteps = matchOrder(order);
+    currentStepIndex = 0;
+    showStepUI();
+  } else {
+    matchOrder(order);
+    render();
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   RENDERING
+   ════════════════════════════════════════════════════════════ */
+
+function render() {
+  renderBook();
+  renderSpreadBar();
+  renderTrades();
+  renderOrders();
+}
+
+function renderBook() {
+  const body = document.getElementById('ob-book-body');
+  let html = '';
+
+  // Find max cumulative for depth bars
+  let askCum = 0, bidCum = 0;
+  const askLevels = book.asks.slice().reverse(); // show highest ask at top
+  const bidLevels = book.bids.slice();
+
+  askLevels.forEach(l => askCum += levelQty(l));
+  bidLevels.forEach(l => bidCum += levelQty(l));
+  const maxCum = Math.max(askCum, bidCum, 1);
+
+  // Asks (reversed so lowest ask is at bottom, near spread)
+  let cum = askCum;
+  askLevels.forEach((level, i) => {
+    const qty = levelQty(level);
+    const visQty = levelVisibleQty(level);
+    const isBest = i === askLevels.length - 1;
+    const flash = flashLevels.has(level.price) ? ' ob-flash' : '';
+    const depthPct = (cum / maxCum * 100).toFixed(1);
+    const hasHidden = visQty < qty;
+    html += `<div class="ob-row ob-row-ask${isBest ? ' ob-row-best' : ''}${flash}" onclick="clickPrice(${level.price})">
+      <div class="ob-depth-bar" style="width:${depthPct}%"></div>
+      <span class="ob-price">${level.price.toFixed(2)}</span>
+      <span>${hasHidden ? visQty + '+' : visQty} (${level.orders.length})</span>
+      <span>${cum}</span>
+      <span></span>
+    </div>`;
+    cum -= qty;
+  });
+
+  // Spread row
+  const bb = bestBid(), ba = bestAsk();
+  if (bb !== null && ba !== null) {
+    const spread = round2(ba - bb);
+    html += `<div class="ob-spread-row">SPREAD: ${spread.toFixed(2)}</div>`;
+  } else if (bb === null && ba === null) {
+    html += `<div class="ob-spread-row">EMPTY BOOK</div>`;
+  } else {
+    html += `<div class="ob-spread-row">ONE SIDE EMPTY</div>`;
+  }
+
+  // Bids
+  cum = 0;
+  bidLevels.forEach((level, i) => {
+    const qty = levelQty(level);
+    cum += qty;
+    const visQty = levelVisibleQty(level);
+    const isBest = i === 0;
+    const flash = flashLevels.has(level.price) ? ' ob-flash' : '';
+    const depthPct = (cum / maxCum * 100).toFixed(1);
+    const hasHidden = visQty < qty;
+    html += `<div class="ob-row ob-row-bid${isBest ? ' ob-row-best' : ''}${flash}" onclick="clickPrice(${level.price})">
+      <div class="ob-depth-bar" style="width:${depthPct}%"></div>
+      <span class="ob-price">${level.price.toFixed(2)}</span>
+      <span>${hasHidden ? visQty + '+' : visQty} (${level.orders.length})</span>
+      <span>${cum}</span>
+      <span></span>
+    </div>`;
+  });
+
+  if (askLevels.length === 0 && bidLevels.length === 0) {
+    html = '<div class="ob-empty" style="text-align:center;padding:20px;">No orders in book</div>';
+  }
+
+  body.innerHTML = html;
+}
+
+function renderSpreadBar() {
+  const bb = bestBid(), ba = bestAsk();
+  document.getElementById('ob-best-bid').textContent = bb !== null ? bb.toFixed(2) : '--';
+  document.getElementById('ob-best-ask').textContent = ba !== null ? ba.toFixed(2) : '--';
+  if (bb !== null && ba !== null) {
+    const spread = round2(ba - bb);
+    const mid = round2((ba + bb) / 2);
+    const bps = ((spread / mid) * 10000).toFixed(1);
+    document.getElementById('ob-spread').textContent = spread.toFixed(2);
+    document.getElementById('ob-mid').textContent = mid.toFixed(2);
+    document.getElementById('ob-spread-bps').textContent = bps;
+  } else {
+    document.getElementById('ob-spread').textContent = '--';
+    document.getElementById('ob-mid').textContent = '--';
+    document.getElementById('ob-spread-bps').textContent = '--';
+  }
+}
+
+function renderTrades() {
+  const el = document.getElementById('ob-trades');
+  if (trades.length === 0) {
+    el.innerHTML = '<div class="ob-empty">No trades yet</div>';
+    return;
+  }
+  let html = '';
+  // Show most recent first
+  for (let i = trades.length - 1; i >= Math.max(0, trades.length - 50); i--) {
+    const t = trades[i];
+    const cls = t.aggressor === 'buy' ? 'ob-trade-buy' : 'ob-trade-sell';
+    const time = new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    html += `<div class="ob-trade-row ${cls}">
+      <span>${time}</span>
+      <span>${t.price.toFixed(2)}</span>
+      <span>${t.qty}</span>
+      <span>${t.aggressor === 'buy' ? 'BUY' : 'SELL'}</span>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderOrders() {
+  const el = document.getElementById('ob-orders');
+  const ids = Object.keys(allOrders).map(Number).sort((a, b) => b - a);
+  if (ids.length === 0) {
+    el.innerHTML = '<div class="ob-empty">No orders</div>';
+    return;
+  }
+  let html = '';
+  // Show most recent first, limit to 50
+  for (let i = 0; i < Math.min(ids.length, 50); i++) {
+    const o = allOrders[ids[i]];
+    const statusCls = 'ob-status-' + (o.status === 'new' ? 'new' : o.status === 'partial' ? 'partial' : o.status === 'filled' ? 'filled' : 'cancelled');
+    html += `<div class="ob-order-row">
+      <span>${o.id}</span>
+      <span>${o.side === 'buy' ? 'B' : 'S'}</span>
+      <span>${o.type === 'limit' ? 'LMT' : 'MKT'}</span>
+      <span>${o.price !== null ? o.price.toFixed(2) : 'MKT'}</span>
+      <span>${o.qty}</span>
+      <span>${o.filled}</span>
+      <span>${o.remaining}</span>
+      <span class="${statusCls}">${o.status}</span>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+/* ── Click price level to set price input ── */
+function clickPrice(price) {
+  document.getElementById('ob-price').value = price.toFixed(2);
+  if (currentType === 'market') setType('limit');
+}
+
+/* ── Scroll book to spread row ── */
+function scrollToSpread() {
+  const body = document.getElementById('ob-book-body');
+  const spreadRow = body.querySelector('.ob-spread-row');
+  if (spreadRow) {
+    spreadRow.scrollIntoView({ block: 'center', behavior: 'instant' });
+  }
+}
+
+/* ── Toast ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.display = 'none'; }, 2000);
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function() {
+  seedBook(100.00);
+  render();
+  scrollToSpread();
+
+  // Default price hint
+  const ba = bestAsk();
+  if (ba !== null) document.getElementById('ob-price').value = ba.toFixed(2);
+
+  // Theme sync
+  const themeText = document.getElementById('theme-text');
+  if (document.body.classList.contains('dark')) {
+    themeText.innerHTML = '&#9828;';
+  }
+});
+
+function toggleTheme() {
+  const body = document.body;
+  const themeText = document.getElementById('theme-text');
+  if (body.classList.contains('dark')) {
+    body.classList.remove('dark');
+    themeText.innerHTML = '&#9790;';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark');
+    themeText.innerHTML = '&#9828;';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+</script>
+</body>
+</html>

@@ -531,6 +531,146 @@
     }
     body.dark .barrel-note { color: #888; }
 
+    /* ── Comparator widget ── */
+    .cmp-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .cmp-input {
+      width: 80px;
+      background: #f9f9f9;
+      border: 1px solid #cccccc;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #000;
+      outline: none;
+    }
+    .cmp-input:focus { border-color: #0066cc; }
+    body.dark .cmp-input { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+    body.dark .cmp-input:focus { border-color: #87ceeb; }
+    .cmp-bits-row {
+      display: flex;
+      gap: 1px;
+      font-family: monospace;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+    .cmp-bit {
+      width: 22px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-weight: 600;
+      background: rgba(0,0,0,0.04);
+      border: 1px solid #ddd;
+    }
+    body.dark .cmp-bit { background: rgba(255,255,255,0.04); border-color: #444; }
+    .cmp-bit.deciding { background: rgba(230,126,34,0.15); border-color: rgba(230,126,34,0.4); color: #e67e22; }
+    body.dark .cmp-bit.deciding { background: rgba(243,156,18,0.15); border-color: rgba(243,156,18,0.4); color: #f39c12; }
+    .cmp-bit.equal { background: rgba(40,167,69,0.08); border-color: rgba(40,167,69,0.2); }
+    body.dark .cmp-bit.equal { background: rgba(76,175,80,0.08); border-color: rgba(76,175,80,0.2); }
+    .cmp-bit.skipped { opacity: 0.35; }
+    .cmp-result { font-size: 12px; margin-top: 8px; line-height: 1.6; }
+    .cmp-gt { color: #0066cc; font-weight: 600; }
+    .cmp-lt { color: #c0392b; font-weight: 600; }
+    .cmp-eq { color: #28a745; font-weight: 600; }
+    body.dark .cmp-gt { color: #87ceeb; }
+    body.dark .cmp-lt { color: #e74c3c; }
+    body.dark .cmp-eq { color: #4caf50; }
+    .cmp-step { font-size: 11px; line-height: 1.5; color: #595959; margin-top: 6px; }
+    body.dark .cmp-step { color: #888; }
+
+    /* ── FIFO widget ── */
+    .fifo-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .fifo-input {
+      width: 50px;
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #000;
+      outline: none;
+    }
+    .fifo-input:focus { border-color: #0066cc; }
+    body.dark .fifo-input { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+    .fifo-btn {
+      padding: 5px 12px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: transparent;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      color: inherit;
+      transition: border-color 0.15s;
+    }
+    .fifo-btn:hover { border-color: #0066cc; }
+    body.dark .fifo-btn { border-color: #444; }
+    body.dark .fifo-btn:hover { border-color: #87ceeb; }
+    .fifo-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .fifo-ring {
+      display: flex;
+      gap: 2px;
+      font-family: monospace;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+    .fifo-slot {
+      width: 36px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      font-weight: 600;
+      background: rgba(0,0,0,0.03);
+      border: 1px solid #ddd;
+      position: relative;
+      transition: all 0.2s;
+    }
+    body.dark .fifo-slot { background: rgba(255,255,255,0.03); border-color: #444; }
+    .fifo-slot.occupied { background: rgba(0,102,204,0.08); border-color: rgba(0,102,204,0.25); }
+    body.dark .fifo-slot.occupied { background: rgba(135,206,235,0.08); border-color: rgba(135,206,235,0.25); }
+    .fifo-slot.head-slot { border-bottom: 3px solid #0a7c42; }
+    body.dark .fifo-slot.head-slot { border-bottom-color: #2ecc71; }
+    .fifo-slot.tail-slot { border-top: 3px solid #0066cc; }
+    body.dark .fifo-slot.tail-slot { border-top-color: #87ceeb; }
+    .fifo-labels {
+      display: flex;
+      gap: 2px;
+      font-size: 9px;
+      color: #999;
+      margin-bottom: 8px;
+    }
+    .fifo-label-cell { width: 36px; text-align: center; }
+    .fifo-ptr-label { font-size: 10px; font-weight: 600; }
+    .fifo-ptr-rd { color: #0a7c42; }
+    .fifo-ptr-wr { color: #0066cc; }
+    body.dark .fifo-ptr-rd { color: #2ecc71; }
+    body.dark .fifo-ptr-wr { color: #87ceeb; }
+    .fifo-status { font-size: 12px; margin-top: 6px; line-height: 1.6; }
+    .fifo-status-full { color: #c0392b; font-weight: 600; }
+    .fifo-status-empty { color: #e67e22; font-weight: 600; }
+    body.dark .fifo-status-full { color: #e74c3c; }
+    body.dark .fifo-status-empty { color: #f39c12; }
+    .fifo-log { font-size: 11px; color: #595959; margin-top: 6px; max-height: 60px; overflow-y: auto; line-height: 1.4; font-family: monospace; }
+    body.dark .fifo-log { color: #888; }
+
     /* ── IEEE 754 widget ── */
     .ieee-row {
       display: flex;
@@ -677,15 +817,17 @@
       <div class="nav-links">
         <a href="/" class="back-link">&larr; p14m.com</a>
         <span style="color:#cccccc;">|</span>
-        <a href="/kmap/">K-Map</a>
+        <a href="/adders/">Adders</a>
         <span style="color:#cccccc;">|</span>
         <a href="/bits/">Bits</a>
         <span style="color:#cccccc;">|</span>
-        <a href="/adders/">Adders</a>
+        <a href="/circuitgen/">CircuitGen</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/kmap/">K-Map</a>
         <span style="color:#cccccc;">|</span>
         <a href="/multipliers/">Multipliers</a>
         <span style="color:#cccccc;">|</span>
-        <a href="/circuitgen/">CircuitGen</a>
+        <a href="/orderbook/">OrderBook</a>
       </div>
       <button class="theme-toggle" onclick="toggleTheme()">
         <span id="theme-text">&#9790;</span>
@@ -831,6 +973,11 @@ const CATEGORIES = {
     name: 'Number Systems',
     order: 4,
     intro: 'How hardware encodes different kinds of numbers \u2014 signed integers, fractions, and real numbers with wide dynamic range. The representation determines what arithmetic the hardware can do and how much it costs.',
+  },
+  orderbook: {
+    name: 'Order Book & Matching',
+    order: 5,
+    intro: 'How electronic exchanges organize buy and sell orders, match them, and execute trades. These data structures and algorithms are implemented in FPGA-based matching engines at trading firms, where nanosecond-level latency matters \u2014 making this a direct application of hardware engineering.',
   },
 };
 
@@ -1070,6 +1217,53 @@ const TOPICS = [
     interactive: barrelShifterWidget,
     relatedTopics: ['priority-encoder', 'logic-gates'],
     order: 12,
+  },
+  {
+    id: 'comparator',
+    title: 'Comparator Circuits',
+    shortDescription: 'How hardware compares two binary numbers to determine greater, less, or equal.',
+    type: 'concept',
+    tags: ['fundamentals', 'combinational', 'arithmetic'],
+    category: 'foundations',
+    content: {
+      problem: 'How does hardware answer "is A > B?" in a single clock cycle? This is the core operation behind priority queues, sorting networks, and matching engines.',
+      howItWorks: '<strong>1-bit comparator:</strong> compares two bits A and B, producing three outputs: A>B, A=B, A<B.<br>'
+        + '\u2022 A>B = A \u00B7 \u00ACB<br>'
+        + '\u2022 A<B = \u00ACA \u00B7 B<br>'
+        + '\u2022 A=B = A \u2299 B (XNOR)<br><br>'
+        + '<strong>N-bit magnitude comparator:</strong> compares from the MSB down. At each bit position, if the bits differ, the comparison is decided \u2014 the number with a 1 in that position is greater. If the bits are equal, move to the next position. If all bits are equal, the numbers are equal.<br><br>'
+        + '<strong>Cascaded comparators:</strong> for wide operands, smaller comparators (e.g., 4-bit) can be cascaded. The high comparator\u2019s result takes priority; the low comparator\u2019s result is only used when the upper bits are equal. This is like carry propagation in adders \u2014 and the same acceleration techniques (lookahead, tree structures) apply.<br><br>'
+        + '<strong>In practice:</strong> subtraction-based comparison (compute A\u2212B and check the sign/borrow) is often used since the ALU already has a subtractor. But dedicated comparator trees are faster when you only need the comparison result, not the difference.',
+      keyInsight: 'Comparison is a cascaded decision from MSB to LSB \u2014 the first bit position where A and B differ determines the result. This is why comparison has O(n) delay for n-bit numbers, and why trading firms use comparator trees in FPGA matching engines to check "does this order\u2019s price cross the spread?" in minimal clock cycles.',
+    },
+    interactive: comparatorWidget,
+    relatedTopics: ['logic-gates', 'priority-encoder', 'order-matching-engine'],
+    order: 13,
+  },
+  {
+    id: 'fifo-queue',
+    title: 'FIFO Queues in Hardware',
+    shortDescription: 'First-in-first-out buffers \u2014 the fundamental building block for pipelining, buffering, and order matching.',
+    type: 'concept',
+    tags: ['fundamentals', 'sequential', 'data-structures'],
+    category: 'foundations',
+    content: {
+      problem: 'How does hardware store a sequence of items and retrieve them in the same order? FIFOs appear everywhere \u2014 between pipeline stages, at bus interfaces, in network switches, and in order book matching engines.',
+      howItWorks: '<strong>Circular buffer:</strong> the most common FIFO implementation uses a fixed-size memory array with two pointers:<br><br>'
+        + '\u2022 <strong>Write pointer (tail)</strong> \u2014 points to the next empty slot. Advances on enqueue.<br>'
+        + '\u2022 <strong>Read pointer (head)</strong> \u2014 points to the oldest item. Advances on dequeue.<br>'
+        + '\u2022 Both pointers wrap around when they reach the end of the array.<br><br>'
+        + '<strong>Full/empty detection:</strong> the tricky part. If head = tail, is the FIFO empty or full? Common solutions:<br>'
+        + '\u2022 <strong>Extra bit:</strong> use (N+1)-bit pointers for an N-slot FIFO. Full when pointers match in low bits but differ in the extra bit. Empty when pointers are exactly equal.<br>'
+        + '\u2022 <strong>Counter:</strong> track the number of occupied slots separately.<br>'
+        + '\u2022 <strong>Waste a slot:</strong> never fill the last slot; full = (tail+1) mod size == head.<br><br>'
+        + '<strong>Synchronous vs asynchronous:</strong> when the producer and consumer run on different clocks (e.g., crossing clock domains), an <em>async FIFO</em> uses Gray code pointers to safely cross domains without metastability. This is one of the most important and subtle structures in digital design.<br><br>'
+        + '<strong>Depth sizing:</strong> FIFO depth is chosen to absorb burst traffic without overflow. Too shallow = data loss under burst. Too deep = wasted area.',
+      keyInsight: 'A FIFO decouples a producer from a consumer \u2014 they don\u2019t need to run at the same rate or even the same clock. In order book engines, each price level\u2019s order queue is a FIFO: first order in is the first to be matched (price-time priority).',
+    },
+    interactive: fifoWidget,
+    relatedTopics: ['comparator', 'order-book-mechanics'],
+    order: 14,
   },
 
   /* ── Timing & Performance ── */
@@ -1362,6 +1556,53 @@ const TOPICS = [
     interactive: ieeeWidget,
     relatedTopics: ['fixed-point', 'sign-extension', 'twos-complement'],
     order: 1,
+  },
+
+  /* ── Order Book & Matching ── */
+  {
+    id: 'order-book-mechanics',
+    title: 'Order Book Mechanics',
+    shortDescription: 'How limit order books organize bids, asks, and the spread \u2014 the core data structure of every electronic exchange.',
+    type: 'concept',
+    tags: ['trading', 'data-structures', 'matching'],
+    category: 'orderbook',
+    content: {
+      problem: 'When thousands of buyers and sellers want to trade the same instrument, how does an exchange organize and prioritize their orders?',
+      howItWorks: '<strong>The limit order book</strong> is the central data structure. It maintains two sorted sides:<br><br>'
+        + '<strong>Bid side</strong> \u2014 buy orders, sorted highest price first (max-heap). The best bid is the highest price any buyer is willing to pay.<br>'
+        + '<strong>Ask side</strong> \u2014 sell orders, sorted lowest price first (min-heap). The best ask is the lowest price any seller will accept.<br><br>'
+        + '<strong>The spread</strong> is the gap between best bid and best ask. A tighter spread means more liquidity \u2014 less cost to trade immediately.<br><br>'
+        + '<strong>Order types:</strong><br>'
+        + '\u2022 <strong>Limit order</strong> \u2014 specifies a price. Rests in the book if no match; fills immediately if it crosses the spread (buy price \u2265 best ask, or sell price \u2264 best bid).<br>'
+        + '\u2022 <strong>Market order</strong> \u2014 no price specified, fills at best available. Walks through price levels if the first level doesn\'t have enough quantity.<br>'
+        + '\u2022 <strong>Iceberg/reserve order</strong> \u2014 only a portion of the total quantity is visible. After each fill, the visible portion refills from the hidden reserve.<br><br>'
+        + '<strong>Depth</strong> is the cumulative quantity at each price level. A deep book is harder to move with a single order \u2014 more liquidity absorbs impact.',
+      keyInsight: 'The order book is essentially two priority queues (heaps) with FIFO ordering within each price level. At each price, orders are matched first-come-first-served \u2014 this is called <strong>price-time priority</strong>, the most common matching algorithm used by major exchanges.',
+    },
+    tryItLink: '/orderbook/',
+    relatedTopics: ['order-matching-engine', 'fifo-queue', 'comparator'],
+    order: 1,
+  },
+  {
+    id: 'order-matching-engine',
+    title: 'Matching Engines & Hardware',
+    shortDescription: 'How orders are matched, why FPGA implementations dominate, and why this matters for hardware engineers.',
+    type: 'concept',
+    tags: ['trading', 'FPGA', 'hardware', 'latency'],
+    category: 'orderbook',
+    content: {
+      problem: 'Once orders are in the book, how does the exchange decide which orders trade against each other? And why do trading firms implement this in hardware?',
+      howItWorks: '<strong>Matching (crossing)</strong> occurs when a new order\'s price crosses the spread:<br>'
+        + '\u2022 New buy at price P where P \u2265 best ask \u2192 match against resting asks, starting at best ask, FIFO within each level.<br>'
+        + '\u2022 New sell at price P where P \u2264 best bid \u2192 match against resting bids, starting at best bid, FIFO within each level.<br><br>'
+        + '<strong>Partial fills:</strong> if a buy for 100 hits a resting ask of 60, the ask is fully filled (removed), 40 remaining continues matching at the next level. If no more levels cross, the remainder rests in the book as a new bid.<br><br>'
+        + '<strong>The aggressor</strong> is the incoming order that initiates the match. Trade records track which side was the aggressor \u2014 this is how exchanges classify trades as "buy-initiated" or "sell-initiated."<br><br>'
+        + '<strong>Why hardware?</strong> Exchange matching engines at firms like Nasdaq, CME, and proprietary trading firms are implemented on <strong>FPGAs</strong> for deterministic nanosecond-level latency. The matching algorithm is simple \u2014 sorted insert + FIFO queue operations \u2014 but the requirement is doing it in <strong>single-digit microseconds</strong> with zero jitter. Software can\'t guarantee this due to OS scheduling, cache misses, and garbage collection. FPGA implementations pipeline the comparison, insertion, and matching stages, achieving wire-speed processing where each order is handled in a fixed number of clock cycles.',
+      keyInsight: 'The matching engine is one of the most direct real-world applications of the data structures and hardware design principles covered elsewhere on this site \u2014 priority queues map to comparator trees, FIFO matching maps to shift registers, and the entire pipeline maps to the same area-vs-speed tradeoffs seen in adder and multiplier architectures.',
+    },
+    tryItLink: '/orderbook/',
+    relatedTopics: ['order-book-mechanics', 'comparator', 'fifo-queue'],
+    order: 2,
   },
 ];
 
@@ -1777,6 +2018,212 @@ function ieeeWidget(container) {
   container.querySelector('#ieeeVal').addEventListener('input', e => { inputStr = e.target.value; updateOutput(); });
 
   updateOutput();
+}
+
+function comparatorWidget(container) {
+  let bits = 8;
+  let valA = 183;
+  let valB = 170;
+
+  let html = '<div class="widget-label">Try it \u2014 Magnitude Comparator</div>';
+  html += '<div class="cmp-input-row">';
+  html += '<select class="cmp-input" style="width:60px;" id="cmpBits">';
+  for (const b of [4, 8]) html += `<option value="${b}" ${b === bits ? 'selected' : ''}>${b}-bit</option>`;
+  html += '</select>';
+  html += '<span style="font-size:12px;">A:</span><input class="cmp-input" id="cmpA" value="' + valA + '" type="number">';
+  html += '<span style="font-size:12px;">B:</span><input class="cmp-input" id="cmpB" value="' + valB + '" type="number">';
+  html += '</div>';
+  html += '<div id="cmpOutput"></div>';
+  container.innerHTML = html;
+
+  const cmpOutput = container.querySelector('#cmpOutput');
+
+  function updateOutput() {
+    const mask = (1 << bits) - 1;
+    const a = valA & mask;
+    const b = valB & mask;
+
+    // Find the deciding bit
+    let decidingBit = -1;
+    for (let i = bits - 1; i >= 0; i--) {
+      const aBit = (a >>> i) & 1;
+      const bBit = (b >>> i) & 1;
+      if (aBit !== bBit) { decidingBit = i; break; }
+    }
+
+    let h = '';
+
+    // Render A bits
+    h += '<div style="font-size:12px;color:#767676;margin-bottom:2px;">A = ' + a + ':</div>';
+    h += '<div class="cmp-bits-row">';
+    for (let i = bits - 1; i >= 0; i--) {
+      const bit = (a >>> i) & 1;
+      let cls = 'cmp-bit';
+      if (i === decidingBit) cls += ' deciding';
+      else if (decidingBit !== -1 && i < decidingBit) cls += ' skipped';
+      else if (decidingBit === -1) cls += ' equal';
+      h += '<div class="' + cls + '">' + bit + '</div>';
+    }
+    h += '</div>';
+
+    // Render B bits
+    h += '<div style="font-size:12px;color:#767676;margin-bottom:2px;margin-top:4px;">B = ' + b + ':</div>';
+    h += '<div class="cmp-bits-row">';
+    for (let i = bits - 1; i >= 0; i--) {
+      const bit = (b >>> i) & 1;
+      let cls = 'cmp-bit';
+      if (i === decidingBit) cls += ' deciding';
+      else if (decidingBit !== -1 && i < decidingBit) cls += ' skipped';
+      else if (decidingBit === -1) cls += ' equal';
+      h += '<div class="' + cls + '">' + bit + '</div>';
+    }
+    h += '</div>';
+
+    // Step-by-step explanation
+    h += '<div class="cmp-step">';
+    let steps = [];
+    for (let i = bits - 1; i >= 0; i--) {
+      const aBit = (a >>> i) & 1;
+      const bBit = (b >>> i) & 1;
+      if (aBit === bBit) {
+        steps.push('Bit ' + i + ': A[' + i + ']=' + aBit + ' = B[' + i + ']=' + bBit + ' \u2192 equal, check next');
+        if (i === 0 && decidingBit === -1) {
+          steps.push('All bits equal \u2192 A = B');
+        }
+      } else {
+        steps.push('Bit ' + i + ': A[' + i + ']=' + aBit + ' \u2260 B[' + i + ']=' + bBit + ' \u2192 ' + (aBit > bBit ? 'A > B' : 'A < B') + ' (decided!)');
+        break;
+      }
+    }
+    h += steps.join('<br>');
+    h += '</div>';
+
+    // Result
+    h += '<div class="cmp-result">';
+    if (a > b) h += '<span class="cmp-gt">A > B</span> \u2014 decided at bit ' + decidingBit + ' (A has 1, B has 0)';
+    else if (a < b) h += '<span class="cmp-lt">A < B</span> \u2014 decided at bit ' + decidingBit + ' (A has 0, B has 1)';
+    else h += '<span class="cmp-eq">A = B</span> \u2014 all ' + bits + ' bits are identical';
+    h += '</div>';
+
+    cmpOutput.innerHTML = h;
+  }
+
+  container.querySelector('#cmpBits').addEventListener('change', function(e) { bits = parseInt(e.target.value); updateOutput(); });
+  container.querySelector('#cmpA').addEventListener('input', function(e) { valA = parseInt(e.target.value) || 0; updateOutput(); });
+  container.querySelector('#cmpB').addEventListener('input', function(e) { valB = parseInt(e.target.value) || 0; updateOutput(); });
+  updateOutput();
+}
+
+function fifoWidget(container) {
+  const SIZE = 8;
+  let fifo = new Array(SIZE).fill(null);
+  let head = 0;    // read pointer
+  let tail = 0;    // write pointer
+  let count = 0;
+  let nextVal = 1;
+  let log = [];
+
+  let html = '<div class="widget-label">Try it \u2014 Circular FIFO (8 slots)</div>';
+  html += '<div class="fifo-controls">';
+  html += '<input class="fifo-input" id="fifoVal" value="1" type="number" min="0" max="99">';
+  html += '<button class="fifo-btn" id="fifoEnq">Enqueue</button>';
+  html += '<button class="fifo-btn" id="fifoDeq">Dequeue</button>';
+  html += '<button class="fifo-btn" id="fifoReset">Clear</button>';
+  html += '</div>';
+  html += '<div id="fifoOutput"></div>';
+  container.innerHTML = html;
+
+  const fifoOutput = container.querySelector('#fifoOutput');
+  const fifoValInput = container.querySelector('#fifoVal');
+
+  function enqueue() {
+    if (count >= SIZE) { log.push('FULL \u2014 enqueue rejected'); render(); return; }
+    const v = parseInt(fifoValInput.value) || 0;
+    fifo[tail] = v;
+    log.push('Enqueue ' + v + ' at slot ' + tail);
+    tail = (tail + 1) % SIZE;
+    count++;
+    nextVal = v + 1;
+    fifoValInput.value = nextVal;
+    render();
+  }
+
+  function dequeue() {
+    if (count <= 0) { log.push('EMPTY \u2014 dequeue rejected'); render(); return; }
+    const v = fifo[head];
+    fifo[head] = null;
+    log.push('Dequeue ' + v + ' from slot ' + head);
+    head = (head + 1) % SIZE;
+    count--;
+    render();
+  }
+
+  function reset() {
+    fifo = new Array(SIZE).fill(null);
+    head = 0; tail = 0; count = 0; nextVal = 1;
+    fifoValInput.value = '1';
+    log = ['FIFO cleared'];
+    render();
+  }
+
+  function render() {
+    let h = '';
+
+    // Pointer labels
+    h += '<div class="fifo-labels">';
+    for (let i = 0; i < SIZE; i++) {
+      let lbl = '';
+      if (i === head && i === tail) lbl = '<span class="fifo-ptr-label fifo-ptr-rd">H</span><span class="fifo-ptr-label fifo-ptr-wr">T</span>';
+      else if (i === head) lbl = '<span class="fifo-ptr-label fifo-ptr-rd">Head</span>';
+      else if (i === tail) lbl = '<span class="fifo-ptr-label fifo-ptr-wr">Tail</span>';
+      h += '<div class="fifo-label-cell">' + lbl + '</div>';
+    }
+    h += '</div>';
+
+    // Slots
+    h += '<div class="fifo-ring">';
+    for (let i = 0; i < SIZE; i++) {
+      let cls = 'fifo-slot';
+      if (fifo[i] !== null) cls += ' occupied';
+      if (i === head && count > 0) cls += ' head-slot';
+      if (i === tail) cls += ' tail-slot';
+      const display = fifo[i] !== null ? fifo[i] : '\u00B7';
+      h += '<div class="' + cls + '">' + display + '</div>';
+    }
+    h += '</div>';
+
+    // Index labels
+    h += '<div class="fifo-labels">';
+    for (let i = 0; i < SIZE; i++) h += '<div class="fifo-label-cell">[' + i + ']</div>';
+    h += '</div>';
+
+    // Status
+    h += '<div class="fifo-status">';
+    h += 'Count: <strong>' + count + '/' + SIZE + '</strong>';
+    if (count === SIZE) h += ' \u2014 <span class="fifo-status-full">FULL</span>';
+    else if (count === 0) h += ' \u2014 <span class="fifo-status-empty">EMPTY</span>';
+    h += ' | Head: ' + head + ' | Tail: ' + tail;
+    h += '</div>';
+
+    // Log (last 5 entries)
+    if (log.length > 0) {
+      h += '<div class="fifo-log">';
+      const recent = log.slice(-5);
+      for (let i = recent.length - 1; i >= 0; i--) h += recent[i] + '<br>';
+      h += '</div>';
+    }
+
+    fifoOutput.innerHTML = h;
+
+    // Update button states
+    container.querySelector('#fifoEnq').disabled = count >= SIZE;
+    container.querySelector('#fifoDeq').disabled = count <= 0;
+  }
+
+  container.querySelector('#fifoEnq').addEventListener('click', enqueue);
+  container.querySelector('#fifoDeq').addEventListener('click', dequeue);
+  container.querySelector('#fifoReset').addEventListener('click', reset);
+  render();
 }
 
 /* ═══════════════════════ Rendering ═══════════════════════ */
