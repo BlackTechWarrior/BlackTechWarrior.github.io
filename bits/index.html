@@ -73,7 +73,7 @@
       transition: border-color 0.2s;
     }
     .var-value-input:focus { border-color: #0066cc; }
-    .var-value-input::placeholder { color: #767676; }
+    .var-value-input::placeholder { color: #595959; }
     body.dark .var-value-input {
       background: #2a2a2a;
       border-color: #444444;
@@ -100,7 +100,7 @@
 
     .bit-idx {
       font-size: 10px;
-      color: #767676;
+      color: #595959;
       font-family: monospace;
       margin-bottom: 2px;
       height: 14px;
@@ -121,7 +121,7 @@
     body.dark .bit-cell { border-color: #444444; }
 
     .bit-cell.b1 { color: #0066cc; }
-    .bit-cell.b0 { color: #767676; }
+    .bit-cell.b0 { color: #595959; }
     body.dark .bit-cell.b1 { color: #87ceeb; }
     body.dark .bit-cell.b0 { color: #6b6b6b; }
 
@@ -146,7 +146,7 @@
       margin-top: 6px;
       word-break: break-all;
     }
-    body.dark .format-line { color: #888888; }
+    body.dark .format-line { color: #9a9a9a; }
 
     /* ── Expression Input ── */
     .expr-input {
@@ -188,18 +188,18 @@
       flex-shrink: 0;
     }
 
-    .step-eq { color: #767676; flex-shrink: 0; }
+    .step-eq { color: #595959; flex-shrink: 0; }
 
     .step-vals {
       font-size: 12px;
       color: #595959;
       flex-shrink: 0;
     }
-    body.dark .step-vals { color: #888888; }
+    body.dark .step-vals { color: #9a9a9a; }
 
     .step-desc {
       font-style: italic;
-      color: #767676;
+      color: #595959;
       font-size: 12px;
       margin-left: auto;
     }
@@ -246,7 +246,7 @@
       color: #595959;
       flex-wrap: wrap;
     }
-    body.dark .step-operand { color: #888888; }
+    body.dark .step-operand { color: #9a9a9a; }
 
     .step-operand-expr { min-width: 80px; flex-shrink: 0; }
 
@@ -255,7 +255,7 @@
       font-family: monospace;
       font-size: 11px;
       font-style: italic;
-      color: #767676;
+      color: #595959;
     }
     body.dark .step-applied { color: #9a9a9a; }
 
@@ -291,7 +291,7 @@
       color: #595959;
     }
     .history-item:hover { background: rgba(0, 102, 204, 0.05); color: #000000; }
-    body.dark .history-item { color: #888888; }
+    body.dark .history-item { color: #9a9a9a; }
     body.dark .history-item:hover { background: rgba(135, 206, 235, 0.1); color: #e0e0e0; }
 
     /* ── Bit Tricks ── */
@@ -318,7 +318,7 @@
     .trick-expr {
       min-width: 120px;
       flex-shrink: 0;
-      color: #767676;
+      color: #595959;
     }
     body.dark .trick-expr { color: #9a9a9a; }
 
@@ -326,7 +326,7 @@
       font-size: 12px;
       color: #595959;
     }
-    body.dark .trick-vals { color: #888888; }
+    body.dark .trick-vals { color: #9a9a9a; }
 
     /* ── Chain Mode ── */
     .chain-controls {
@@ -346,10 +346,10 @@
       font-family: inherit;
       transition: background 0.2s, border-color 0.2s;
     }
-    .chain-toggle:hover { border-color: #888888; }
+    .chain-toggle:hover { border-color: #9a9a9a; }
     .chain-toggle.on { background-color: #0066cc; color: #ffffff; border-color: #0066cc; }
     body.dark .chain-toggle { background-color: #333333; border-color: #555555; color: #e0e0e0; }
-    body.dark .chain-toggle:hover { border-color: #888888; }
+    body.dark .chain-toggle:hover { border-color: #9a9a9a; }
     body.dark .chain-toggle.on { background-color: #4a9eff; color: #1a1a1a; border-color: #4a9eff; }
 
     .chain-clear {
@@ -360,11 +360,11 @@
       cursor: pointer;
       font-size: 0.8em;
       font-family: inherit;
-      color: #767676;
+      color: #595959;
     }
-    .chain-clear:hover { border-color: #888888; color: #333333; }
-    body.dark .chain-clear { border-color: #555555; color: #888888; }
-    body.dark .chain-clear:hover { border-color: #888888; color: #e0e0e0; }
+    .chain-clear:hover { border-color: #9a9a9a; color: #333333; }
+    body.dark .chain-clear { border-color: #555555; color: #9a9a9a; }
+    body.dark .chain-clear:hover { border-color: #9a9a9a; color: #e0e0e0; }
 
     .chain-pipeline {
       margin-top: 12px;
@@ -407,7 +407,7 @@
       color: #595959;
       flex-shrink: 0;
     }
-    body.dark .chain-vals { color: #888888; }
+    body.dark .chain-vals { color: #9a9a9a; }
 
     .chain-arrow {
       color: #bbbbbb;
@@ -507,7 +507,7 @@
       <div class="chain-controls">
         <button class="chain-toggle" id="chainToggle" onclick="toggleChainMode()">Chain Mode</button>
         <button class="chain-clear" id="chainClear" onclick="clearChain()" style="display:none;">Clear Chain</button>
-        <span id="chainHint" style="font-size:12px;color:#767676;display:none;">Use <code>$</code> to reference the previous result</span>
+        <span id="chainHint" style="font-size:12px;color:#595959;display:none;">Use <code>$</code> to reference the previous result</span>
       </div>
       <div id="chainPipeline"></div>
       <div class="ref-section" style="margin-top:10px;">
@@ -748,7 +748,7 @@ function renderVarBank() {
     html += '<div class="var-row" data-var-idx="' + i + '">';
     html += '<div class="var-top">';
     html += '<input class="var-name-input" value="' + escHtml(v.name) + '" data-var-idx="' + i + '" data-field="name" maxlength="4" spellcheck="false" aria-label="Variable name">';
-    html += '<span style="color:#767676;font-size:12px;">=</span>';
+    html += '<span style="color:#595959;font-size:12px;">=</span>';
     html += '<input class="var-value-input" value="' + escHtml(toSigned(v.value).toString()) + '" data-var-idx="' + i + '" data-field="value" placeholder="0" spellcheck="false" aria-label="Value for variable ' + escHtml(v.name) + '">';
     html += '</div>';
     html += '<div class="var-bits" data-var-idx="' + i + '">';

@@ -28,8 +28,8 @@
     }
     body.dark .ob-spread-bar { border-color: #333; }
     .ob-spread-bar .ob-metric { text-align: center; }
-    .ob-spread-bar .ob-metric-label { color: #767676; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-    body.dark .ob-spread-bar .ob-metric-label { color: #888; }
+    .ob-spread-bar .ob-metric-label { color: #595959; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    body.dark .ob-spread-bar .ob-metric-label { color: #9a9a9a; }
     .ob-spread-bar .ob-metric-value { font-weight: 600; font-family: monospace; font-size: 14px; }
 
     .ob-layout {
@@ -53,15 +53,15 @@
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #767676;
+      color: #595959;
       border-bottom: 1px solid #e0e0e0;
       background: #fafafa;
     }
-    body.dark .ob-book-header { background: #222; border-bottom-color: #333; color: #888; }
+    body.dark .ob-book-header { background: #222; border-bottom-color: #333; color: #9a9a9a; }
     .ob-book-header span:nth-child(3),
     .ob-book-header span:nth-child(4) { text-align: right; }
 
-    .ob-book-body { max-height: 440px; overflow-y: auto; }
+    .ob-book-body { max-height: 440px; overflow-y: auto; min-height: 440px; }
 
     .ob-row {
       display: grid;
@@ -103,13 +103,13 @@
       padding: 6px 10px;
       text-align: center;
       font-size: 12px;
-      color: #767676;
+      color: #595959;
       border-top: 1px dashed #e0e0e0;
       border-bottom: 1px dashed #e0e0e0;
       background: #fafafa;
       font-family: monospace;
     }
-    body.dark .ob-spread-row { background: #222; border-color: #333; color: #888; }
+    body.dark .ob-spread-row { background: #222; border-color: #333; color: #9a9a9a; }
 
     .ob-row.ob-flash { animation: obFlash 0.4s ease-out; }
     @keyframes obFlash {
@@ -131,10 +131,10 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #767676;
+      color: #595959;
       margin-bottom: 10px;
     }
-    body.dark .ob-card-title { color: #888; }
+    body.dark .ob-card-title { color: #9a9a9a; }
 
     /* Side toggle */
     .ob-side-toggle {
@@ -154,12 +154,12 @@
       font-family: inherit;
       font-size: 13px;
       font-weight: 600;
-      color: #767676;
+      color: #595959;
       transition: all 0.15s;
     }
     .ob-side-btn.ob-buy-active { background: #0a7c42; color: white; }
     .ob-side-btn.ob-sell-active { background: #c0392b; color: white; }
-    body.dark .ob-side-btn { color: #888; }
+    body.dark .ob-side-btn { color: #9a9a9a; }
     body.dark .ob-side-btn.ob-buy-active { background: #2ecc71; color: #1a1a1a; }
     body.dark .ob-side-btn.ob-sell-active { background: #e74c3c; color: #1a1a1a; }
 
@@ -180,23 +180,23 @@
       cursor: pointer;
       font-family: inherit;
       font-size: 12px;
-      color: #767676;
+      color: #595959;
       transition: all 0.15s;
     }
     .ob-type-btn.active { background: #0066cc; color: white; }
-    body.dark .ob-type-btn { color: #888; }
+    body.dark .ob-type-btn { color: #9a9a9a; }
     body.dark .ob-type-btn.active { background: #87ceeb; color: #1a1a1a; }
 
     .ob-field { margin-bottom: 8px; }
     .ob-field label {
       display: block;
       font-size: 11px;
-      color: #767676;
+      color: #595959;
       margin-bottom: 3px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    body.dark .ob-field label { color: #888; }
+    body.dark .ob-field label { color: #9a9a9a; }
     .ob-field input {
       width: 100%;
       box-sizing: border-box;
@@ -241,7 +241,7 @@
       color: inherit;
       transition: border-color 0.15s;
     }
-    .ob-reset-btn:hover { border-color: #999; }
+    .ob-reset-btn:hover { border-color: #9a9a9a; }
     body.dark .ob-reset-btn { border-color: #444; }
     body.dark .ob-reset-btn:hover { border-color: #666; }
 
@@ -350,24 +350,24 @@
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.3px;
-      color: #767676;
+      color: #595959;
       padding-bottom: 4px;
       border-bottom: 1px solid #e0e0e0;
       margin-bottom: 4px;
     }
-    body.dark .ob-th { color: #888; border-bottom-color: #333; }
+    body.dark .ob-th { color: #9a9a9a; border-bottom-color: #333; }
     .ob-trades-th { display: grid; grid-template-columns: 60px 70px 60px 50px; }
     .ob-orders-th { display: grid; grid-template-columns: 30px 35px 35px 60px 45px 45px 40px 55px; gap: 2px; }
 
     .ob-status-new { color: #0066cc; }
     .ob-status-partial { color: #e67e22; }
     .ob-status-filled { color: #0a7c42; }
-    .ob-status-cancelled { color: #999; }
+    .ob-status-cancelled { color: #9a9a9a; }
     body.dark .ob-status-new { color: #87ceeb; }
     body.dark .ob-status-partial { color: #f39c12; }
     body.dark .ob-status-filled { color: #2ecc71; }
 
-    .ob-empty { color: #999; font-style: italic; padding: 12px 0; font-family: inherit; font-size: 12px; }
+    .ob-empty { color: #9a9a9a; font-style: italic; padding: 12px 0; font-family: inherit; font-size: 12px; }
   </style>
 </head>
 <body>
@@ -445,19 +445,19 @@
       <div class="ob-card">
         <div class="ob-card-title">Place Order</div>
         <div class="ob-side-toggle">
-          <button class="ob-side-btn ob-buy-active" id="ob-side-buy" onclick="setSide('buy')">Buy</button>
-          <button class="ob-side-btn" id="ob-side-sell" onclick="setSide('sell')">Sell</button>
+          <button class="ob-side-btn ob-buy-active" id="ob-side-buy" onclick="setSide('buy')" aria-label="Buy side">Buy</button>
+          <button class="ob-side-btn" id="ob-side-sell" onclick="setSide('sell')" aria-label="Sell side">Sell</button>
         </div>
         <div class="ob-type-toggle">
-          <button class="ob-type-btn active" id="ob-type-limit" onclick="setType('limit')">Limit</button>
-          <button class="ob-type-btn" id="ob-type-market" onclick="setType('market')">Market</button>
+          <button class="ob-type-btn active" id="ob-type-limit" onclick="setType('limit')" aria-label="Limit order type">Limit</button>
+          <button class="ob-type-btn" id="ob-type-market" onclick="setType('market')" aria-label="Market order type">Market</button>
         </div>
         <div class="ob-field" id="ob-price-field">
-          <label>Price</label>
+          <label for="ob-price">Price</label>
           <input type="number" id="ob-price" step="0.01" min="0.01" placeholder="100.00">
         </div>
         <div class="ob-field">
-          <label>Quantity</label>
+          <label for="ob-qty">Quantity</label>
           <input type="number" id="ob-qty" step="1" min="1" value="50">
         </div>
         <button class="ob-submit-btn ob-submit-buy" id="ob-submit" onclick="submitOrder()">Submit Buy</button>
@@ -468,10 +468,10 @@
       <div class="ob-card">
         <div class="ob-card-title">Step Mode</div>
         <div class="ob-step-toggle">
-          <input type="checkbox" id="ob-step-check" onchange="toggleStepMode()">
+          <input type="checkbox" id="ob-step-check" onchange="toggleStepMode()" aria-label="Enable step mode">
           <label for="ob-step-check" style="font-size:13px;cursor:pointer;">Walk through matching step-by-step</label>
         </div>
-        <button class="ob-step-btn" id="ob-step-next" onclick="nextStep()">Next Step (Space)</button>
+        <button class="ob-step-btn" id="ob-step-next" onclick="nextStep()" aria-label="Next matching step">Next Step (Space)</button>
         <div class="ob-step-narration" id="ob-narration"></div>
       </div>
 
@@ -479,23 +479,23 @@
       <div class="ob-card">
         <div class="ob-card-title">Scenarios</div>
         <div class="ob-scenario-grid">
-          <button class="ob-scenario-btn" onclick="loadScenario('sweep')">
+          <button class="ob-scenario-btn" onclick="loadScenario('sweep')" aria-label="Scenario: Market Order Sweeping Levels">
             <strong>Market Order Sweeping Levels</strong>
             Large market order eats through multiple thin price levels.
           </button>
-          <button class="ob-scenario-btn" onclick="loadScenario('collapse')">
+          <button class="ob-scenario-btn" onclick="loadScenario('collapse')" aria-label="Scenario: Spread Collapse">
             <strong>Spread Collapse</strong>
             Aggressive limit orders narrow the spread to zero and cross.
           </button>
-          <button class="ob-scenario-btn" onclick="loadScenario('largefill')">
+          <button class="ob-scenario-btn" onclick="loadScenario('largefill')" aria-label="Scenario: Large Limit Fill">
             <strong>Large Limit Fill</strong>
             Big resting order gets partially filled by multiple smaller orders.
           </button>
-          <button class="ob-scenario-btn" onclick="loadScenario('iceberg')">
+          <button class="ob-scenario-btn" onclick="loadScenario('iceberg')" aria-label="Scenario: Iceberg Reveal">
             <strong>Iceberg Reveal</strong>
             Hidden reserve order refills after each partial fill.
           </button>
-          <button class="ob-scenario-btn" onclick="loadScenario('empty')">
+          <button class="ob-scenario-btn" onclick="loadScenario('empty')" aria-label="Scenario: Empty Side">
             <strong>Empty Side</strong>
             Market order into an empty side &mdash; shows order rejection.
           </button>

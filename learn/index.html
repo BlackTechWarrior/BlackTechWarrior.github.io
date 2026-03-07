@@ -38,7 +38,7 @@
     }
     .filter-btn:hover { border-color: #999999; color: #333333; }
     .filter-btn.on { background: #0066cc; color: white; border-color: #0066cc; }
-    body.dark .filter-btn { border-color: #444444; color: #888888; }
+    body.dark .filter-btn { border-color: #444444; color: #9a9a9a; }
     body.dark .filter-btn:hover { border-color: #666666; color: #cccccc; }
     body.dark .filter-btn.on { background: #87ceeb; color: #1a1a1a; border-color: #87ceeb; }
 
@@ -58,7 +58,7 @@
       margin-bottom: 14px;
       line-height: 1.6;
     }
-    body.dark .cat-intro { color: #888888; }
+    body.dark .cat-intro { color: #9a9a9a; }
 
     /* ── Topic Cards ── */
     .card-grid {
@@ -93,7 +93,7 @@
       color: #595959;
       line-height: 1.5;
     }
-    body.dark .card-desc { color: #888888; }
+    body.dark .card-desc { color: #9a9a9a; }
 
     .card-meta {
       display: flex;
@@ -160,7 +160,7 @@
       align-items: center;
       margin-bottom: 20px;
       font-size: 12px;
-      color: #767676;
+      color: #595959;
     }
     body.dark .topic-meta { color: #9a9a9a; }
 
@@ -222,7 +222,7 @@
       margin-top: 4px;
       font-size: 12px;
     }
-    body.dark .tradeoff-best { color: #888888; }
+    body.dark .tradeoff-best { color: #9a9a9a; }
 
     /* ── Action Buttons ── */
     .action-row {
@@ -260,9 +260,9 @@
     }
     .action-btn-secondary:hover { border-color: #999999; color: #333333; background: transparent; }
     .action-btn-secondary:visited { color: #595959; }
-    body.dark .action-btn-secondary { border-color: #444444; color: #888888; background: transparent; }
+    body.dark .action-btn-secondary { border-color: #444444; color: #9a9a9a; background: transparent; }
     body.dark .action-btn-secondary:hover { border-color: #666666; color: #cccccc; background: transparent; }
-    body.dark .action-btn-secondary:visited { color: #888888; }
+    body.dark .action-btn-secondary:visited { color: #9a9a9a; }
 
     /* ── Related Topics ── */
     .related-section {
@@ -276,7 +276,7 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #767676;
+      color: #595959;
       margin-bottom: 8px;
     }
     body.dark .related-label { color: #9a9a9a; }
@@ -478,7 +478,7 @@
     body.dark .fp-bit.frac-part { background: rgba(76,175,80,0.08); border-color: rgba(76,175,80,0.2); }
     .fp-radix { font-size: 18px; font-weight: 700; margin: 0 2px; color: #dc3545; }
     .fp-info { font-size: 12px; margin-top: 6px; line-height: 1.6; color: #595959; }
-    body.dark .fp-info { color: #888; }
+    body.dark .fp-info { color: #9a9a9a; }
 
     /* ── Barrel shifter diagram ── */
     .barrel-diagram {
@@ -529,7 +529,7 @@
       margin-top: 4px;
       line-height: 1.5;
     }
-    body.dark .barrel-note { color: #888; }
+    body.dark .barrel-note { color: #9a9a9a; }
 
     /* ── Comparator widget ── */
     .cmp-input-row {
@@ -585,7 +585,7 @@
     body.dark .cmp-lt { color: #e74c3c; }
     body.dark .cmp-eq { color: #4caf50; }
     .cmp-step { font-size: 11px; line-height: 1.5; color: #595959; margin-top: 6px; }
-    body.dark .cmp-step { color: #888; }
+    body.dark .cmp-step { color: #9a9a9a; }
 
     /* ── FIFO widget ── */
     .fifo-controls {
@@ -669,7 +669,7 @@
     body.dark .fifo-status-full { color: #e74c3c; }
     body.dark .fifo-status-empty { color: #f39c12; }
     .fifo-log { font-size: 11px; color: #595959; margin-top: 6px; max-height: 60px; overflow-y: auto; line-height: 1.4; font-family: monospace; }
-    body.dark .fifo-log { color: #888; }
+    body.dark .fifo-log { color: #9a9a9a; }
 
     /* ── IEEE 754 widget ── */
     .ieee-row {
@@ -766,7 +766,7 @@
       color: #595959;
     }
     .feedback-btn:hover { border-color: #0066cc; color: #0066cc; }
-    body.dark .feedback-btn { border-color: #444444; color: #888888; }
+    body.dark .feedback-btn { border-color: #444444; color: #9a9a9a; }
     body.dark .feedback-btn:hover { border-color: #87ceeb; color: #87ceeb; }
     .feedback-btn.voted {
       border-color: #0066cc;
@@ -1650,7 +1650,7 @@ function boothWidget(container) {
     const clamped = val & ((1 << bits) - 1);
     const digits = encode(clamped, bits);
 
-    let h = '<div style="margin-bottom:6px;font-size:12px;color:#767676;">Binary:</div>';
+    let h = '<div style="margin-bottom:6px;font-size:12px;color:#595959;">Binary:</div>';
     h += '<div class="booth-bits" style="overflow-x:auto;">';
     for (let i = bits - 1; i >= 0; i--) {
       h += `<div class="booth-bit" style="background:rgba(0,0,0,0.04);border:1px solid #ddd;">${(clamped >>> i) & 1}</div>`;
@@ -1663,7 +1663,7 @@ function boothWidget(container) {
     h += '</div>';
 
     // Booth encoding
-    h += '<div style="margin-bottom:6px;font-size:12px;color:#767676;">Booth encoding (d[i] = b[i\u22121] \u2212 b[i]):</div>';
+    h += '<div style="margin-bottom:6px;font-size:12px;color:#595959;">Booth encoding (d[i] = b[i\u22121] \u2212 b[i]):</div>';
     h += '<div class="booth-bits" style="overflow-x:auto;">';
     for (let i = bits - 1; i >= 0; i--) {
       const d = digits[i];
@@ -1692,7 +1692,7 @@ function boothWidget(container) {
     // Booth efficiency note
     const nonZero = digits.filter(d => d !== 0).length;
     const onesInBinary = clamped.toString(2).split('').filter(c => c === '1').length;
-    h += '<div class="booth-result-row" style="color:#767676;font-size:11px;margin-top:4px;">';
+    h += '<div class="booth-result-row" style="color:#595959;font-size:11px;margin-top:4px;">';
     if (nonZero < onesInBinary) {
       h += `Booth wins: ${nonZero} op${nonZero !== 1 ? 's' : ''} vs ${onesInBinary} with standard binary. Ideal when bits have long runs of 1s (e.g. 0b0111110), since Booth collapses each run into just a subtract and an add.`;
     } else if (nonZero > onesInBinary) {
@@ -1745,7 +1745,7 @@ function overflowWidget(container) {
   const ovOutput = container.querySelector('#ovOutput');
 
   function renderBits(val, label) {
-    let h = `<div style="font-size:12px;color:#767676;margin-bottom:2px;">${label} (signed: ${toSigned(val, bits)}):</div>`;
+    let h = `<div style="font-size:12px;color:#595959;margin-bottom:2px;">${label} (signed: ${toSigned(val, bits)}):</div>`;
     h += '<div class="overflow-bits" style="overflow-x:auto;">';
     for (let i = bits - 1; i >= 0; i--) {
       const cls = i === bits - 1 ? ' sign' : '';
@@ -2054,7 +2054,7 @@ function comparatorWidget(container) {
     let h = '';
 
     // Render A bits
-    h += '<div style="font-size:12px;color:#767676;margin-bottom:2px;">A = ' + a + ':</div>';
+    h += '<div style="font-size:12px;color:#595959;margin-bottom:2px;">A = ' + a + ':</div>';
     h += '<div class="cmp-bits-row">';
     for (let i = bits - 1; i >= 0; i--) {
       const bit = (a >>> i) & 1;
@@ -2067,7 +2067,7 @@ function comparatorWidget(container) {
     h += '</div>';
 
     // Render B bits
-    h += '<div style="font-size:12px;color:#767676;margin-bottom:2px;margin-top:4px;">B = ' + b + ':</div>';
+    h += '<div style="font-size:12px;color:#595959;margin-bottom:2px;margin-top:4px;">B = ' + b + ':</div>';
     h += '<div class="cmp-bits-row">';
     for (let i = bits - 1; i >= 0; i--) {
       const bit = (b >>> i) & 1;
