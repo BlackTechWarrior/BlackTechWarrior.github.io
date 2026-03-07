@@ -1800,7 +1800,7 @@ function render() {
       Circuit.interact(svg, circuit, circuitWrap);
       circuitPanel.style.display = 'block';
     } catch (e) {
-      circuitWrap.innerHTML = '<div style="padding:20px;color:#999;font-style:italic;">Could not render circuit: ' + e.message + '</div>';
+      circuitWrap.innerHTML = '<div style="padding:20px;color:#595959;font-style:italic;">Could not render circuit: ' + e.message + '</div>';
       circuitPanel.style.display = 'block';
     }
   } else {

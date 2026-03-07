@@ -33,6 +33,7 @@ body.dark .header { border-bottom-color: #444444; }
 .profile-picture {
     width: 90px;
     height: 90px;
+    aspect-ratio: 1;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid #cccccc;

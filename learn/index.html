@@ -12,8 +12,6 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
   <link rel="stylesheet" href="/shared.css">
-  <script defer src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
-  <script defer src="https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore-compat.js"></script>
   <style>
     /* ── Learn-specific styles ── */
 
@@ -356,7 +354,7 @@
     }
     .booth-bit-label {
       font-size: 9px;
-      color: #999999;
+      color: #595959;
       text-align: center;
       width: 22px;
     }
@@ -367,7 +365,7 @@
     }
     .booth-pos { color: #28a745; }
     .booth-neg { color: #dc3545; }
-    .booth-zero { color: #999999; }
+    .booth-zero { color: #595959; }
     body.dark .booth-pos { color: #4caf50; }
     body.dark .booth-neg { color: #ff6b6b; }
 
@@ -521,8 +519,8 @@
       color: #0066cc;
     }
     body.dark .barrel-mux { background: rgba(135,206,235,0.08); border-color: rgba(135,206,235,0.2); color: #87ceeb; }
-    .barrel-mux.pass { background: rgba(0,0,0,0.03); border-color: #ddd; color: #999; }
-    body.dark .barrel-mux.pass { background: rgba(255,255,255,0.03); border-color: #444; color: #666; }
+    .barrel-mux.pass { background: rgba(0,0,0,0.03); border-color: #ddd; color: #595959; }
+    body.dark .barrel-mux.pass { background: rgba(255,255,255,0.03); border-color: #444; color: #9a9a9a; }
     .barrel-note {
       font-size: 11px;
       color: #595959;
@@ -654,7 +652,7 @@
       display: flex;
       gap: 2px;
       font-size: 9px;
-      color: #999;
+      color: #595959;
       margin-bottom: 8px;
     }
     .fifo-label-cell { width: 36px; text-align: center; }
@@ -781,7 +779,7 @@
     }
     .feedback-count {
       font-size: 11px;
-      color: #999999;
+      color: #595959;
       font-weight: 600;
     }
     .feedback-thanks {
@@ -843,20 +841,41 @@
   </main>
 
 <script>
-/* ═══════════════════════ Firebase ═══════════════════════ */
+/* ═══════════════════════ Firebase (lazy-loaded) ═══════════════════════ */
 
 var db = null;
-try {
-  firebase.initializeApp({
-    apiKey: "AIzaSyDjXO28mfjl3L85F91DhWuaYNMIvYcDdPM",
-    authDomain: "p14m-helpful-counter.firebaseapp.com",
-    projectId: "p14m-helpful-counter",
-    storageBucket: "p14m-helpful-counter.firebasestorage.app",
-    messagingSenderId: "109214087494",
-    appId: "1:109214087494:web:6affe1ce6be75c1d298d47",
+var _firebaseReady = null;
+
+function loadFirebase() {
+  if (_firebaseReady) return _firebaseReady;
+  _firebaseReady = new Promise(function(resolve) {
+    var s1 = document.createElement('script');
+    s1.src = 'https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js';
+    s1.onload = function() {
+      var s2 = document.createElement('script');
+      s2.src = 'https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore-compat.js';
+      s2.onload = function() {
+        try {
+          firebase.initializeApp({
+            apiKey: "AIzaSyDjXO28mfjl3L85F91DhWuaYNMIvYcDdPM",
+            authDomain: "p14m-helpful-counter.firebaseapp.com",
+            projectId: "p14m-helpful-counter",
+            storageBucket: "p14m-helpful-counter.firebasestorage.app",
+            messagingSenderId: "109214087494",
+            appId: "1:109214087494:web:6affe1ce6be75c1d298d47",
+          });
+          db = firebase.firestore();
+        } catch(e) {}
+        resolve();
+      };
+      s2.onerror = function() { resolve(); };
+      document.head.appendChild(s2);
+    };
+    s1.onerror = function() { resolve(); };
+    document.head.appendChild(s1);
   });
-  db = firebase.firestore();
-} catch(e) {}
+  return _firebaseReady;
+}
 
 function getVote(topicId) {
   return localStorage.getItem('feedback_' + topicId);
@@ -869,48 +888,50 @@ function setVote(topicId, vote) {
 function submitFeedback(topicId) {
   if (getVote(topicId)) return;
   setVote(topicId, 'yes');
-  const ref = db.collection('feedback').doc(topicId);
+  var ref = db.collection('feedback').doc(topicId);
   ref.set({ helpful: firebase.firestore.FieldValue.increment(1) }, { merge: true });
 }
 
 function mountFeedback(topicId) {
-  const mount = document.getElementById('feedbackMount');
+  var mount = document.getElementById('feedbackMount');
   if (!mount) return;
 
-  const voted = getVote(topicId);
+  var voted = getVote(topicId);
 
   function renderFeedback(count) {
-    let html = '';
+    var html = '';
     if (voted) {
       html += '<div class="feedback-btns">';
-      html += `<span class="feedback-btn voted">\uD83D\uDC4D Helpful <span class="feedback-count">${count}</span></span>`;
+      html += '<span class="feedback-btn voted">\uD83D\uDC4D Helpful <span class="feedback-count">' + count + '</span></span>';
       html += '</div>';
       html += '<div class="feedback-thanks">Thanks for your feedback!</div>';
     } else {
       html += '<div class="feedback-btns">';
-      html += `<button class="feedback-btn" id="helpfulBtn">\uD83D\uDC4D Helpful? <span class="feedback-count">${count}</span></button>`;
+      html += '<button class="feedback-btn" id="helpfulBtn">\uD83D\uDC4D Helpful? <span class="feedback-count">' + count + '</span></button>';
       html += '</div>';
     }
     mount.innerHTML = html;
 
     if (!voted) {
-      document.getElementById('helpfulBtn').addEventListener('click', () => {
+      document.getElementById('helpfulBtn').addEventListener('click', function() {
         submitFeedback(topicId);
         renderFeedback(count + 1);
       });
     }
   }
 
-  if (db) {
-    db.collection('feedback').doc(topicId).get().then(doc => {
-      const data = doc.exists ? doc.data() : {};
-      renderFeedback(data.helpful || 0);
-    }).catch(() => {
+  loadFirebase().then(function() {
+    if (db) {
+      db.collection('feedback').doc(topicId).get().then(function(doc) {
+        var data = doc.exists ? doc.data() : {};
+        renderFeedback(data.helpful || 0);
+      }).catch(function() {
+        renderFeedback(0);
+      });
+    } else {
       renderFeedback(0);
-    });
-  } else {
-    renderFeedback(0);
-  }
+    }
+  });
 }
 
 /* ═══════════════════════ Theme ═══════════════════════ */
