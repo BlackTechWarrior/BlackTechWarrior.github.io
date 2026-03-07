@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Generate gate-level circuit diagrams from boolean expressions with interactive SVG rendering.">
-  <meta property="og:title" content="CircuitGen | p14m.com">
-  <meta property="og:description" content="From boolean expressions to gate-level circuit diagrams.">
+  <meta name="description" content="Generate gate-level logic circuit diagrams from boolean expressions with interactive SVG rendering.">
+  <meta property="og:title" content="CircuitGen — Gate-Level Logic Circuit Generator | p14m.com">
+  <meta property="og:description" content="From boolean expressions to gate-level logic circuit diagrams.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://p14m.com/circuitgen/">
-  <title>CircuitGen | p14m.com</title>
+  <title>CircuitGen — Gate-Level Logic Circuit Generator | p14m.com</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
   <link rel="stylesheet" href="/shared.css">
@@ -108,7 +108,7 @@
           <button class="mode-btn on" data-mode="natural">Natural fan-in</button>
           <button class="mode-btn" data-mode="two">2-input only</button>
         </div>
-        <a class="btn-t" id="kmapLink" href="/kmap/" style="font-size:12px;opacity:0.4;pointer-events:none;">Simplify with K-Map &rarr;</a>
+        <a class="btn-t" id="kmapLink" href="/kmap/" style="font-size:12px;display:none;">Simplify with K-Map &rarr;</a>
       </div>
       <div id="errorMsg" class="error-msg" style="display:none;"></div>
     </div>
@@ -344,9 +344,9 @@ function updateKmapLink() {
   var expr = document.getElementById('exprInput').value.trim();
   if (expr && currentVars.length >= 2 && currentVars.length <= 6) {
     link.href = '/kmap/?expr=' + encodeURIComponent(expr) + '&vars=' + encodeURIComponent(currentVars.join(','));
-    link.style.opacity = '1'; link.style.pointerEvents = '';
+    link.style.display = '';
   } else {
-    link.href = '/kmap/'; link.style.opacity = '0.4'; link.style.pointerEvents = 'none';
+    link.href = '/kmap/'; link.style.display = 'none';
   }
 }
 
