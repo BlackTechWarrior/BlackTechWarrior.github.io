@@ -1227,9 +1227,9 @@ const TOPICS = [
     category: 'foundations',
     content: {
       problem: 'How does hardware answer "is A > B?" in a single clock cycle? This is the core operation behind priority queues, sorting networks, and matching engines.',
-      howItWorks: '<strong>1-bit comparator:</strong> compares two bits A and B, producing three outputs: A>B, A=B, A<B.<br>'
-        + '\u2022 A>B = A \u00B7 \u00ACB<br>'
-        + '\u2022 A<B = \u00ACA \u00B7 B<br>'
+      howItWorks: '<strong>1-bit comparator:</strong> compares two bits A and B, producing three outputs: A&gt;B, A=B, A&lt;B.<br>'
+        + '\u2022 A&gt;B = A \u00B7 \u00ACB<br>'
+        + '\u2022 A&lt;B = \u00ACA \u00B7 B<br>'
         + '\u2022 A=B = A \u2299 B (XNOR)<br><br>'
         + '<strong>N-bit magnitude comparator:</strong> compares from the MSB down. At each bit position, if the bits differ, the comparison is decided \u2014 the number with a 1 in that position is greater. If the bits are equal, move to the next position. If all bits are equal, the numbers are equal.<br><br>'
         + '<strong>Cascaded comparators:</strong> for wide operands, smaller comparators (e.g., 4-bit) can be cascaded. The high comparator\u2019s result takes priority; the low comparator\u2019s result is only used when the upper bits are equal. This is like carry propagation in adders \u2014 and the same acceleration techniques (lookahead, tree structures) apply.<br><br>'

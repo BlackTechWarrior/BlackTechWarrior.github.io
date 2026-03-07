@@ -746,7 +746,7 @@ function seedBook(refPrice, opts = {}) {
     askLevels = 15 + Math.floor(Math.random() * 12),   // 15-26 levels
     bidLevels = 15 + Math.floor(Math.random() * 12),
     spreadTicks = Math.random() < 0.3 ? 1 : Math.random() < 0.6 ? Math.ceil(Math.random() * 3) : Math.ceil(Math.random() * 8),
-    baseQty = 40 + Math.floor(Math.random() * 120),    // 40-160 base
+    baseQty = 60 + Math.floor(Math.random() * 140),    // 60-200 base
     decay = 0.82 + Math.random() * 0.12,               // 0.82-0.94
   } = opts;
 
@@ -797,6 +797,34 @@ function seedBook(refPrice, opts = {}) {
 
   seedSide('sell', askLevels, bestAskPrice, 0.01, askWall, askGaps);
   seedSide('buy', bidLevels, bestBidPrice, -0.01, bidWall, bidGaps);
+
+  // Simulate some initial trading activity so the book has history on load
+  simulateInitialTrades();
+}
+
+function simulateInitialTrades() {
+  const numTrades = 4 + Math.floor(Math.random() * 5); // 4-8 trades
+  for (let i = 0; i < numTrades; i++) {
+    // Alternate buy and sell market orders with small quantities
+    const side = Math.random() < 0.5 ? 'buy' : 'sell';
+    const oppSide = side === 'buy' ? book.asks : book.bids;
+    if (oppSide.length === 0) continue;
+    // Take a small bite: 5-30% of the best level's quantity
+    const bestLevel = oppSide[0];
+    const available = levelQty(bestLevel);
+    const qty = Math.max(1, Math.floor(available * (0.05 + Math.random() * 0.25)));
+    const order = createOrder(side, 'market', null, qty);
+    matchOrder(order);
+    // Stagger timestamps on the resulting trades for realism
+    trades.forEach((t, idx) => {
+      if (!t._adjusted) {
+        t.timestamp = Date.now() - (numTrades - i) * (3000 + Math.floor(Math.random() * 7000));
+        t._adjusted = true;
+      }
+    });
+  }
+  // Clean up the adjustment flag
+  trades.forEach(t => delete t._adjusted);
 }
 
 function resetBook() {
@@ -1280,7 +1308,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Theme sync
   const themeText = document.getElementById('theme-text');
   if (document.body.classList.contains('dark')) {
-    themeText.innerHTML = '&#9828;';
+    themeText.innerHTML = '&#9788;';
   }
 });
 
@@ -1293,7 +1321,7 @@ function toggleTheme() {
     localStorage.setItem('theme', 'light');
   } else {
     body.classList.add('dark');
-    themeText.innerHTML = '&#9828;';
+    themeText.innerHTML = '&#9788;';
     localStorage.setItem('theme', 'dark');
   }
 }
