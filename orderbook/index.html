@@ -59,6 +59,7 @@
       text-align: right;
     }
     body.dark .ob-book-header { background: #222; border-bottom-color: #333; color: #9a9a9a; }
+    .ob-book-header span:first-child { text-align: left; }
 
     .ob-book-body { max-height: 440px; overflow-y: auto; min-height: 440px; }
 
@@ -89,6 +90,7 @@
     .ob-row-bid .ob-depth-bar { right: 0; background: #2ecc71; }
 
 
+    .ob-row .ob-price { text-align: left; }
     .ob-row-ask .ob-price { color: #c0392b; }
     .ob-row-bid .ob-price { color: #0a7c42; }
     body.dark .ob-row-ask .ob-price { color: #e74c3c; }
@@ -121,8 +123,8 @@
       border: 1px solid #e0e0e0;
       border-radius: 8px;
       padding: 14px;
-      overflow-x: auto;
     }
+    .ob-bottom .ob-card { overflow-x: auto; }
     body.dark .ob-card { border-color: #333; }
     .ob-card-title {
       font-size: 12px;
@@ -336,8 +338,13 @@
       align-items: center;
     }
     body.dark .ob-trade-row, body.dark .ob-order-row { border-bottom-color: #2a2a2a; }
-    .ob-trade-row { grid-template-columns: 80px 70px 50px 40px; }
-    .ob-order-row { grid-template-columns: 30px 35px 42px 60px 45px 45px 40px 55px; gap: 2px; }
+    .ob-trade-row { grid-template-columns: 80px 70px 50px 40px; gap: 8px; }
+    .ob-order-row { grid-template-columns: 24px 22px 34px 55px 40px 40px 55px; gap: 6px; }
+    .ob-order-row .ob-col-rem { display: none; }
+    @media (min-width: 701px) {
+      .ob-order-row { grid-template-columns: 30px 30px 38px 60px 45px 45px 40px 55px; gap: 4px; }
+      .ob-order-row .ob-col-rem { display: block; }
+    }
 
     .ob-trade-buy { color: #0a7c42; }
     .ob-trade-sell { color: #c0392b; }
@@ -354,8 +361,13 @@
       margin-bottom: 4px;
     }
     body.dark .ob-th { color: #9a9a9a; border-bottom-color: #333; }
-    .ob-trades-th { display: grid; grid-template-columns: 80px 70px 50px 40px; }
-    .ob-orders-th { display: grid; grid-template-columns: 30px 35px 42px 60px 45px 45px 40px 55px; gap: 2px; }
+    .ob-trades-th { display: grid; grid-template-columns: 80px 70px 50px 40px; gap: 8px; }
+    .ob-orders-th { display: grid; grid-template-columns: 24px 22px 34px 55px 40px 40px 55px; gap: 6px; }
+    .ob-orders-th .ob-col-rem { display: none; }
+    @media (min-width: 701px) {
+      .ob-orders-th { grid-template-columns: 30px 30px 38px 60px 45px 45px 40px 55px; gap: 4px; }
+      .ob-orders-th .ob-col-rem { display: block; }
+    }
 
     .ob-status-new { color: #0066cc; }
     .ob-status-partial { color: #e67e22; }
@@ -513,7 +525,7 @@
     <div class="ob-card">
       <div class="ob-card-title">Order Log</div>
       <div class="ob-orders-th ob-th">
-        <span>ID</span><span>Side</span><span>Type</span><span>Price</span><span>Qty</span><span>Filled</span><span>Rem</span><span>Status</span>
+        <span>ID</span><span>Side</span><span>Type</span><span>Price</span><span>Qty</span><span class="ob-col-filled">Filled</span><span class="ob-col-rem">Rem</span><span>Status</span>
       </div>
       <div class="ob-orders-list" id="ob-orders"></div>
     </div>
@@ -1259,8 +1271,8 @@ function renderOrders() {
       <span>${o.type === 'limit' ? 'LMT' : 'MKT'}</span>
       <span>${o.price !== null ? o.price.toFixed(2) : 'MKT'}</span>
       <span>${o.qty}</span>
-      <span>${o.filled}</span>
-      <span>${o.remaining}</span>
+      <span class="ob-col-filled">${o.filled}</span>
+      <span class="ob-col-rem">${o.remaining}</span>
       <span class="${statusCls}">${o.status}</span>
     </div>`;
   }
