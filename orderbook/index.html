@@ -34,7 +34,7 @@
 
     .ob-layout {
       display: grid;
-      grid-template-columns: 1fr 300px;
+      grid-template-columns: auto 300px;
       gap: 16px;
       margin-bottom: 16px;
     }
@@ -48,7 +48,7 @@
 
     .ob-book-header {
       display: grid;
-      grid-template-columns: 90px 1fr 70px 60px;
+      grid-template-columns: 70px 100px 80px;
       padding: 6px 10px;
       font-size: 11px;
       text-transform: uppercase;
@@ -58,14 +58,13 @@
       background: #fafafa;
     }
     body.dark .ob-book-header { background: #222; border-bottom-color: #333; color: #9a9a9a; }
-    .ob-book-header span:nth-child(3),
-    .ob-book-header span:nth-child(4) { text-align: right; }
+    .ob-book-header span:nth-child(3) { text-align: right; }
 
     .ob-book-body { max-height: 440px; overflow-y: auto; min-height: 440px; }
 
     .ob-row {
       display: grid;
-      grid-template-columns: 90px 1fr 70px 60px;
+      grid-template-columns: 70px 100px 80px;
       padding: 3px 10px;
       font-size: 13px;
       font-family: monospace;
@@ -89,8 +88,7 @@
     .ob-row-bid .ob-depth-bar { right: 0; background: #2ecc71; }
 
     .ob-row span:nth-child(2) { padding-left: 4px; }
-    .ob-row span:nth-child(3),
-    .ob-row span:nth-child(4) { text-align: right; }
+    .ob-row span:nth-child(3) { text-align: right; }
 
     .ob-row-ask .ob-price { color: #c0392b; }
     .ob-row-bid .ob-price { color: #0a7c42; }
@@ -326,6 +324,7 @@
     .ob-trades-list, .ob-orders-list {
       max-height: 220px;
       overflow-y: auto;
+      overflow-x: auto;
       font-size: 12px;
       font-family: monospace;
     }
@@ -338,8 +337,8 @@
       align-items: center;
     }
     body.dark .ob-trade-row, body.dark .ob-order-row { border-bottom-color: #2a2a2a; }
-    .ob-trade-row { grid-template-columns: 60px 70px 60px 50px; }
-    .ob-order-row { grid-template-columns: 30px 35px 35px 60px 45px 45px 40px 55px; gap: 2px; }
+    .ob-trade-row { grid-template-columns: 60px 70px 60px 50px; min-width: 240px; }
+    .ob-order-row { grid-template-columns: 30px 35px 35px 60px 45px 45px 40px 55px; gap: 2px; min-width: 350px; }
 
     .ob-trade-buy { color: #0a7c42; }
     .ob-trade-sell { color: #c0392b; }
@@ -356,8 +355,8 @@
       margin-bottom: 4px;
     }
     body.dark .ob-th { color: #9a9a9a; border-bottom-color: #333; }
-    .ob-trades-th { display: grid; grid-template-columns: 60px 70px 60px 50px; }
-    .ob-orders-th { display: grid; grid-template-columns: 30px 35px 35px 60px 45px 45px 40px 55px; gap: 2px; }
+    .ob-trades-th { display: grid; grid-template-columns: 60px 70px 60px 50px; min-width: 240px; }
+    .ob-orders-th { display: grid; grid-template-columns: 30px 35px 35px 60px 45px 45px 40px 55px; gap: 2px; min-width: 350px; }
 
     .ob-status-new { color: #0066cc; }
     .ob-status-partial { color: #e67e22; }
@@ -434,7 +433,6 @@
         <span>Price</span>
         <span>Qty (orders)</span>
         <span>Cumulative</span>
-        <span>Depth</span>
       </div>
       <div class="ob-book-body" id="ob-book-body"></div>
     </div>
@@ -1164,7 +1162,6 @@ function renderBook() {
       <span class="ob-price">${level.price.toFixed(2)}</span>
       <span>${hasHidden ? visQty + '+' : visQty} (${level.orders.length})</span>
       <span>${cum}</span>
-      <span></span>
     </div>`;
     cum -= qty;
   });
@@ -1195,7 +1192,6 @@ function renderBook() {
       <span class="ob-price">${level.price.toFixed(2)}</span>
       <span>${hasHidden ? visQty + '+' : visQty} (${level.orders.length})</span>
       <span>${cum}</span>
-      <span></span>
     </div>`;
   });
 
