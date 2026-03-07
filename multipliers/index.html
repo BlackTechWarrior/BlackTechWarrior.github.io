@@ -450,6 +450,7 @@
     <details class="how-to">
       <summary>How to use</summary>
       <div class="how-to-body">
+        <p>This binary multiplier visualizer lets you compare Shift-and-Add, Booth's Radix-2, Array, and Wallace Tree multiplier architectures side by side. Animate partial product generation and reduction step by step to understand how each design trades off area for speed, and see signed multiplication with Booth encoding in action.</p>
         <ul>
           <li>Enter two operands (A and B) in <strong>decimal, bin (<code>0b1010</code>), octal (<code>0o200</code>) or hex</strong> (<code>0xFF</code>).</li>
           <li>Select <strong>bit width</strong> (4, 8, 12, or 16) and check which <strong>architectures</strong> to compare.</li>
@@ -463,6 +464,7 @@
         </ul>
       </div>
     </details>
+    <button class="btn-t" onclick="copyLearnPrompt()" style="margin-bottom:16px;">Ask AI: Booth's Algorithm</button>
 
     <!-- Input Section -->
     <div class="section">
@@ -549,6 +551,31 @@
 
     <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
   </main>
+
+<div id="toast" class="toast" style="display:none;"></div>
+
+<script>
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.display = 'none'; }, 2000);
+}
+
+function copyLearnPrompt() {
+  const prompt = `I'm learning about binary multiplier architectures using an interactive visualizer. Please explain Booth's algorithm (Radix-2) in a beginner-friendly way:
+
+1. What problem does Booth's algorithm solve? Why not just use shift-and-add for signed numbers?
+2. How does Booth encoding work? Walk me through how a binary multiplier like 0110 gets recoded into signed digits {-1, 0, +1}, and why consecutive 1s turn into a subtract-then-add.
+3. What does it mean when a partial product is "subtracted" instead of added? How does the hardware handle negative partial products using two's complement?
+4. Why does Booth's naturally handle signed multiplication without needing sign extension tricks?
+5. Use a small concrete example (like 5 × -3) and show each step of the encoding and accumulation.`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(prompt).then(() => showToast('Prompt copied — paste it into any AI chat'));
+  }
+}
+</script>
 
 <script>
 /* ═══════════════════════ Theme ═══════════════════════ */

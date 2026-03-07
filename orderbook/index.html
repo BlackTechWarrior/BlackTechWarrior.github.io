@@ -417,6 +417,7 @@
   <details class="how-to">
     <summary>How to use</summary>
     <div class="how-to-body">
+      <p>This order book simulator lets you place limit and market orders against a live book and watch how a matching engine fills them in real time. Use step mode to walk through price-time priority (FIFO) matching one operation at a time, or load preset scenarios to see how sweeps, iceberg orders, and spread collapses actually work.</p>
       <p><strong>The book</strong> shows all resting buy orders (bids, green) and sell orders (asks, red) for a fictional instrument. Asks are on top, bids on bottom, with the spread in the middle. Each row shows the price, total quantity and number of orders at that level, cumulative depth, and a depth bar.</p>
       <p><strong>Place orders</strong> using the entry panel. Choose Buy/Sell, Limit/Market, set a price (for limit orders) and quantity, then submit. Click any price level in the book to auto-fill the price input.</p>
       <p><strong>Limit orders</strong> rest in the book if they don't cross the spread. If they do cross (buy price &ge; best ask, or sell price &le; best bid), they match against resting orders at each level using FIFO (first in, first out) priority.</p>
@@ -509,6 +510,7 @@
             Market order into an empty side &mdash; shows order rejection.
           </button>
         </div>
+        <button class="btn-t" onclick="copyLearnPrompt()" style="margin-top:10px;">Ask AI about this</button>
       </div>
     </div>
   </div>
@@ -1291,6 +1293,23 @@ function scrollToSpread() {
   const spreadRow = body.querySelector('.ob-spread-row');
   if (spreadRow) {
     spreadRow.scrollIntoView({ block: 'center', behavior: 'instant' });
+  }
+}
+
+/* ── Learn with AI ── */
+function copyLearnPrompt() {
+  const prompt = `I'm learning about order books and trade matching using an interactive simulator. Please explain the following in a beginner-friendly way:
+
+1. What is a limit order book? How do bids and asks create the "spread," and why does the spread matter?
+2. What is price-time priority (FIFO) matching, and how does the engine decide which resting order gets filled first?
+3. Walk me through these specific scenarios:
+   - Market order sweep: A large market order eating through multiple thin price levels. Why does the fill price get worse at each level (slippage)?
+   - Spread collapse: Aggressive limit orders narrowing the spread until they cross. What happens when a buy limit is placed at or above the best ask?
+   - Iceberg/reserve orders: Why would a trader hide part of their order size, and how does the hidden portion refill after a partial fill?
+   - Partial fills: A big resting limit order getting filled piece by piece. How does the remaining quantity stay in the book?
+4. Use simple analogies where possible — think of it like explaining to someone who understands basic buying/selling but has never seen a trading screen.`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(prompt).then(() => showToast('Prompt copied — paste it into any AI chat'));
   }
 }
 

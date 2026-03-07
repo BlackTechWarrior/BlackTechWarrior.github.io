@@ -529,6 +529,7 @@
     <details class="how-to">
       <summary>How to use</summary>
       <div class="how-to-body">
+        <p>This binary adder visualizer lets you compare Ripple Carry (RCA), Carry Lookahead (CLA), Carry Select, and Carry Save adder architectures side by side. Animate carry propagation step by step to see why some adders are faster than others, and compare their gate count, delay, and area-delay tradeoffs at different bit widths.</p>
         <ul>
           <li>Enter two operands (A and B) in <strong>decimal, bin (<code>0b1010</code>), octal (<code>0o200</code>) or hex</strong> (<code>0xFF</code>). For Carry Save, a third operand C appears.</li>
           <li>Select <strong>bit width</strong> (4, 8, 16, or 32) and check which <strong>architectures</strong> to compare.</li>
@@ -541,6 +542,7 @@
         </ul>
       </div>
     </details>
+    <button class="btn-t" onclick="copyLearnPrompt()" style="margin-bottom:16px;">Ask AI: CLA Generate/Propagate</button>
 
     <!-- Input Section -->
     <div class="section">
@@ -631,6 +633,31 @@
 
     <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
   </main>
+
+<div id="toast" class="toast" style="display:none;"></div>
+
+<script>
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.display = 'none'; }, 2000);
+}
+
+function copyLearnPrompt() {
+  const prompt = `I'm learning about binary adder architectures using an interactive visualizer. Please explain the Carry Lookahead Adder (CLA) generate and propagate logic in a beginner-friendly way:
+
+1. Why is the Ripple Carry Adder slow? What is the "carry chain" problem, and why does delay grow linearly with bit width?
+2. What are the generate (G) and propagate (P) signals? For each bit position, explain what G = A·B and P = A⊕B mean in plain English — when does a bit position "generate" a carry vs. just "propagate" one from below?
+3. How does the CLA use G and P to compute all carry bits in parallel, without waiting for the carry to ripple? Walk through a small 4-bit example showing how C1, C2, C3, C4 are each computed directly from the inputs.
+4. What is the tradeoff? Why does CLA use more gates (area) to achieve less delay? Why can't we just build a giant CLA for 64 bits — what limits it in practice?
+5. Use a simple analogy to explain why "looking ahead" is faster than "waiting in line."`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(prompt).then(() => showToast('Prompt copied — paste it into any AI chat'));
+  }
+}
+</script>
 
 <script>
 /* ═══════════════════════ Theme ═══════════════════════ */
