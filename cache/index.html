@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive CPU cache simulator with visual address breakdown, hit/miss tracking, and preset access patterns. Learn how direct-mapped and set-associative caches work.">
+  <meta property="og:title" content="Cache Simulator | p14m.com">
+  <meta property="og:description" content="Interactive CPU cache simulator with visual address breakdown and access pattern visualization.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://p14m.com/cache/">
+  <title>Cache Simulator | p14m.com</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    /* ── Config bar ── */
+    .ca-config-bar {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      padding: 10px 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    body.dark .ca-config-bar { border-color: #333; }
+    .ca-config-item { text-align: center; }
+    .ca-config-item label {
+      display: block; color: #595959; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
+    }
+    body.dark .ca-config-item label { color: #9a9a9a; }
+    .ca-config-item select {
+      padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;
+      font-family: monospace; font-size: 13px; background: #fff; color: inherit;
+    }
+    body.dark .ca-config-item select { background: #1a1a1a; border-color: #444; color: #e0e0e0; }
+    .ca-fixed { font-family: monospace; font-size: 14px; font-weight: 600; }
+
+    /* ── Address breakdown ── */
+    .ca-breakdown {
+      text-align: center; padding: 14px 16px; border: 1px solid #e0e0e0;
+      border-radius: 8px; margin-bottom: 12px; font-family: monospace;
+      font-size: 14px; min-height: 48px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+    body.dark .ca-breakdown { border-color: #333; }
+    .ca-bit-tag { background: #3498db; color: #fff; padding: 2px 5px; border-radius: 3px; }
+    .ca-bit-index { background: #27ae60; color: #fff; padding: 2px 5px; border-radius: 3px; }
+    .ca-bit-offset { background: #e67e22; color: #fff; padding: 2px 5px; border-radius: 3px; }
+
+    /* ── Narration ── */
+    .ca-narration {
+      text-align: center; padding: 8px 12px; margin-bottom: 12px;
+      font-size: 13px; border-radius: 6px; min-height: 20px;
+    }
+    .ca-narration:empty { display: none; }
+    .ca-narration.ca-hit { background: rgba(46,204,113,0.12); color: #0a7c42; }
+    .ca-narration.ca-miss { background: rgba(231,76,60,0.12); color: #c0392b; }
+    .ca-narration.ca-info { background: rgba(52,152,219,0.12); color: #2471a3; }
+    body.dark .ca-narration.ca-hit { background: rgba(46,204,113,0.1); color: #2ecc71; }
+    body.dark .ca-narration.ca-miss { background: rgba(231,76,60,0.1); color: #e74c3c; }
+    body.dark .ca-narration.ca-info { background: rgba(52,152,219,0.1); color: #87ceeb; }
+
+    /* ── Main layout ── */
+    .ca-layout {
+      display: grid; grid-template-columns: 1fr 280px;
+      gap: 16px; margin-bottom: 16px;
+    }
+    @media (max-width: 700px) { .ca-layout { grid-template-columns: 1fr; } }
+
+    /* ── Cache table ── */
+    .ca-cache-panel { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    body.dark .ca-cache-panel { border-color: #333; }
+    .ca-cache-header {
+      display: grid; grid-template-columns: 40px 40px 30px 1fr 1fr;
+      padding: 6px 10px; font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #595959; border-bottom: 1px solid #e0e0e0;
+      background: #fafafa;
+    }
+    body.dark .ca-cache-header { background: #222; border-bottom-color: #333; color: #9a9a9a; }
+    .ca-cache-row {
+      display: grid; grid-template-columns: 40px 40px 30px 1fr 1fr;
+      padding: 4px 10px; font-size: 13px; font-family: monospace;
+      border-bottom: 1px solid #f0f0f0; transition: background 0.3s;
+      min-height: 28px; align-items: center;
+    }
+    body.dark .ca-cache-row { border-bottom-color: #2a2a2a; }
+    .ca-cache-row.ca-set-alt { background: rgba(0,0,0,0.02); }
+    body.dark .ca-cache-row.ca-set-alt { background: rgba(255,255,255,0.02); }
+    .ca-cache-row.ca-flash-hit { background: rgba(46,204,113,0.22) !important; }
+    .ca-cache-row.ca-flash-miss { background: rgba(231,76,60,0.18) !important; }
+    .ca-cache-row .ca-valid { color: #595959; }
+    .ca-cache-row .ca-tag { color: #3498db; }
+    .ca-cache-row .ca-block { color: #595959; font-size: 12px; }
+    body.dark .ca-cache-row .ca-valid { color: #9a9a9a; }
+    body.dark .ca-cache-row .ca-block { color: #9a9a9a; }
+
+    /* ── Cards ── */
+    .ca-card {
+      border: 1px solid #e0e0e0; border-radius: 8px;
+      padding: 12px; margin-bottom: 12px;
+    }
+    body.dark .ca-card { border-color: #333; }
+    .ca-card-title {
+      font-weight: 700; font-size: 13px; text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 8px; color: #333;
+    }
+    body.dark .ca-card-title { color: #ccc; }
+
+    /* ── Input ── */
+    .ca-input-row { display: flex; gap: 8px; margin-bottom: 4px; }
+    .ca-input-row input {
+      flex: 1; padding: 6px 10px; border: 1px solid #ccc;
+      border-radius: 6px; font-family: monospace; font-size: 14px;
+      background: #fff; color: inherit;
+    }
+    body.dark .ca-input-row input { background: #1a1a1a; border-color: #444; color: #e0e0e0; }
+    .ca-access-btn {
+      padding: 6px 16px; background: #0066cc; color: #fff; border: none;
+      border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;
+    }
+    .ca-access-btn:hover { background: #0055aa; }
+    .ca-reset-btn {
+      padding: 6px 12px; background: transparent; border: 1px solid #ccc;
+      border-radius: 6px; cursor: pointer; font-size: 12px; color: inherit;
+    }
+    body.dark .ca-reset-btn { border-color: #444; }
+
+    /* ── Stats ── */
+    .ca-stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4px 12px; font-size: 13px;
+    }
+    .ca-stat-item { display: flex; justify-content: space-between; padding: 2px 0; }
+    .ca-stat-label { color: #595959; }
+    body.dark .ca-stat-label { color: #9a9a9a; }
+    .ca-stat-value { font-family: monospace; font-weight: 600; }
+    .ca-color-hit { color: #0a7c42; }
+    .ca-color-miss { color: #c0392b; }
+    body.dark .ca-color-hit { color: #2ecc71; }
+    body.dark .ca-color-miss { color: #e74c3c; }
+    .ca-hit-rate {
+      text-align: center; font-size: 22px; font-weight: 700;
+      font-family: monospace; margin-top: 6px; padding: 4px 0;
+    }
+
+    /* ── Queue chips ── */
+    .ca-queue-chips {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      margin-bottom: 8px; min-height: 24px;
+    }
+    .ca-chip {
+      padding: 2px 8px; border-radius: 10px; font-size: 12px;
+      font-family: monospace; background: #f0f0f0; border: 1px solid #ddd;
+    }
+    body.dark .ca-chip { background: #2a2a2a; border-color: #444; }
+    .ca-chip-current { background: #3498db !important; color: #fff; border-color: #3498db !important; font-weight: 600; }
+    .ca-chip-hit { background: rgba(46,204,113,0.18) !important; border-color: #27ae60 !important; opacity: 0.75; }
+    .ca-chip-miss { background: rgba(231,76,60,0.15) !important; border-color: #c0392b !important; opacity: 0.75; }
+    .ca-next-btn {
+      width: 100%; padding: 8px; background: #0066cc; color: #fff;
+      border: none; border-radius: 6px; cursor: pointer;
+      font-size: 13px; font-weight: 600; display: none;
+    }
+    .ca-next-btn.visible { display: block; }
+    .ca-next-btn:hover { background: #0055aa; }
+
+    /* ── Presets ── */
+    .ca-preset-grid { display: flex; flex-direction: column; gap: 6px; }
+    .ca-preset-btn {
+      padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 6px;
+      background: transparent; text-align: left; cursor: pointer;
+      font-family: inherit; font-size: 12px; color: inherit;
+      transition: border-color 0.15s; line-height: 1.4;
+    }
+    .ca-preset-btn:hover { border-color: #0066cc; }
+    body.dark .ca-preset-btn { border-color: #333; }
+    body.dark .ca-preset-btn:hover { border-color: #87ceeb; }
+    .ca-preset-btn strong { display: block; font-size: 13px; margin-bottom: 2px; }
+
+    /* ── History ── */
+    .ca-history-panel {
+      border: 1px solid #e0e0e0; border-radius: 8px;
+      padding: 12px; margin-bottom: 16px; overflow-x: auto;
+    }
+    body.dark .ca-history-panel { border-color: #333; }
+    .ca-history-header {
+      display: grid; grid-template-columns: 30px 50px 1fr 50px 35px 38px 50px;
+      padding: 4px 0; font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #595959; border-bottom: 1px solid #e0e0e0;
+      min-width: 340px;
+    }
+    body.dark .ca-history-header { color: #9a9a9a; border-bottom-color: #333; }
+    .ca-history-list { max-height: 200px; overflow-y: auto; min-width: 340px; }
+    .ca-history-row {
+      display: grid; grid-template-columns: 30px 50px 1fr 50px 35px 38px 50px;
+      padding: 3px 0; font-size: 12px; font-family: monospace;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    body.dark .ca-history-row { border-bottom-color: #2a2a2a; }
+    .ca-history-hit { color: #0a7c42; font-weight: 600; }
+    .ca-history-miss { color: #c0392b; font-weight: 600; }
+    body.dark .ca-history-hit { color: #2ecc71; }
+    body.dark .ca-history-miss { color: #e74c3c; }
+
+    /* ── How-to ── */
+    .ca-howto {
+      border: 1px solid #e0e0e0; border-radius: 8px;
+      margin-bottom: 16px; overflow: hidden;
+    }
+    body.dark .ca-howto { border-color: #333; }
+    .ca-howto summary {
+      padding: 12px 16px; cursor: pointer; font-weight: 600;
+      font-size: 14px; background: #fafafa;
+    }
+    body.dark .ca-howto summary { background: #222; }
+    .ca-howto-body { padding: 12px 16px; font-size: 13px; line-height: 1.6; }
+
+    /* ── Toast ── */
+    .ca-toast {
+      position: fixed; bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #333; color: #fff; padding: 10px 24px;
+      border-radius: 8px; font-size: 13px; opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      z-index: 1000; pointer-events: none;
+    }
+    .ca-toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* ── Mobile ── */
+    @media (max-width: 700px) {
+      .ca-config-bar { gap: 12px; padding: 8px 12px; }
+      .ca-cache-header, .ca-cache-row {
+        grid-template-columns: 32px 32px 24px 1fr 1fr;
+        font-size: 12px; padding: 3px 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+  <main class="container">
+    <div class="nav-row">
+      <div class="nav-links">
+        <a href="/" class="back-link">&larr; p14m.com</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/adders/">Adders</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/bits/">Bits</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/circuitgen/">CircuitGen</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/kmap/">K-Map</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/multipliers/">Multipliers</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/orderbook/">OrderBook</a>
+        <span style="color:#cccccc;">|</span>
+        <a href="/learn/">Learn</a>
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-text">&#9790;</span>
+      </button>
+    </div>
+
+    <h1>Cache Simulator</h1>
+    <p style="text-align:center;color:#595959;margin-top:-8px;margin-bottom:16px;font-size:14px;">
+      Visualize how CPU caches map, store, and evict memory blocks
+    </p>
+
+    <!-- Config bar -->
+    <div class="ca-config-bar">
+      <div class="ca-config-item">
+        <label for="ca-block-size">Block Size</label>
+        <select id="ca-block-size" onchange="updateConfig()">
+          <option value="1">1 byte</option>
+          <option value="2">2 bytes</option>
+          <option value="4" selected>4 bytes</option>
+        </select>
+      </div>
+      <div class="ca-config-item">
+        <label for="ca-assoc">Associativity</label>
+        <select id="ca-assoc" onchange="updateConfig()">
+          <option value="1" selected>Direct Mapped</option>
+          <option value="2">2-Way</option>
+          <option value="4">4-Way</option>
+          <option value="8">Fully Assoc (8-Way)</option>
+        </select>
+      </div>
+      <div class="ca-config-item">
+        <label>Cache Lines</label>
+        <span class="ca-fixed">8</span>
+      </div>
+      <div class="ca-config-item">
+        <label>Addresses</label>
+        <span class="ca-fixed">8-bit (0&ndash;255)</span>
+      </div>
+      <div class="ca-config-item">
+        <label>Bit Split</label>
+        <span class="ca-fixed" id="ca-bit-split">3t / 3i / 2o</span>
+      </div>
+    </div>
+
+    <!-- Address breakdown -->
+    <div class="ca-breakdown" id="ca-breakdown">
+      Enter an address (0&ndash;255) to see the tag / index / offset breakdown
+    </div>
+
+    <!-- Narration -->
+    <div class="ca-narration" id="ca-narration"></div>
+
+    <!-- Main layout -->
+    <div class="ca-layout">
+      <!-- Cache table -->
+      <div class="ca-cache-panel">
+        <div class="ca-cache-header">
+          <span>Set</span><span>Way</span><span>V</span><span>Tag</span><span>Block</span>
+        </div>
+        <div id="ca-cache-body"></div>
+      </div>
+
+      <!-- Controls sidebar -->
+      <div>
+        <div class="ca-card">
+          <div class="ca-card-title">Access Memory</div>
+          <div class="ca-input-row">
+            <input type="number" id="ca-addr" min="0" max="255" placeholder="0&ndash;255" aria-label="Memory address">
+            <button class="ca-access-btn" onclick="doAccess()">Access</button>
+            <button class="ca-reset-btn" onclick="resetCache()">Reset</button>
+          </div>
+        </div>
+
+        <div class="ca-card">
+          <div class="ca-card-title">Access Queue</div>
+          <div class="ca-queue-chips" id="ca-queue"></div>
+          <button class="ca-next-btn" id="ca-next-btn" onclick="stepQueue()">Next Access (Space)</button>
+        </div>
+
+        <div class="ca-card">
+          <div class="ca-card-title">Patterns</div>
+          <div class="ca-preset-grid">
+            <button class="ca-preset-btn" onclick="loadPreset('sequential')" aria-label="Pattern: Sequential Access">
+              <strong>Sequential</strong>
+              Addresses 0&ndash;15 in order. Demonstrates spatial locality.
+            </button>
+            <button class="ca-preset-btn" onclick="loadPreset('temporal')" aria-label="Pattern: Temporal Loop">
+              <strong>Temporal Loop</strong>
+              Same blocks accessed twice. Second pass hits from temporal locality.
+            </button>
+            <button class="ca-preset-btn" onclick="loadPreset('thrashing')" aria-label="Pattern: Thrashing">
+              <strong>Thrashing</strong>
+              Two addresses fight for the same set. Try 2-way to fix it.
+            </button>
+            <button class="ca-preset-btn" onclick="loadPreset('stride')" aria-label="Pattern: Power-of-2 Stride">
+              <strong>Power-of-2 Stride</strong>
+              Stride-8 access pattern. Watch for conflict misses.
+            </button>
+          </div>
+          <button class="btn-t" onclick="copyLearnPrompt()" style="margin-top:10px;">Ask AI about this</button>
+        </div>
+
+        <div class="ca-card">
+          <div class="ca-card-title">Statistics</div>
+          <div class="ca-stats-grid">
+            <div class="ca-stat-item"><span class="ca-stat-label">Accesses</span><span class="ca-stat-value" id="ca-stat-total">0</span></div>
+            <div class="ca-stat-item"><span class="ca-stat-label">Hits</span><span class="ca-stat-value ca-color-hit" id="ca-stat-hits">0</span></div>
+            <div class="ca-stat-item"><span class="ca-stat-label">Misses</span><span class="ca-stat-value ca-color-miss" id="ca-stat-misses">0</span></div>
+            <div class="ca-stat-item"><span class="ca-stat-label">Hit Rate</span><span class="ca-stat-value" id="ca-stat-rate">&mdash;</span></div>
+          </div>
+          <div class="ca-hit-rate" id="ca-hit-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="ca-history-panel">
+      <div class="ca-card-title">Access History</div>
+      <div class="ca-history-header">
+        <span>#</span><span>Addr</span><span>Binary</span><span>Tag</span><span>Set</span><span>Way</span><span>Result</span>
+      </div>
+      <div class="ca-history-list" id="ca-history"></div>
+    </div>
+
+    <!-- How to Use -->
+    <details class="ca-howto">
+      <summary>How to Use</summary>
+      <div class="ca-howto-body">
+        <p>A cache simulator helps you understand how CPU caches work &mdash; how memory addresses map to cache locations, when data is found quickly (hits) versus fetched from main memory (misses), and how different cache organizations affect performance. This tool is essential for computer architecture courses, understanding memory hierarchy, and building intuition about locality and cache behavior.</p>
+        <p><strong>Configure</strong> the cache using the dropdowns above. Block size determines how many consecutive bytes are fetched together (spatial locality). Associativity controls how many cache lines an address can map to &mdash; more ways means fewer conflict misses but more hardware cost.</p>
+        <p><strong>Access addresses</strong> by typing a number (0&ndash;255) and clicking Access, or load a preset pattern and step through with the Next button or <strong>Spacebar</strong>.</p>
+        <p><strong>Watch the breakdown</strong> &mdash; it shows how each address splits into <span style="color:#3498db;font-weight:600">tag</span>, <span style="color:#27ae60;font-weight:600">index</span>, and <span style="color:#e67e22;font-weight:600">offset</span> bits, which determines where data maps in the cache.</p>
+        <p><strong>Try different configs</strong> with the same pattern. Load Thrashing in direct-mapped mode, then switch to 2-way and reload &mdash; see how associativity eliminates conflict misses.</p>
+      </div>
+    </details>
+
+    <div class="footer">&copy; 2026 <a href="/">p14m.com</a> &middot; <a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Submit Feedback</a></div>
+  </main>
+
+  <div class="ca-toast" id="ca-toast"></div>
+
+<script>
+// ── Configuration ──
+const ADDRESS_BITS = 8;
+const TOTAL_LINES = 8;
+let blockSize = 4;
+let associativity = 1;
+let offsetBits, indexBits, tagBits, numSets;
+
+// ── State ──
+let cache = [];
+let accessHistory = [];
+let stats = { hits: 0, misses: 0 };
+let globalTimer = 0;
+let accessQueue = [];
+let queuePos = 0;
+let queueResults = [];
+let briefing = [];
+let briefingIndex = 0;
+let flashTimeout = null;
+
+// ── Derived values ──
+function recalc() {
+  offsetBits = Math.log2(blockSize);
+  numSets = TOTAL_LINES / associativity;
+  indexBits = Math.log2(numSets);
+  tagBits = ADDRESS_BITS - offsetBits - indexBits;
+  document.getElementById('ca-bit-split').textContent =
+    tagBits + 't / ' + indexBits + 'i / ' + offsetBits + 'o';
+}
+
+function initCache() {
+  cache = [];
+  for (let s = 0; s < numSets; s++) {
+    cache[s] = [];
+    for (let w = 0; w < associativity; w++) {
+      cache[s][w] = { valid: false, tag: -1, lastUsed: 0 };
+    }
+  }
+}
+
+function resetCache() {
+  initCache();
+  accessHistory = [];
+  stats = { hits: 0, misses: 0 };
+  globalTimer = 0;
+  accessQueue = [];
+  queuePos = 0;
+  queueResults = [];
+  briefing = [];
+  briefingIndex = 0;
+  document.getElementById('ca-narration').textContent = '';
+  document.getElementById('ca-narration').className = 'ca-narration';
+  document.getElementById('ca-breakdown').innerHTML =
+    'Enter an address (0\u2013255) to see the tag / index / offset breakdown';
+  document.getElementById('ca-next-btn').classList.remove('visible');
+  renderCache();
+  renderHistory();
+  renderStats();
+  renderQueue();
+  showToast('Cache reset');
+}
+
+function updateConfig() {
+  blockSize = parseInt(document.getElementById('ca-block-size').value);
+  associativity = parseInt(document.getElementById('ca-assoc').value);
+  recalc();
+  resetCache();
+}
+
+// ── Address decomposition ──
+function decompose(addr) {
+  var offset = addr & ((1 << offsetBits) - 1);
+  var index = indexBits > 0 ? (addr >> offsetBits) & ((1 << indexBits) - 1) : 0;
+  var tag = addr >> (offsetBits + indexBits);
+  return { addr: addr, offset: offset, index: index, tag: tag };
+}
+
+function toBin(val, bits) {
+  if (bits <= 0) return '';
+  return val.toString(2).padStart(bits, '0');
+}
+
+// ── Access logic ──
+function accessAddress(addr) {
+  var d = decompose(addr);
+  var set = cache[d.index];
+  globalTimer++;
+
+  // Check for hit
+  for (var w = 0; w < associativity; w++) {
+    if (set[w].valid && set[w].tag === d.tag) {
+      set[w].lastUsed = globalTimer;
+      stats.hits++;
+      var result = { addr: d.addr, offset: d.offset, index: d.index, tag: d.tag, hit: true, way: w, evictedTag: null };
+      accessHistory.push(result);
+      return result;
+    }
+  }
+
+  // Miss — find empty way
+  for (var w = 0; w < associativity; w++) {
+    if (!set[w].valid) {
+      set[w].valid = true;
+      set[w].tag = d.tag;
+      set[w].lastUsed = globalTimer;
+      stats.misses++;
+      var result = { addr: d.addr, offset: d.offset, index: d.index, tag: d.tag, hit: false, way: w, evictedTag: null };
+      accessHistory.push(result);
+      return result;
+    }
+  }
+
+  // Evict LRU
+  var lruWay = 0, lruTime = Infinity;
+  for (var w = 0; w < associativity; w++) {
+    if (set[w].lastUsed < lruTime) {
+      lruTime = set[w].lastUsed;
+      lruWay = w;
+    }
+  }
+  var evictedTag = set[lruWay].tag;
+  set[lruWay].tag = d.tag;
+  set[lruWay].lastUsed = globalTimer;
+  stats.misses++;
+  var result = { addr: d.addr, offset: d.offset, index: d.index, tag: d.tag, hit: false, way: lruWay, evictedTag: evictedTag };
+  accessHistory.push(result);
+  return result;
+}
+
+// ── Rendering ──
+function renderBreakdown(d) {
+  var el = document.getElementById('ca-breakdown');
+  var tagStr = toBin(d.tag, tagBits);
+  var idxStr = toBin(d.index, indexBits);
+  var offStr = toBin(d.offset, offsetBits);
+
+  var bitsHtml = '';
+  if (tagBits > 0) bitsHtml += '<span class="ca-bit-tag">' + tagStr + '</span> ';
+  if (indexBits > 0) bitsHtml += '<span class="ca-bit-index">' + idxStr + '</span> ';
+  if (offsetBits > 0) bitsHtml += '<span class="ca-bit-offset">' + offStr + '</span>';
+
+  var labelsHtml = '';
+  if (tagBits > 0) labelsHtml += '<span class="ca-bit-tag" style="font-size:11px">tag = ' + d.tag + '</span> ';
+  if (indexBits > 0) labelsHtml += '<span class="ca-bit-index" style="font-size:11px">set = ' + d.index + '</span> ';
+  if (offsetBits > 0) labelsHtml += '<span class="ca-bit-offset" style="font-size:11px">offset = ' + d.offset + '</span>';
+
+  el.innerHTML =
+    '<div style="font-size:15px;margin-bottom:4px">Address <strong>' + d.addr + '</strong> \u2192 ' + toBin(d.addr, ADDRESS_BITS) + '</div>' +
+    '<div style="font-size:18px;letter-spacing:2px">' + bitsHtml + '</div>' +
+    '<div style="display:flex;gap:6px;justify-content:center">' + labelsHtml + '</div>';
+}
+
+function renderNarration(result) {
+  var el = document.getElementById('ca-narration');
+  var tagStr = toBin(result.tag, tagBits);
+  if (result.hit) {
+    el.className = 'ca-narration ca-hit';
+    el.textContent = 'HIT \u2014 Tag ' + tagStr + ' found in Set ' + result.index + ', Way ' + result.way;
+  } else {
+    var text = 'MISS \u2014 Tag ' + tagStr + ' not in Set ' + result.index + '. Placed in Way ' + result.way;
+    if (result.evictedTag !== null) {
+      text += ' (evicted tag ' + toBin(result.evictedTag, tagBits) + ')';
+    }
+    el.className = 'ca-narration ca-miss';
+    el.textContent = text;
+  }
+}
+
+function renderCache(flashSet, flashWay, isHit) {
+  var body = document.getElementById('ca-cache-body');
+  var html = '';
+  for (var s = 0; s < numSets; s++) {
+    for (var w = 0; w < associativity; w++) {
+      var entry = cache[s][w];
+      var isFirst = (w === 0);
+      var cls = 'ca-cache-row';
+      if (s % 2 === 1) cls += ' ca-set-alt';
+      if (s === flashSet && w === flashWay) {
+        cls += isHit ? ' ca-flash-hit' : ' ca-flash-miss';
+      }
+      var setLabel = isFirst ? s : '';
+      var validStr = entry.valid ? '1' : '0';
+      var tagStr = entry.valid ? toBin(entry.tag, tagBits) : '\u2014';
+      var blockStr = '\u2014';
+      if (entry.valid) {
+        var blockNum = (entry.tag << indexBits) | s;
+        var startAddr = blockNum * blockSize;
+        if (blockSize === 1) {
+          blockStr = '' + startAddr;
+        } else {
+          blockStr = startAddr + '\u2013' + (startAddr + blockSize - 1);
+        }
+      }
+      html += '<div class="' + cls + '">' +
+        '<span>' + setLabel + '</span>' +
+        '<span>' + w + '</span>' +
+        '<span class="ca-valid">' + validStr + '</span>' +
+        '<span class="ca-tag">' + tagStr + '</span>' +
+        '<span class="ca-block">' + blockStr + '</span>' +
+        '</div>';
+    }
+  }
+  body.innerHTML = html;
+}
+
+function renderHistory() {
+  var el = document.getElementById('ca-history');
+  var html = '';
+  for (var i = accessHistory.length - 1; i >= 0; i--) {
+    var h = accessHistory[i];
+    var cls = h.hit ? 'ca-history-hit' : 'ca-history-miss';
+    html += '<div class="ca-history-row">' +
+      '<span>' + (i + 1) + '</span>' +
+      '<span>' + h.addr + '</span>' +
+      '<span>' + toBin(h.addr, ADDRESS_BITS) + '</span>' +
+      '<span>' + toBin(h.tag, tagBits) + '</span>' +
+      '<span>' + h.index + '</span>' +
+      '<span>' + h.way + '</span>' +
+      '<span class="' + cls + '">' + (h.hit ? 'HIT' : 'MISS') + '</span>' +
+      '</div>';
+  }
+  el.innerHTML = html || '<div style="padding:8px;color:#999;font-size:12px">No accesses yet</div>';
+}
+
+function renderStats() {
+  var total = stats.hits + stats.misses;
+  document.getElementById('ca-stat-total').textContent = total;
+  document.getElementById('ca-stat-hits').textContent = stats.hits;
+  document.getElementById('ca-stat-misses').textContent = stats.misses;
+  var bar = document.getElementById('ca-hit-bar');
+  if (total > 0) {
+    var rate = (stats.hits / total * 100).toFixed(1);
+    document.getElementById('ca-stat-rate').textContent = rate + '%';
+    bar.textContent = rate + '% hit rate';
+    bar.className = 'ca-hit-rate ' + (parseFloat(rate) >= 50 ? 'ca-color-hit' : 'ca-color-miss');
+  } else {
+    document.getElementById('ca-stat-rate').textContent = '\u2014';
+    bar.textContent = '';
+    bar.className = 'ca-hit-rate';
+  }
+}
+
+function renderQueue() {
+  var el = document.getElementById('ca-queue');
+  if (accessQueue.length === 0) {
+    el.innerHTML = '<span style="color:#999;font-size:12px">Load a pattern to fill the queue</span>';
+    return;
+  }
+  var html = '';
+  for (var i = 0; i < accessQueue.length; i++) {
+    var cls = 'ca-chip';
+    if (i < queuePos) {
+      cls += queueResults[i].hit ? ' ca-chip-hit' : ' ca-chip-miss';
+    } else if (i === queuePos && briefingIndex >= briefing.length) {
+      cls += ' ca-chip-current';
+    }
+    html += '<span class="' + cls + '">' + accessQueue[i] + '</span>';
+  }
+  el.innerHTML = html;
+}
+
+// ── Actions ──
+function doAccess() {
+  var input = document.getElementById('ca-addr');
+  var addr = parseInt(input.value);
+  if (isNaN(addr) || addr < 0 || addr > 255) {
+    showToast('Enter an address between 0 and 255');
+    return;
+  }
+  var d = decompose(addr);
+  renderBreakdown(d);
+  var result = accessAddress(addr);
+  renderNarration(result);
+  renderCache(result.index, result.way, result.hit);
+  renderHistory();
+  renderStats();
+  if (flashTimeout) clearTimeout(flashTimeout);
+  flashTimeout = setTimeout(function() { renderCache(); }, 600);
+  input.value = '';
+  input.focus();
+}
+
+function stepQueue() {
+  // Handle briefing first
+  if (briefingIndex < briefing.length) {
+    var el = document.getElementById('ca-narration');
+    el.className = 'ca-narration ca-info';
+    el.textContent = briefing[briefingIndex];
+    briefingIndex++;
+    if (briefingIndex >= briefing.length) renderQueue();
+    return;
+  }
+
+  if (queuePos >= accessQueue.length) return;
+
+  var addr = accessQueue[queuePos];
+  var d = decompose(addr);
+  renderBreakdown(d);
+  var result = accessAddress(addr);
+  renderNarration(result);
+  renderCache(result.index, result.way, result.hit);
+  renderHistory();
+  renderStats();
+  queueResults.push(result);
+  queuePos++;
+  renderQueue();
+
+  if (flashTimeout) clearTimeout(flashTimeout);
+  flashTimeout = setTimeout(function() { renderCache(); }, 600);
+
+  if (queuePos >= accessQueue.length) {
+    setTimeout(function() {
+      var total = stats.hits + stats.misses;
+      var rate = total > 0 ? (stats.hits / total * 100).toFixed(1) : '0.0';
+      var el = document.getElementById('ca-narration');
+      el.className = 'ca-narration ca-info';
+      el.textContent = 'Pattern complete \u2014 ' + stats.hits + ' hits, ' + stats.misses + ' misses (' + rate + '% hit rate)';
+      document.getElementById('ca-next-btn').classList.remove('visible');
+    }, 700);
+  }
+}
+
+// ── Presets ──
+var PRESETS = {
+  sequential: {
+    name: 'Sequential Access',
+    addresses: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
+    briefing: [
+      'Sequential addresses 0 through 15. With block size 4, each cache block holds 4 consecutive bytes.',
+      'Watch: the first access to each block is a compulsory miss. But the next 3 addresses in that block hit \u2014 the block was already fetched. This is spatial locality.'
+    ]
+  },
+  temporal: {
+    name: 'Temporal Loop',
+    addresses: [0,4,8,12,0,4,8,12],
+    briefing: [
+      'Four block-aligned addresses accessed twice each: 0, 4, 8, 12 \u2192 then 0, 4, 8, 12 again.',
+      'Watch: the first pass misses on every access (compulsory misses). The second pass hits every time \u2014 the data is still in cache. This is temporal locality.'
+    ]
+  },
+  thrashing: {
+    name: 'Thrashing',
+    addresses: [0,32,0,32,0,32,0,32],
+    briefing: [
+      'Addresses 0 and 32 alternate. In direct-mapped mode, both map to Set 0 \u2014 they keep evicting each other.',
+      'Every access is a miss despite using only two addresses. This is thrashing. Switch to 2-way associativity and reload to see it disappear.'
+    ]
+  },
+  stride: {
+    name: 'Power-of-2 Stride',
+    addresses: [0,8,16,24,32,40,48,56],
+    briefing: [
+      'Stride-8 pattern: 0, 8, 16, 24, 32, 40, 48, 56. With 8 sets, the second half conflicts with the first.',
+      'Watch for 100% miss rate even though only 8 unique blocks are accessed. Power-of-2 strides are worst-case for direct-mapped caches. Try fully associative to fit all 8.'
+    ]
+  }
+};
+
+function loadPreset(name) {
+  var preset = PRESETS[name];
+  if (!preset) return;
+
+  initCache();
+  accessHistory = [];
+  stats = { hits: 0, misses: 0 };
+  globalTimer = 0;
+  accessQueue = preset.addresses.slice();
+  queuePos = 0;
+  queueResults = [];
+  briefing = preset.briefing.slice();
+  briefingIndex = 0;
+
+  // Show first briefing
+  var el = document.getElementById('ca-narration');
+  el.className = 'ca-narration ca-info';
+  el.textContent = briefing[0];
+  briefingIndex = 1;
+
+  document.getElementById('ca-next-btn').classList.add('visible');
+  document.getElementById('ca-breakdown').innerHTML =
+    'Step through to see each access';
+
+  renderCache();
+  renderHistory();
+  renderStats();
+  renderQueue();
+  showToast('Pattern: ' + preset.name);
+}
+
+// ── Keyboard ──
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT' &&
+      document.activeElement.tagName !== 'SELECT') {
+    if (accessQueue.length > 0 && (briefingIndex <= briefing.length && queuePos < accessQueue.length || briefingIndex < briefing.length)) {
+      e.preventDefault();
+      stepQueue();
+    }
+  }
+  if (e.key === 'Enter' && document.activeElement.id === 'ca-addr') {
+    doAccess();
+  }
+});
+
+// ── Theme ──
+function toggleTheme() {
+  var body = document.body;
+  var text = document.getElementById('theme-text');
+  if (body.classList.contains('dark')) {
+    body.classList.remove('dark');
+    text.textContent = '\u263E';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark');
+    text.textContent = '\u263C';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.body.classList.contains('dark')) {
+    document.getElementById('theme-text').textContent = '\u263C';
+  }
+});
+
+// ── Toast ──
+var toastTimer;
+function showToast(msg) {
+  var el = document.getElementById('ca-toast');
+  el.textContent = msg;
+  el.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.remove('visible'); }, 2000);
+}
+
+// ── Ask AI ──
+function copyLearnPrompt() {
+  var prompt = 'Explain how CPU cache memory works. Cover: 1) How addresses split into tag, index, and offset bits for cache lookup. 2) Direct-mapped vs set-associative vs fully associative caches and their tradeoffs. 3) Spatial locality (why block size > 1 helps) and temporal locality (why recently used data hits). 4) LRU replacement policy and when eviction happens. 5) Thrashing \u2014 why two addresses mapping to the same set cause 0% hit rate in direct-mapped, and how associativity fixes it. Use an 8-bit address space with an 8-line cache for concrete examples.';
+  navigator.clipboard.writeText(prompt).then(function() { showToast('Prompt copied to clipboard'); });
+}
+
+// ── Boot ──
+recalc();
+initCache();
+renderCache();
+renderHistory();
+renderStats();
+renderQueue();
+</script>
+</body>
+</html>
