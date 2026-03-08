@@ -964,7 +964,12 @@ function loadScenario(name) {
         addToBook(o);
       }
       render();
-      // Queue market buy
+      pendingSteps = [
+        { type: 'INFO', text: 'Setup: 8 thin ask levels (10-25 qty each) above 100.00. A market buy for 120 is queued.' },
+        { type: 'INFO', text: 'Watch how the buy eats through multiple price levels, getting progressively worse fills. This is slippage — the cost of taking liquidity from a thin book.' },
+      ];
+      currentStepIndex = 0;
+      showStepUI();
       queueStepOrder('buy', 'market', null, 120);
       showToast('Scenario: Market Order Sweeping Levels');
       break;
@@ -987,7 +992,12 @@ function loadScenario(name) {
         o.status = 'new'; addToBook(o);
       }
       render();
-      // Queue aggressive orders that cross
+      pendingSteps = [
+        { type: 'INFO', text: 'Setup: Wide spread — best bid at 99.90, best ask at 100.10 ($0.20 gap). Three aggressive orders are queued.' },
+        { type: 'INFO', text: 'Watch how each crossing limit order narrows the spread. When a buy price meets or exceeds the ask, it fills immediately instead of resting — collapsing the gap between buyers and sellers.' },
+      ];
+      currentStepIndex = 0;
+      showStepUI();
       queueStepOrder('buy', 'limit', 100.08, 30);
       queueStepOrder('sell', 'limit', 99.92, 25);
       queueStepOrder('buy', 'limit', 100.12, 50);
@@ -1016,7 +1026,12 @@ function loadScenario(name) {
         o.status = 'new'; addToBook(o);
       }
       render();
-      // Queue small sells that hit the big bid
+      pendingSteps = [
+        { type: 'INFO', text: 'Setup: A large resting bid of 500 qty at 99.95. Three smaller sell orders (80, 120, 100) are queued to hit it.' },
+        { type: 'INFO', text: 'Watch how each sell partially fills the big bid. The resting order shrinks with each match but stays on the book until fully consumed — this is how large orders absorb incoming flow.' },
+      ];
+      currentStepIndex = 0;
+      showStepUI();
       queueStepOrder('sell', 'limit', 99.95, 80);
       queueStepOrder('sell', 'limit', 99.95, 120);
       queueStepOrder('sell', 'limit', 99.95, 100);
@@ -1045,7 +1060,12 @@ function loadScenario(name) {
         o.status = 'new'; addToBook(o);
       }
       render();
-      // Queue market buys that each hit the iceberg
+      pendingSteps = [
+        { type: 'INFO', text: 'Setup: An iceberg order at 100.00 — only 50 qty visible, but 500 qty total hidden behind it. Three market buys of 50 each are queued.' },
+        { type: 'INFO', text: 'Watch the ask at 100.00 get filled and then refill. The visible quantity replenishes from the hidden reserve after each fill — this is how large players hide their true size.' },
+      ];
+      currentStepIndex = 0;
+      showStepUI();
       queueStepOrder('buy', 'market', null, 50);
       queueStepOrder('buy', 'market', null, 50);
       queueStepOrder('buy', 'market', null, 50);
@@ -1066,7 +1086,12 @@ function loadScenario(name) {
         o.status = 'new'; addToBook(o);
       }
       render();
-      // Queue market buy into empty ask side
+      pendingSteps = [
+        { type: 'INFO', text: 'Setup: Only bids on the book — the ask side is completely empty. A market buy for 30 is queued.' },
+        { type: 'INFO', text: 'Watch what happens when there is no liquidity to match against. The order gets rejected — a market order cannot rest on the book, and there are no sellers to fill it.' },
+      ];
+      currentStepIndex = 0;
+      showStepUI();
       queueStepOrder('buy', 'market', null, 30);
       showToast('Scenario: Empty Side');
       break;
