@@ -305,7 +305,7 @@
       <summary>How to Use</summary>
       <div class="ca-howto-body">
         <p>A cache simulator helps you understand how CPU caches work &mdash; how memory addresses map to cache locations, when data is found quickly (hits) versus fetched from main memory (misses), and how different cache organizations affect performance. This tool is essential for computer architecture courses, understanding memory hierarchy, and building intuition about locality and cache behavior.</p>
-        <p><strong>Configure</strong> the cache using the dropdowns above. Block size determines how many consecutive bytes are fetched together (spatial locality). Associativity controls how many cache lines an address can map to &mdash; more ways means fewer conflict misses but more hardware cost.</p>
+        <p><strong>Configure</strong> the cache using the dropdowns above. Block size determines how many consecutive bytes are fetched together (spatial locality). Cache lines sets the total capacity. Associativity controls how many ways per set &mdash; more ways means fewer conflict misses but more hardware cost. Replacement policy (LRU, FIFO, Random) determines which line gets evicted when a set is full.</p>
         <p><strong>Access addresses</strong> by typing a number (0&ndash;255) and clicking Access, or load a preset pattern and step through with the Next button or <strong>Spacebar</strong>.</p>
         <p><strong>Watch the breakdown</strong> &mdash; it shows how each address splits into <span style="color:#3498db;font-weight:600">tag</span>, <span style="color:#27ae60;font-weight:600">index</span>, and <span style="color:#e67e22;font-weight:600">offset</span> bits, which determines where data maps in the cache.</p>
         <p><strong>Try different configs</strong> with the same pattern. Load Thrashing in direct-mapped mode, then switch to 2-way and reload &mdash; see how associativity eliminates conflict misses.</p>
@@ -351,17 +351,28 @@
         </select>
       </div>
       <div class="ca-config-item">
+        <label for="ca-lines">Cache Lines</label>
+        <select id="ca-lines" onchange="updateConfig()">
+          <option value="4">4</option>
+          <option value="8" selected>8</option>
+          <option value="16">16</option>
+        </select>
+      </div>
+      <div class="ca-config-item">
         <label for="ca-assoc">Associativity</label>
         <select id="ca-assoc" onchange="updateConfig()">
           <option value="1" selected>Direct Mapped</option>
           <option value="2">2-Way</option>
           <option value="4">4-Way</option>
-          <option value="8">Fully Assoc (8-Way)</option>
         </select>
       </div>
       <div class="ca-config-item">
-        <label>Cache Lines</label>
-        <span class="ca-fixed">8</span>
+        <label for="ca-replace">Replacement</label>
+        <select id="ca-replace" onchange="updateConfig()">
+          <option value="lru" selected>LRU</option>
+          <option value="fifo">FIFO</option>
+          <option value="random">Random</option>
+        </select>
       </div>
       <div class="ca-config-item">
         <label>Addresses</label>
@@ -461,9 +472,10 @@
 <script>
 // ── Configuration ──
 const ADDRESS_BITS = 8;
-const TOTAL_LINES = 8;
+let totalLines = 8;
 let blockSize = 4;
 let associativity = 1;
+let replacePolicy = 'lru';
 let offsetBits, indexBits, tagBits, numSets;
 
 // ── State ──
@@ -481,11 +493,29 @@ let flashTimeout = null;
 // ── Derived values ──
 function recalc() {
   offsetBits = Math.log2(blockSize);
-  numSets = TOTAL_LINES / associativity;
+  numSets = totalLines / associativity;
   indexBits = Math.log2(numSets);
   tagBits = ADDRESS_BITS - offsetBits - indexBits;
   document.getElementById('ca-bit-split').textContent =
     tagBits + 't / ' + indexBits + 'i / ' + offsetBits + 'o';
+}
+
+function rebuildAssocOptions() {
+  var sel = document.getElementById('ca-assoc');
+  var current = associativity;
+  sel.innerHTML = '';
+  var opt1 = document.createElement('option');
+  opt1.value = '1'; opt1.textContent = 'Direct Mapped';
+  sel.appendChild(opt1);
+  for (var w = 2; w <= totalLines; w *= 2) {
+    var opt = document.createElement('option');
+    opt.value = '' + w;
+    opt.textContent = w === totalLines ? 'Fully Assoc (' + w + '-Way)' : w + '-Way';
+    sel.appendChild(opt);
+  }
+  if (current > totalLines) current = 1;
+  sel.value = '' + current;
+  associativity = parseInt(sel.value);
 }
 
 function initCache() {
@@ -493,7 +523,7 @@ function initCache() {
   for (let s = 0; s < numSets; s++) {
     cache[s] = [];
     for (let w = 0; w < associativity; w++) {
-      cache[s][w] = { valid: false, tag: -1, lastUsed: 0 };
+      cache[s][w] = { valid: false, tag: -1, lastUsed: 0, placedAt: 0 };
     }
   }
 }
@@ -522,7 +552,9 @@ function resetCache() {
 
 function updateConfig() {
   blockSize = parseInt(document.getElementById('ca-block-size').value);
-  associativity = parseInt(document.getElementById('ca-assoc').value);
+  totalLines = parseInt(document.getElementById('ca-lines').value);
+  replacePolicy = document.getElementById('ca-replace').value;
+  rebuildAssocOptions();
   recalc();
   resetCache();
 }
@@ -563,6 +595,7 @@ function accessAddress(addr) {
       set[w].valid = true;
       set[w].tag = d.tag;
       set[w].lastUsed = globalTimer;
+      set[w].placedAt = globalTimer;
       stats.misses++;
       var result = { addr: d.addr, offset: d.offset, index: d.index, tag: d.tag, hit: false, way: w, evictedTag: null };
       accessHistory.push(result);
@@ -570,19 +603,27 @@ function accessAddress(addr) {
     }
   }
 
-  // Evict LRU
-  var lruWay = 0, lruTime = Infinity;
-  for (var w = 0; w < associativity; w++) {
-    if (set[w].lastUsed < lruTime) {
-      lruTime = set[w].lastUsed;
-      lruWay = w;
+  // Evict — pick victim based on replacement policy
+  var victimWay = 0;
+  if (replacePolicy === 'lru') {
+    var oldest = Infinity;
+    for (var w = 0; w < associativity; w++) {
+      if (set[w].lastUsed < oldest) { oldest = set[w].lastUsed; victimWay = w; }
     }
+  } else if (replacePolicy === 'fifo') {
+    var earliest = Infinity;
+    for (var w = 0; w < associativity; w++) {
+      if (set[w].placedAt < earliest) { earliest = set[w].placedAt; victimWay = w; }
+    }
+  } else {
+    victimWay = Math.floor(Math.random() * associativity);
   }
-  var evictedTag = set[lruWay].tag;
-  set[lruWay].tag = d.tag;
-  set[lruWay].lastUsed = globalTimer;
+  var evictedTag = set[victimWay].tag;
+  set[victimWay].tag = d.tag;
+  set[victimWay].lastUsed = globalTimer;
+  set[victimWay].placedAt = globalTimer;
   stats.misses++;
-  var result = { addr: d.addr, offset: d.offset, index: d.index, tag: d.tag, hit: false, way: lruWay, evictedTag: evictedTag };
+  var result = { addr: d.addr, offset: d.offset, index: d.index, tag: d.tag, hit: false, way: victimWay, evictedTag: evictedTag };
   accessHistory.push(result);
   return result;
 }
@@ -619,7 +660,8 @@ function renderNarration(result) {
   } else {
     var text = 'MISS \u2014 Tag ' + tagStr + ' not in Set ' + result.index + '. Placed in Way ' + result.way;
     if (result.evictedTag !== null) {
-      text += ' (evicted tag ' + toBin(result.evictedTag, tagBits) + ')';
+      var policyLabel = replacePolicy === 'lru' ? 'least recently used' : replacePolicy === 'fifo' ? 'first in' : 'random';
+      text += ' (evicted tag ' + toBin(result.evictedTag, tagBits) + ' \u2014 ' + policyLabel + ')';
     }
     el.className = 'ca-narration ca-miss';
     el.textContent = text;
@@ -898,6 +940,7 @@ function copyLearnPrompt() {
 }
 
 // ── Boot ──
+rebuildAssocOptions();
 recalc();
 initCache();
 renderCache();
