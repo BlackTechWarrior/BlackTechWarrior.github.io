@@ -110,6 +110,9 @@
     }
     body.dark .ob-spread-row { background: #222; border-color: #333; color: #9a9a9a; }
 
+    .ob-row.ob-fifo-highlight { box-shadow: inset 0 0 0 2px #e67e22; background: rgba(230,126,34,0.1); }
+    body.dark .ob-row.ob-fifo-highlight { box-shadow: inset 0 0 0 2px #f39c12; background: rgba(243,156,18,0.12); }
+
     .ob-row.ob-flash { animation: obFlash 0.4s ease-out; }
     @keyframes obFlash {
       0% { background: rgba(230,126,34,0.3); }
@@ -339,10 +342,10 @@
     }
     body.dark .ob-trade-row, body.dark .ob-order-row { border-bottom-color: #2a2a2a; }
     .ob-trade-row { grid-template-columns: 80px 70px 50px 40px; gap: 8px; }
-    .ob-order-row { grid-template-columns: 24px 22px 34px 55px 40px 40px 55px; gap: 6px; }
+    .ob-order-row { grid-template-columns: 24px 22px 34px 55px 40px 40px 55px 20px; gap: 6px; }
     .ob-order-row .ob-col-rem { display: none; }
     @media (min-width: 701px) {
-      .ob-order-row { grid-template-columns: 30px 30px 38px 60px 45px 45px 40px 55px; gap: 4px; }
+      .ob-order-row { grid-template-columns: 30px 30px 38px 60px 45px 45px 40px 55px 20px; gap: 4px; }
       .ob-order-row .ob-col-rem { display: block; }
     }
 
@@ -362,10 +365,10 @@
     }
     body.dark .ob-th { color: #9a9a9a; border-bottom-color: #333; }
     .ob-trades-th { display: grid; grid-template-columns: 80px 70px 50px 40px; gap: 8px; }
-    .ob-orders-th { display: grid; grid-template-columns: 24px 22px 34px 55px 40px 40px 55px; gap: 6px; }
+    .ob-orders-th { display: grid; grid-template-columns: 24px 22px 34px 55px 40px 40px 55px 20px; gap: 6px; }
     .ob-orders-th .ob-col-rem { display: none; }
     @media (min-width: 701px) {
-      .ob-orders-th { grid-template-columns: 30px 30px 38px 60px 45px 45px 40px 55px; gap: 4px; }
+      .ob-orders-th { grid-template-columns: 30px 30px 38px 60px 45px 45px 40px 55px 20px; gap: 4px; }
       .ob-orders-th .ob-col-rem { display: block; }
     }
 
@@ -376,6 +379,13 @@
     body.dark .ob-status-new { color: #87ceeb; }
     body.dark .ob-status-partial { color: #f39c12; }
     body.dark .ob-status-filled { color: #2ecc71; }
+
+    .ob-cancel-btn {
+      background: none; border: none; color: #9a9a9a; cursor: pointer; font-size: 14px;
+      padding: 0 2px; line-height: 1; font-family: inherit;
+    }
+    .ob-cancel-btn:hover { color: #dc3545; }
+    body.dark .ob-cancel-btn:hover { color: #e74c3c; }
 
     .ob-empty { color: #9a9a9a; font-style: italic; padding: 12px 0; font-family: inherit; font-size: 12px; }
   </style>
@@ -509,6 +519,10 @@
             <strong>Empty Side</strong>
             Market order into an empty side &mdash; shows order rejection.
           </button>
+          <button class="ob-scenario-btn" onclick="loadScenario('imbalance')" aria-label="Scenario: Book Imbalance">
+            <strong>Book Imbalance</strong>
+            Heavy bids with thin asks &mdash; shows directional pressure and likely price movement.
+          </button>
         </div>
         <button class="btn-t" onclick="copyLearnPrompt()" style="margin-top:10px;">Ask AI about this</button>
       </div>
@@ -527,7 +541,7 @@
     <div class="ob-card">
       <div class="ob-card-title">Order Log</div>
       <div class="ob-orders-th ob-th">
-        <span>ID</span><span>Side</span><span>Type</span><span>Price</span><span>Qty</span><span class="ob-col-filled">Filled</span><span class="ob-col-rem">Rem</span><span>Status</span>
+        <span>ID</span><span>Side</span><span>Type</span><span>Price</span><span>Qty</span><span class="ob-col-filled">Filled</span><span class="ob-col-rem">Rem</span><span>Status</span><span></span>
       </div>
       <div class="ob-orders-list" id="ob-orders"></div>
     </div>
@@ -551,6 +565,7 @@ let stepMode = false;
 let stepQueue = [];
 let pendingSteps = [];
 let flashLevels = new Set();
+let highlightOrderId = null;
 
 // ── Order creation ──
 function createOrder(side, type, price, qty, opts = {}) {
@@ -991,6 +1006,46 @@ function loadScenario(name) {
       showToast('Scenario: Empty Side');
       break;
     }
+    case 'imbalance': {
+      nextOrderId = 1;
+      book = { bids: [], asks: [] };
+      allOrders = {};
+      trades = [];
+      stepQueue = [];
+      pendingSteps = [];
+
+      // Heavy bids: 10 levels, large quantities, multiple orders per level
+      for (let i = 0; i < 10; i++) {
+        const price = round2(99.99 - i * 0.01);
+        const numOrders = 2 + Math.floor(Math.random() * 3);
+        for (let j = 0; j < numOrders; j++) {
+          const qty = 80 + Math.floor(Math.random() * 120);
+          const o = createOrder('buy', 'limit', price, qty);
+          o.status = 'new'; addToBook(o);
+        }
+      }
+      // Thin asks: 4 levels, small quantities, single orders
+      for (let i = 0; i < 4; i++) {
+        const price = round2(100.00 + i * 0.01);
+        const qty = 8 + Math.floor(Math.random() * 12);
+        const o = createOrder('sell', 'limit', price, qty);
+        o.status = 'new'; addToBook(o);
+      }
+      render();
+      // Add contextual narration about the imbalance, then queue a market buy
+      const bidVol = book.bids.reduce((s, l) => s + levelQty(l), 0);
+      const askVol = book.asks.reduce((s, l) => s + levelQty(l), 0);
+      const ratio = (bidVol / Math.max(askVol, 1)).toFixed(1);
+      pendingSteps = [
+        { type: 'INFO', text: `Book imbalance: ${bidVol} total bid volume vs ${askVol} total ask volume (${ratio}:1 ratio). Heavy bids signal strong buyer pressure.` },
+        { type: 'INFO', text: `With thin asks, even a moderate buy order will eat through multiple levels — pushing the price up. This is how imbalance predicts short-term price direction.` },
+      ];
+      currentStepIndex = 0;
+      showStepUI();
+      queueStepOrder('buy', 'market', null, 50);
+      showToast('Scenario: Book Imbalance');
+      break;
+    }
   }
 }
 
@@ -1024,10 +1079,25 @@ function toggleStepMode() {
   }
 }
 
+function updateFifoHighlight() {
+  // Peek at next step: if it's a FILL, highlight the resting order
+  const nextIdx = currentStepIndex + 1;
+  if (nextIdx < pendingSteps.length && pendingSteps[nextIdx].type === 'FILL') {
+    const trade = pendingSteps[nextIdx].trade;
+    // The resting order is the one that's not the aggressor
+    const aggressorStep = pendingSteps.find(s => s.type === 'NEW');
+    const aggressorId = aggressorStep ? aggressorStep.orderId : null;
+    highlightOrderId = trade.buyOrderId === aggressorId ? trade.sellOrderId : trade.buyOrderId;
+  } else {
+    highlightOrderId = null;
+  }
+}
+
 function showStepUI() {
   if (!stepMode) {
     // Instant mode: just render
     pendingSteps = [];
+    highlightOrderId = null;
     render();
     processStepQueue();
     return;
@@ -1039,6 +1109,7 @@ function showStepUI() {
   // Show first step
   if (currentStepIndex < pendingSteps.length) {
     narr.textContent = pendingSteps[currentStepIndex].text;
+    updateFifoHighlight();
     render();
   }
 }
@@ -1051,6 +1122,7 @@ function nextStep() {
     const step = pendingSteps[currentStepIndex];
     narr.textContent = step.text;
     if (step.price != null) flashLevels.add(step.price);
+    updateFifoHighlight();
     render();
     setTimeout(() => { flashLevels.delete(step.price); }, 500);
   } else {
@@ -1058,6 +1130,7 @@ function nextStep() {
     narr.textContent = 'Matching complete.';
     pendingSteps = [];
     currentStepIndex = 0;
+    highlightOrderId = null;
     render();
     // Check for queued scenario orders
     setTimeout(() => {
@@ -1168,9 +1241,10 @@ function renderBook() {
     const visQty = levelVisibleQty(level);
     const isBest = i === askLevels.length - 1;
     const flash = flashLevels.has(level.price) ? ' ob-flash' : '';
+    const fifo = highlightOrderId && level.orders.some(o => o.id === highlightOrderId) ? ' ob-fifo-highlight' : '';
     const depthPct = (cum / maxCum * 100).toFixed(1);
     const hasHidden = visQty < qty;
-    html += `<div class="ob-row ob-row-ask${isBest ? ' ob-row-best' : ''}${flash}" onclick="clickPrice(${level.price})">
+    html += `<div class="ob-row ob-row-ask${isBest ? ' ob-row-best' : ''}${flash}${fifo}" onclick="clickPrice(${level.price})">
       <div class="ob-depth-bar" style="width:${depthPct}%"></div>
       <span class="ob-price">${level.price.toFixed(2)}</span>
       <span>${hasHidden ? visQty + '+' : visQty} (${level.orders.length})</span>
@@ -1198,9 +1272,10 @@ function renderBook() {
     const visQty = levelVisibleQty(level);
     const isBest = i === 0;
     const flash = flashLevels.has(level.price) ? ' ob-flash' : '';
+    const fifo = highlightOrderId && level.orders.some(o => o.id === highlightOrderId) ? ' ob-fifo-highlight' : '';
     const depthPct = (cum / maxCum * 100).toFixed(1);
     const hasHidden = visQty < qty;
-    html += `<div class="ob-row ob-row-bid${isBest ? ' ob-row-best' : ''}${flash}" onclick="clickPrice(${level.price})">
+    html += `<div class="ob-row ob-row-bid${isBest ? ' ob-row-best' : ''}${flash}${fifo}" onclick="clickPrice(${level.price})">
       <div class="ob-depth-bar" style="width:${depthPct}%"></div>
       <span class="ob-price">${level.price.toFixed(2)}</span>
       <span>${hasHidden ? visQty + '+' : visQty} (${level.orders.length})</span>
@@ -1267,6 +1342,7 @@ function renderOrders() {
   for (let i = 0; i < Math.min(ids.length, 50); i++) {
     const o = allOrders[ids[i]];
     const statusCls = 'ob-status-' + (o.status === 'new' ? 'new' : o.status === 'partial' ? 'partial' : o.status === 'filled' ? 'filled' : 'cancelled');
+    const canCancel = o.status === 'new' || o.status === 'partial';
     html += `<div class="ob-order-row">
       <span>${o.id}</span>
       <span>${o.side === 'buy' ? 'B' : 'S'}</span>
@@ -1276,6 +1352,7 @@ function renderOrders() {
       <span class="ob-col-filled">${o.filled}</span>
       <span class="ob-col-rem">${o.remaining}</span>
       <span class="${statusCls}">${o.status}</span>
+      <span>${canCancel ? `<button class="ob-cancel-btn" onclick="cancelOrder(${o.id})">&times;</button>` : ''}</span>
     </div>`;
   }
   el.innerHTML = html;
@@ -1307,6 +1384,7 @@ function copyLearnPrompt() {
    - Spread collapse: Aggressive limit orders narrowing the spread until they cross. What happens when a buy limit is placed at or above the best ask?
    - Iceberg/reserve orders: Why would a trader hide part of their order size, and how does the hidden portion refill after a partial fill?
    - Partial fills: A big resting limit order getting filled piece by piece. How does the remaining quantity stay in the book?
+   - Book imbalance: One side has far more volume than the other (e.g. heavy bids, thin asks). What does this imbalance signal about buyer/seller pressure, and why does it predict short-term price movement?
 4. Use simple analogies where possible — think of it like explaining to someone who understands basic buying/selling but has never seen a trading screen.`;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(prompt).then(() => showToast('Prompt copied — paste it into any AI chat'));

@@ -1601,7 +1601,7 @@ const TOPICS = [
       keyInsight: 'The order book is essentially two priority queues (heaps) with FIFO ordering within each price level. At each price, orders are matched first-come-first-served \u2014 this is called <strong>price-time priority</strong>, the most common matching algorithm used by major exchanges.',
     },
     tryItLink: '/orderbook/',
-    relatedTopics: ['order-matching-engine', 'fifo-queue', 'comparator'],
+    relatedTopics: ['order-matching-engine', 'market-data-infrastructure', 'fifo-queue', 'comparator'],
     order: 1,
   },
   {
@@ -1622,8 +1622,28 @@ const TOPICS = [
       keyInsight: 'The matching engine is one of the most direct real-world applications of the data structures and hardware design principles covered elsewhere on this site \u2014 priority queues map to comparator trees, FIFO order queues map to RAM-based circular buffers with read/write pointers, and the entire pipeline maps to the same area-vs-speed tradeoffs seen in adder and multiplier architectures.',
     },
     tryItLink: '/orderbook/',
-    relatedTopics: ['order-book-mechanics', 'comparator', 'fifo-queue'],
+    relatedTopics: ['order-book-mechanics', 'comparator', 'fifo-queue', 'market-data-infrastructure'],
     order: 2,
+  },
+  {
+    id: 'market-data-infrastructure',
+    title: 'Market Data Infrastructure',
+    shortDescription: 'How market data travels from exchanges to trading firms \u2014 UDP feeds, co-location, and FPGA network cards.',
+    type: 'concept',
+    tags: ['trading', 'networking', 'FPGA', 'latency', 'hardware'],
+    category: 'orderbook',
+    content: {
+      problem: 'The order book you just interacted with gets its data from somewhere. In the real world, how does market data travel from an exchange to the trading firm\'s matching engine \u2014 and why does every microsecond on that path matter?',
+      howItWorks: '<strong>The data feed:</strong> Exchanges publish market data (every new order, cancel, and trade) as a stream of messages using protocols like <strong>ITCH</strong> (Nasdaq), <strong>PITCH</strong> (Cboe), or <strong>OPRA</strong> (options). These are compact binary formats \u2014 an ITCH message is typically 20\u201350 bytes \u2014 designed to be parsed fast, not human-readable.<br><br>'
+        + '<strong>Why UDP, not TCP:</strong> Market data feeds use <strong>multicast UDP</strong> rather than TCP. TCP guarantees delivery by retransmitting lost packets, but retransmission adds latency and stalls the stream for everyone. UDP is fire-and-forget: the exchange blasts packets to all subscribers simultaneously. If a packet is lost, firms detect the gap via sequence numbers and request a retransmit on a separate recovery channel \u2014 but the main feed keeps flowing at wire speed. For data where being 1\u00b5s late is worse than occasionally missing a message, UDP wins.<br><br>'
+        + '<strong>Network hops:</strong> Each device a packet passes through \u2014 switch, router, NIC \u2014 is a hop, and each hop adds latency (typically 100ns\u20131\u00b5s per switch). Fewer hops = faster. This is why firms obsess over network topology.<br><br>'
+        + '<strong>Co-location:</strong> Trading firms rent rack space <strong>inside the exchange\'s data center</strong>, often in the same room as the matching engine. This eliminates wide-area network latency entirely. The physical cable length between the firm\'s server and the exchange\'s switch might be 10\u201350 meters \u2014 the speed of light in fiber is ~5ns/meter, so even cable length matters at this scale. Exchanges sell equal-length cables to ensure fairness.<br><br>'
+        + '<strong>FPGA network cards (Smart NICs):</strong> A normal server receives a UDP packet through the OS kernel \u2014 interrupt handling, memory copies, context switches \u2014 adding microseconds of overhead. <strong>FPGA-based NICs</strong> bypass the CPU entirely: the FPGA parses the incoming Ethernet frame, extracts the market data message, and updates the order book representation <strong>in hardware</strong>, all within the same clock cycles the packet arrives on the wire. The result is single-digit microsecond or sub-microsecond tick-to-trade latency \u2014 from seeing a market data update to having a response order on the wire.',
+      keyInsight: 'The data feeding the order book you interacted with arrives through this exact pipeline in the real world: exchange \u2192 multicast UDP \u2192 co-located switch \u2192 FPGA NIC \u2192 hardware order book \u2192 trading decision \u2192 order out. Every component in this chain is optimized to shave microseconds, because in competitive markets, the fastest firm to react to new information captures the opportunity.',
+    },
+    tryItLink: '/orderbook/',
+    relatedTopics: ['order-matching-engine', 'order-book-mechanics', 'fifo-queue'],
+    order: 3,
   },
 ];
 
