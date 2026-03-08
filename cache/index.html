@@ -220,6 +220,10 @@
     body.dark .ca-howto summary { background: #222; }
     .ca-howto-body { padding: 12px 16px; font-size: 13px; line-height: 1.6; }
 
+    /* ── Placeholder text ── */
+    .ca-placeholder { color: #595959; font-size: 12px; }
+    body.dark .ca-placeholder { color: #9a9a9a; }
+
     /* ── Toast ── */
     .ca-toast {
       position: fixed; bottom: 24px; left: 50%;
@@ -278,6 +282,46 @@
     <p style="text-align:center;color:#595959;margin-top:-8px;margin-bottom:16px;font-size:14px;">
       Visualize how CPU caches map, store, and evict memory blocks
     </p>
+
+    <!-- How to Use -->
+    <details class="ca-howto">
+      <summary>How to Use</summary>
+      <div class="ca-howto-body">
+        <p>A cache simulator helps you understand how CPU caches work &mdash; how memory addresses map to cache locations, when data is found quickly (hits) versus fetched from main memory (misses), and how different cache organizations affect performance. This tool is essential for computer architecture courses, understanding memory hierarchy, and building intuition about locality and cache behavior.</p>
+        <p><strong>Configure</strong> the cache using the dropdowns above. Block size determines how many consecutive bytes are fetched together (spatial locality). Associativity controls how many cache lines an address can map to &mdash; more ways means fewer conflict misses but more hardware cost.</p>
+        <p><strong>Access addresses</strong> by typing a number (0&ndash;255) and clicking Access, or load a preset pattern and step through with the Next button or <strong>Spacebar</strong>.</p>
+        <p><strong>Watch the breakdown</strong> &mdash; it shows how each address splits into <span style="color:#3498db;font-weight:600">tag</span>, <span style="color:#27ae60;font-weight:600">index</span>, and <span style="color:#e67e22;font-weight:600">offset</span> bits, which determines where data maps in the cache.</p>
+        <p><strong>Try different configs</strong> with the same pattern. Load Thrashing in direct-mapped mode, then switch to 2-way and reload &mdash; see how associativity eliminates conflict misses.</p>
+        <details style="margin-top:8px">
+          <summary style="cursor:pointer;font-weight:600;font-size:13px">Bit Split Formulas</summary>
+          <table style="width:100%;margin-top:8px;border-collapse:collapse;font-size:13px;font-family:monospace">
+            <tr style="border-bottom:1px solid #e0e0e0;text-align:left">
+              <th style="padding:4px 8px">Field</th><th style="padding:4px 8px">Formula</th><th style="padding:4px 8px">Example (default)</th>
+            </tr>
+            <tr style="border-bottom:1px solid #f0f0f0">
+              <td style="padding:4px 8px;color:#e67e22;font-weight:600">Offset bits</td>
+              <td style="padding:4px 8px">log<sub>2</sub>(block size)</td>
+              <td style="padding:4px 8px">log<sub>2</sub>(4) = 2</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f0f0f0">
+              <td style="padding:4px 8px;color:#27ae60;font-weight:600">Index bits</td>
+              <td style="padding:4px 8px">log<sub>2</sub>(cache lines / associativity)</td>
+              <td style="padding:4px 8px">log<sub>2</sub>(8 / 1) = 3</td>
+            </tr>
+            <tr style="border-bottom:1px solid #f0f0f0">
+              <td style="padding:4px 8px;color:#3498db;font-weight:600">Tag bits</td>
+              <td style="padding:4px 8px">address bits &minus; index bits &minus; offset bits</td>
+              <td style="padding:4px 8px">8 &minus; 3 &minus; 2 = 3</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 8px">Num sets</td>
+              <td style="padding:4px 8px">cache lines / associativity</td>
+              <td style="padding:4px 8px">8 / 1 = 8</td>
+            </tr>
+          </table>
+        </details>
+      </div>
+    </details>
 
     <!-- Config bar -->
     <div class="ca-config-bar">
@@ -352,19 +396,19 @@
           <div class="ca-preset-grid">
             <button class="ca-preset-btn" onclick="loadPreset('sequential')" aria-label="Pattern: Sequential Access">
               <strong>Sequential</strong>
-              Addresses 0&ndash;15 in order. Demonstrates spatial locality.
+              Addresses 0&ndash;15 in order. Like iterating through an array &mdash; spatial locality means most accesses hit after the first block fetch.
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('temporal')" aria-label="Pattern: Temporal Loop">
               <strong>Temporal Loop</strong>
-              Same blocks accessed twice. Second pass hits from temporal locality.
+              Same blocks accessed twice. Like a loop body re-reading its variables &mdash; the second pass hits every time from temporal locality.
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('thrashing')" aria-label="Pattern: Thrashing">
               <strong>Thrashing</strong>
-              Two addresses fight for the same set. Try 2-way to fix it.
+              Two addresses map to the same set and keep evicting each other. Happens in direct-mapped caches when two hot variables alias &mdash; switch to 2-way to fix it.
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('stride')" aria-label="Pattern: Power-of-2 Stride">
               <strong>Power-of-2 Stride</strong>
-              Stride-8 access pattern. Watch for conflict misses.
+              Stride-8 pattern. Like accessing a column in a row-major matrix &mdash; power-of-2 strides cause worst-case conflict misses in direct-mapped caches.
             </button>
           </div>
           <button class="btn-t" onclick="copyLearnPrompt()" style="margin-top:10px;">Ask AI about this</button>
@@ -392,19 +436,7 @@
       <div class="ca-history-list" id="ca-history"></div>
     </div>
 
-    <!-- How to Use -->
-    <details class="ca-howto">
-      <summary>How to Use</summary>
-      <div class="ca-howto-body">
-        <p>A cache simulator helps you understand how CPU caches work &mdash; how memory addresses map to cache locations, when data is found quickly (hits) versus fetched from main memory (misses), and how different cache organizations affect performance. This tool is essential for computer architecture courses, understanding memory hierarchy, and building intuition about locality and cache behavior.</p>
-        <p><strong>Configure</strong> the cache using the dropdowns above. Block size determines how many consecutive bytes are fetched together (spatial locality). Associativity controls how many cache lines an address can map to &mdash; more ways means fewer conflict misses but more hardware cost.</p>
-        <p><strong>Access addresses</strong> by typing a number (0&ndash;255) and clicking Access, or load a preset pattern and step through with the Next button or <strong>Spacebar</strong>.</p>
-        <p><strong>Watch the breakdown</strong> &mdash; it shows how each address splits into <span style="color:#3498db;font-weight:600">tag</span>, <span style="color:#27ae60;font-weight:600">index</span>, and <span style="color:#e67e22;font-weight:600">offset</span> bits, which determines where data maps in the cache.</p>
-        <p><strong>Try different configs</strong> with the same pattern. Load Thrashing in direct-mapped mode, then switch to 2-way and reload &mdash; see how associativity eliminates conflict misses.</p>
-      </div>
-    </details>
-
-    <div class="footer">&copy; 2026 <a href="/">p14m.com</a> &middot; <a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Submit Feedback</a></div>
+    <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
   </main>
 
   <div class="ca-toast" id="ca-toast"></div>
@@ -630,7 +662,7 @@ function renderHistory() {
       '<span class="' + cls + '">' + (h.hit ? 'HIT' : 'MISS') + '</span>' +
       '</div>';
   }
-  el.innerHTML = html || '<div style="padding:8px;color:#999;font-size:12px">No accesses yet</div>';
+  el.innerHTML = html || '<div class="ca-placeholder" style="padding:8px">No accesses yet</div>';
 }
 
 function renderStats() {
@@ -654,7 +686,7 @@ function renderStats() {
 function renderQueue() {
   var el = document.getElementById('ca-queue');
   if (accessQueue.length === 0) {
-    el.innerHTML = '<span style="color:#999;font-size:12px">Load a pattern to fill the queue</span>';
+    el.innerHTML = '<span class="ca-placeholder">Load a pattern to fill the queue</span>';
     return;
   }
   var html = '';
