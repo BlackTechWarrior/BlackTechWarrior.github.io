@@ -664,7 +664,7 @@ function matchOrder(order) {
         const trade = { buyOrderId: order.id, sellOrderId: resting.id, price: fillPrice, qty: fillQty, timestamp: Date.now(), aggressor: 'buy' };
         trades.push(trade);
 
-        steps.push({ type: 'FILL', text: `FILL ${fillQty} @ ${fillPrice.toFixed(2)} (vs order #${resting.id})`, price: fillPrice, qty: fillQty, trade, restingId: resting.id, fifoPos, fifoTotal });
+        steps.push({ type: 'FILL', text: `FILL ${fillQty} @ ${fillPrice.toFixed(2)} (vs order #${resting.id})`, price: fillPrice, qty: fillQty, trade, restingId: resting.id, incomingId: order.id, fifoPos, fifoTotal });
 
         if (resting.remaining <= 0) {
           resting.status = 'filled';
@@ -675,7 +675,7 @@ function matchOrder(order) {
             resting.remaining = refillQty;
             resting.status = 'partial';
             askLevel.orders.push(resting);
-            steps.push({ type: 'ICEBERG', text: `Iceberg refill: order #${resting.id} reveals ${refillQty} more @ ${resting.price.toFixed(2)}`, price: resting.price });
+            steps.push({ type: 'ICEBERG', text: `Iceberg refill: order #${resting.id} reveals ${refillQty} more @ ${resting.price.toFixed(2)}`, price: resting.price, orderId: resting.id, refillQty });
           }
         } else {
           resting.status = 'partial';
@@ -716,7 +716,7 @@ function matchOrder(order) {
         const trade = { buyOrderId: resting.id, sellOrderId: order.id, price: fillPrice, qty: fillQty, timestamp: Date.now(), aggressor: 'sell' };
         trades.push(trade);
 
-        steps.push({ type: 'FILL', text: `FILL ${fillQty} @ ${fillPrice.toFixed(2)} (vs order #${resting.id})`, price: fillPrice, qty: fillQty, trade, restingId: resting.id, fifoPos, fifoTotal });
+        steps.push({ type: 'FILL', text: `FILL ${fillQty} @ ${fillPrice.toFixed(2)} (vs order #${resting.id})`, price: fillPrice, qty: fillQty, trade, restingId: resting.id, incomingId: order.id, fifoPos, fifoTotal });
 
         if (resting.remaining <= 0) {
           resting.status = 'filled';
@@ -726,7 +726,7 @@ function matchOrder(order) {
             resting.remaining = refillQty;
             resting.status = 'partial';
             bidLevel.orders.push(resting);
-            steps.push({ type: 'ICEBERG', text: `Iceberg refill: order #${resting.id} reveals ${refillQty} more @ ${resting.price.toFixed(2)}`, price: resting.price });
+            steps.push({ type: 'ICEBERG', text: `Iceberg refill: order #${resting.id} reveals ${refillQty} more @ ${resting.price.toFixed(2)}`, price: resting.price, orderId: resting.id, refillQty });
           }
         } else {
           resting.status = 'partial';
@@ -745,7 +745,7 @@ function matchOrder(order) {
 
   // Market order with no liquidity
   if (isMarket && order.remaining > 0) {
-    steps.push({ type: 'REJECT', text: `No liquidity — ${order.remaining} unfilled, order rejected` });
+    steps.push({ type: 'REJECT', text: `No liquidity — ${order.remaining} unfilled, order rejected`, orderId: order.id });
     order.status = 'cancelled';
   }
 
@@ -754,7 +754,7 @@ function matchOrder(order) {
     if (order.type === 'limit') {
       addToBook(order);
       order.status = order.filled > 0 ? 'partial' : 'new';
-      steps.push({ type: 'REST', text: `Order #${order.id} rests in book: ${order.remaining} @ ${order.price.toFixed(2)}`, price: order.price });
+      steps.push({ type: 'REST', text: `Order #${order.id} rests in book: ${order.remaining} @ ${order.price.toFixed(2)}`, price: order.price, orderId: order.id });
     }
   } else if (order.remaining === 0) {
     order.status = 'filled';
@@ -771,6 +771,62 @@ function cancelOrder(id) {
   removeFromBook(order);
   order.status = 'cancelled';
   render();
+}
+
+// ── Snapshot / Restore (for incremental step replay) ──
+function takeSnapshot() {
+  const orderStates = {};
+  for (const id in allOrders) {
+    const o = allOrders[id];
+    orderStates[id] = { remaining: o.remaining, filled: o.filled, status: o.status };
+  }
+  return {
+    bids: book.bids.map(l => ({ price: l.price, orderIds: l.orders.map(o => o.id) })),
+    asks: book.asks.map(l => ({ price: l.price, orderIds: l.orders.map(o => o.id) })),
+    orderStates,
+    tradesLen: trades.length,
+  };
+}
+
+function restoreSnapshot(snap) {
+  for (const id in snap.orderStates) {
+    const s = snap.orderStates[id];
+    const o = allOrders[id];
+    if (o) { o.remaining = s.remaining; o.filled = s.filled; o.status = s.status; }
+  }
+  book.bids = snap.bids.map(l => ({ price: l.price, orders: l.orderIds.map(id => allOrders[id]) }));
+  book.asks = snap.asks.map(l => ({ price: l.price, orders: l.orderIds.map(id => allOrders[id]) }));
+  trades.length = snap.tradesLen;
+}
+
+function applyStep(step) {
+  if (step.type === 'FILL') {
+    const resting = allOrders[step.restingId];
+    const incoming = allOrders[step.incomingId];
+    resting.filled += step.qty;
+    resting.remaining -= step.qty;
+    incoming.filled += step.qty;
+    incoming.remaining -= step.qty;
+    trades.push(step.trade);
+    if (resting.remaining <= 0) {
+      resting.status = 'filled';
+      removeFromBook(resting);
+    } else {
+      resting.status = 'partial';
+    }
+  } else if (step.type === 'ICEBERG') {
+    const order = allOrders[step.orderId];
+    order.remaining = step.refillQty;
+    order.status = 'partial';
+    addToBook(order);
+  } else if (step.type === 'REST') {
+    const order = allOrders[step.orderId];
+    addToBook(order);
+    order.status = order.filled > 0 ? 'partial' : 'new';
+  } else if (step.type === 'REJECT') {
+    const order = allOrders[step.orderId];
+    if (order) order.status = 'cancelled';
+  }
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -1067,7 +1123,13 @@ function processStepQueue() {
   if (pendingSteps.length > 0 || stepQueue.length === 0) return;
   const next = stepQueue.shift();
   const order = createOrder(next.side, next.type, next.price, next.qty, next.opts || {});
-  pendingSteps = matchOrder(order);
+  if (stepMode) {
+    const snap = takeSnapshot();
+    pendingSteps = matchOrder(order);
+    restoreSnapshot(snap);
+  } else {
+    pendingSteps = matchOrder(order);
+  }
   currentStepIndex = 0;
   showStepUI();
 }
@@ -1126,6 +1188,7 @@ function nextStep() {
   const narr = document.getElementById('ob-narration');
   if (currentStepIndex < pendingSteps.length) {
     const step = pendingSteps[currentStepIndex];
+    applyStep(step);
     narr.textContent = step.text;
     if (step.price != null) flashLevels.add(step.price);
     updateFifoHighlight();
@@ -1150,9 +1213,14 @@ function nextStep() {
 }
 
 function finishPendingSteps() {
+  // Apply all remaining steps from current position
+  for (let i = currentStepIndex + 1; i < pendingSteps.length; i++) {
+    applyStep(pendingSteps[i]);
+  }
   pendingSteps = [];
   currentStepIndex = 0;
-  // Also process any queued orders instantly
+  fifoHighlight = null;
+  // Process any queued orders instantly
   while (stepQueue.length > 0) {
     const next = stepQueue.shift();
     const order = createOrder(next.side, next.type, next.price, next.qty, next.opts || {});
@@ -1207,7 +1275,9 @@ function submitOrder() {
   const order = createOrder(currentSide, currentType, price, qty);
 
   if (stepMode) {
+    const snap = takeSnapshot();
     pendingSteps = matchOrder(order);
+    restoreSnapshot(snap);
     currentStepIndex = 0;
     showStepUI();
   } else {
