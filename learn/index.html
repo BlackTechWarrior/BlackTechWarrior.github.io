@@ -1002,6 +1002,11 @@ const CATEGORIES = {
     order: 5,
     intro: 'How electronic exchanges organize buy and sell orders, match them, and execute trades. These data structures and algorithms are implemented in FPGA-based matching engines at trading firms, where nanosecond-level latency matters \u2014 making this a direct application of hardware engineering.',
   },
+  memory: {
+    name: 'Memory Hierarchy',
+    order: 6,
+    intro: 'Processors are fast; main memory is slow. Caches bridge this gap by keeping recently and nearby data close to the CPU. Understanding how addresses map to cache locations, why some access patterns thrash, and how associativity and block size affect hit rate is fundamental to writing fast software and designing efficient hardware.',
+  },
 };
 
 const TOPICS = [
@@ -1646,6 +1651,29 @@ const TOPICS = [
     tryItLink: '/orderbook/',
     relatedTopics: ['order-matching-engine', 'order-book-mechanics', 'fifo-queue'],
     order: 3,
+  },
+
+  /* ── Memory Hierarchy ── */
+  {
+    id: 'cache-fundamentals',
+    title: 'Cache Memory',
+    shortDescription: 'How CPU caches map addresses to fast local storage using tag, index, and offset bits.',
+    type: 'concept',
+    tags: ['cache', 'memory', 'locality', 'hardware', 'performance'],
+    category: 'memory',
+    content: {
+      problem: 'A modern CPU can execute an instruction every ~0.3ns, but reading from main memory (DRAM) takes ~50\u2013100ns \u2014 a 200\u00d7 gap. Without a fast intermediary, the processor stalls waiting for data on almost every load. How does hardware bridge this speed gap?',
+      howItWorks: '<strong>The cache</strong> is a small, fast SRAM buffer between the CPU and main memory. When the processor reads address A, it checks the cache first. If the data is there (a <strong>hit</strong>), it returns in 1\u20134 cycles. If not (a <strong>miss</strong>), it fetches a whole <strong>block</strong> of data from memory and stores it in the cache for next time.<br><br>'
+        + '<strong>Address breakdown:</strong> Every memory address is split into three fields: <strong style="color:#3498db">tag</strong> | <strong style="color:#27ae60">index</strong> | <strong style="color:#e67e22">offset</strong>. The <strong>index</strong> bits select which <strong>set</strong> (row) in the cache to check. The <strong>tag</strong> bits identify which memory block is stored there. The <strong>offset</strong> bits select the byte within the block. This is the core of cache lookup \u2014 it\'s just bit slicing.<br><br>'
+        + '<strong>Direct-mapped:</strong> Each address maps to exactly one cache line (1 way per set). Simple and fast, but two addresses that map to the same set evict each other \u2014 this is a <strong>conflict miss</strong>.<br><br>'
+        + '<strong>Set-associative:</strong> Each set has multiple <strong>ways</strong> (slots). A 2-way cache checks 2 tags per lookup. More ways = fewer conflict misses, but more comparators and slower lookup. <strong>Fully associative</strong> (1 set, N ways) eliminates all conflict misses but requires checking every tag in parallel.<br><br>'
+        + '<strong>Replacement:</strong> When all ways in a set are occupied, the cache must evict one. <strong>LRU (Least Recently Used)</strong> evicts the way that hasn\'t been accessed the longest \u2014 betting that recently used data will be used again soon.<br><br>'
+        + '<strong>Locality:</strong> Caches exploit two patterns: <strong>spatial locality</strong> (if you accessed address A, you\'ll likely access A+1 soon \u2014 that\'s why blocks are bigger than 1 byte) and <strong>temporal locality</strong> (if you accessed A recently, you\'ll likely access it again \u2014 that\'s why eviction picks the least-recently-used entry).',
+      keyInsight: 'A cache is just a hardware hash table. The index bits are the hash, the tag bits are the key, and associativity is the number of slots per bucket. Thrashing \u2014 when two addresses keep evicting each other from the same set \u2014 is the cache equivalent of a hash collision with no room to resolve it. Understanding this mapping is how you write code that runs 10\u00d7 faster without changing the algorithm.',
+    },
+    tryItLink: '/cache/',
+    relatedTopics: ['fifo-queue', 'area-vs-speed'],
+    order: 1,
   },
 ];
 
