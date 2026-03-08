@@ -424,19 +424,31 @@
           <div class="ca-preset-grid">
             <button class="ca-preset-btn" onclick="loadPreset('sequential')" aria-label="Pattern: Sequential Access">
               <strong>Sequential</strong>
-              Addresses 0&ndash;15 in order. Like iterating through an array &mdash; spatial locality means most accesses hit after the first block fetch.
+              Iterate through consecutive addresses. Spatial locality means most accesses hit after the first block fetch.
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('temporal')" aria-label="Pattern: Temporal Loop">
               <strong>Temporal Loop</strong>
-              Same blocks accessed twice. Like a loop body re-reading its variables &mdash; the second pass hits every time from temporal locality.
+              Same blocks accessed twice. Like a loop body re-reading its variables &mdash; second pass hits from temporal locality.
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('thrashing')" aria-label="Pattern: Thrashing">
               <strong>Thrashing</strong>
-              Two addresses map to the same set and keep evicting each other. Happens in direct-mapped caches when two hot variables alias &mdash; switch to 2-way to fix it.
+              Two addresses fight for the same set. Happens in direct-mapped caches &mdash; switch to 2-way to fix it.
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('stride')" aria-label="Pattern: Power-of-2 Stride">
               <strong>Power-of-2 Stride</strong>
-              Stride-8 pattern. Like accessing a column in a row-major matrix &mdash; power-of-2 strides cause worst-case conflict misses in direct-mapped caches.
+              Strided access pattern that creates worst-case conflict misses in direct-mapped caches.
+            </button>
+            <button class="ca-preset-btn" onclick="loadPreset('lru-vs-fifo')" aria-label="Pattern: LRU vs FIFO">
+              <strong>LRU vs FIFO</strong>
+              Overfill a set, then re-access early entries. Switch replacement policy and reload to see different eviction choices.
+            </button>
+            <button class="ca-preset-btn" onclick="loadPreset('column')" aria-label="Pattern: Column Traversal">
+              <strong>Column Traversal</strong>
+              Access column 0 of a row-major matrix. Every row maps to the same set &mdash; a classic real-world conflict miss scenario.
+            </button>
+            <button class="ca-preset-btn" onclick="loadPreset('random')" aria-label="Pattern: Random">
+              <strong>Random</strong>
+              20 random addresses with no locality. The baseline &mdash; compare against structured patterns to see how much locality matters.
             </button>
           </div>
           <button class="btn-t" onclick="copyLearnPrompt()" style="margin-top:10px;">Ask AI about this</button>
@@ -822,44 +834,139 @@ function stepQueue() {
   }
 }
 
-// ── Presets ──
-var PRESETS = {
-  sequential: {
-    name: 'Sequential Access',
-    addresses: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],
-    briefing: [
-      'Sequential addresses 0 through 15. With block size 4, each cache block holds 4 consecutive bytes.',
-      'Watch: the first access to each block is a compulsory miss. But the next 3 addresses in that block hit \u2014 the block was already fetched. This is spatial locality.'
-    ]
-  },
-  temporal: {
-    name: 'Temporal Loop',
-    addresses: [0,4,8,12,0,4,8,12],
-    briefing: [
-      'Four block-aligned addresses accessed twice each: 0, 4, 8, 12 \u2192 then 0, 4, 8, 12 again.',
-      'Watch: the first pass misses on every access (compulsory misses). The second pass hits every time \u2014 the data is still in cache. This is temporal locality.'
-    ]
-  },
-  thrashing: {
-    name: 'Thrashing',
-    addresses: [0,32,0,32,0,32,0,32],
-    briefing: [
-      'Addresses 0 and 32 alternate. In direct-mapped mode, both map to Set 0 \u2014 they keep evicting each other.',
-      'Every access is a miss despite using only two addresses. This is thrashing. Switch to 2-way associativity and reload to see it disappear.'
-    ]
-  },
-  stride: {
-    name: 'Power-of-2 Stride',
-    addresses: [0,8,16,24,32,40,48,56],
-    briefing: [
-      'Stride-8 pattern: 0, 8, 16, 24, 32, 40, 48, 56. With 8 sets, the second half conflicts with the first.',
-      'Watch for 100% miss rate even though only 8 unique blocks are accessed. Power-of-2 strides are worst-case for direct-mapped caches. Try fully associative to fit all 8.'
-    ]
+// ── Presets (generated dynamically from current config) ──
+function generatePreset(name) {
+  var bs = blockSize;
+  var ns = numSets;
+  var stride = ns * bs; // distance between addresses that map to same set
+
+  switch (name) {
+    case 'sequential': {
+      // 4 blocks worth of sequential addresses
+      var count = Math.min(bs * 4, 256);
+      var addrs = [];
+      for (var i = 0; i < count; i++) addrs.push(i);
+      return {
+        name: 'Sequential Access',
+        addresses: addrs,
+        briefing: [
+          'Sequential addresses 0 through ' + (count - 1) + '. With block size ' + bs + ', each cache block holds ' + bs + ' consecutive byte' + (bs > 1 ? 's' : '') + '.',
+          'Watch: the first access to each block is a compulsory miss.' + (bs > 1 ? ' But the next ' + (bs - 1) + ' address' + (bs > 2 ? 'es' : '') + ' in that block hit \u2014 the block was already fetched. This is spatial locality.' : '')
+        ]
+      };
+    }
+    case 'temporal': {
+      // Access numSets/2 unique blocks twice (fits in cache)
+      var n = Math.min(Math.floor(totalLines / 2), 4);
+      var addrs = [];
+      for (var i = 0; i < n; i++) addrs.push(i * bs);
+      for (var i = 0; i < n; i++) addrs.push(i * bs);
+      var last = (n - 1) * bs;
+      return {
+        name: 'Temporal Loop',
+        addresses: addrs,
+        briefing: [
+          n + ' block-aligned addresses accessed twice each: ' + addrs.slice(0, n).join(', ') + ' \u2192 then again.',
+          'Watch: the first pass misses on every access (compulsory misses). The second pass hits every time \u2014 the data is still in cache. This is temporal locality.'
+        ]
+      };
+    }
+    case 'thrashing': {
+      // Two addresses that map to same set, alternating
+      var a = 0, b = stride;
+      if (b > 255) b = stride % 256 || bs;
+      var addrs = [a, b, a, b, a, b, a, b];
+      return {
+        name: 'Thrashing',
+        addresses: addrs,
+        briefing: [
+          'Addresses ' + a + ' and ' + b + ' alternate. Both map to Set 0 \u2014 they keep evicting each other in direct-mapped mode.',
+          'Every access is a miss despite using only two addresses. This is thrashing. Switch to 2-way associativity and reload to see it disappear.'
+        ]
+      };
+    }
+    case 'stride': {
+      // Stride = 2 * blockSize: hits every other set, then wraps to conflict
+      var s = 2 * bs;
+      var count = totalLines + Math.floor(totalLines / 2);
+      var addrs = [];
+      for (var i = 0; i < count; i++) {
+        var addr = (i * s) % 256;
+        addrs.push(addr);
+      }
+      return {
+        name: 'Power-of-2 Stride',
+        addresses: addrs,
+        briefing: [
+          'Stride-' + s + ' pattern across ' + count + ' accesses. The stride hits every other set, then wraps around to conflict with earlier entries.',
+          'Watch how the second pass through the sets causes evictions. Power-of-2 strides are a common source of conflict misses in loops over arrays. Try higher associativity to reduce conflicts.'
+        ]
+      };
+    }
+    case 'lru-vs-fifo': {
+      // Access assoc+1 blocks mapping to set 0, then re-access the earliest
+      var ways = associativity;
+      if (ways < 2) ways = 2;
+      var addrs = [];
+      // Fill set 0 with `ways` unique blocks
+      for (var i = 0; i < ways; i++) addrs.push(i * stride < 256 ? i * stride : (i * bs) % 256);
+      // Access one more to cause eviction
+      var extra = ways * stride < 256 ? ways * stride : ((ways * bs) % 256);
+      addrs.push(extra);
+      // Re-access the first (was it evicted?)
+      addrs.push(addrs[0]);
+      // Also re-access the second
+      addrs.push(addrs[1]);
+      return {
+        name: 'LRU vs FIFO',
+        addresses: addrs,
+        briefing: [
+          'Fill one set with ' + ways + ' blocks, then access one more to force an eviction. Then re-access the first two blocks.',
+          'With LRU, the least recently used block gets evicted. With FIFO, the first one placed gets evicted regardless of recent access. Try switching replacement policy and reloading to see the difference.'
+        ]
+      };
+    }
+    case 'column': {
+      // Simulate column traversal in a row-major matrix
+      // Row width = numSets * blockSize (one full cache "page")
+      var rowWidth = ns * bs;
+      var rows = Math.min(Math.floor(255 / rowWidth) + 1, 8);
+      var addrs = [];
+      for (var r = 0; r < rows; r++) {
+        var addr = r * rowWidth;
+        if (addr < 256) addrs.push(addr);
+      }
+      // Second pass to show temporal locality (if cache is large enough)
+      for (var r = 0; r < rows; r++) {
+        var addr = r * rowWidth;
+        if (addr < 256) addrs.push(addr);
+      }
+      return {
+        name: 'Column Traversal',
+        addresses: addrs,
+        briefing: [
+          'Simulates accessing column 0 of a row-major matrix with row width ' + rowWidth + '. Each row access is ' + rowWidth + ' bytes apart \u2014 every access maps to Set 0.',
+          'In direct-mapped mode, rows beyond the first evict each other from Set 0. With higher associativity, more rows fit. The second pass shows whether temporal locality helps with your current config.'
+        ]
+      };
+    }
+    case 'random': {
+      var addrs = [];
+      for (var i = 0; i < 20; i++) addrs.push(Math.floor(Math.random() * 256));
+      return {
+        name: 'Random',
+        addresses: addrs,
+        briefing: [
+          '20 random addresses with no locality pattern. This is the baseline \u2014 what cache performance looks like without any spatial or temporal locality.',
+          'Compare the hit rate here against the structured patterns to see how much locality matters. Larger caches and higher associativity help, but not as much as having a good access pattern.'
+        ]
+      };
+    }
   }
-};
+}
 
 function loadPreset(name) {
-  var preset = PRESETS[name];
+  var preset = generatePreset(name);
   if (!preset) return;
 
   initCache();
