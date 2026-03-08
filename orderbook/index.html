@@ -112,6 +112,11 @@
 
     .ob-row.ob-fifo-highlight { box-shadow: inset 0 0 0 2px #e67e22; background: rgba(230,126,34,0.1); }
     body.dark .ob-row.ob-fifo-highlight { box-shadow: inset 0 0 0 2px #f39c12; background: rgba(243,156,18,0.12); }
+    .ob-fifo-tag {
+      font-size: 10px; font-weight: 600; color: #e67e22;
+      margin-left: 4px; white-space: nowrap;
+    }
+    body.dark .ob-fifo-tag { color: #f39c12; }
 
     .ob-row.ob-flash { animation: obFlash 0.4s ease-out; }
     @keyframes obFlash {
@@ -565,7 +570,7 @@ let stepMode = false;
 let stepQueue = [];
 let pendingSteps = [];
 let flashLevels = new Set();
-let highlightOrderId = null;
+let fifoHighlight = null; // { orderId, price, position, total }
 
 // ── Order creation ──
 function createOrder(side, type, price, qty, opts = {}) {
@@ -646,6 +651,8 @@ function matchOrder(order) {
 
       while (order.remaining > 0 && askLevel.orders.length > 0) {
         const resting = askLevel.orders[0];
+        const fifoPos = 1;
+        const fifoTotal = askLevel.orders.length;
         const fillQty = Math.min(order.remaining, resting.remaining);
         const fillPrice = resting.price;
 
@@ -657,7 +664,7 @@ function matchOrder(order) {
         const trade = { buyOrderId: order.id, sellOrderId: resting.id, price: fillPrice, qty: fillQty, timestamp: Date.now(), aggressor: 'buy' };
         trades.push(trade);
 
-        steps.push({ type: 'FILL', text: `FILL ${fillQty} @ ${fillPrice.toFixed(2)} (vs order #${resting.id})`, price: fillPrice, qty: fillQty, trade });
+        steps.push({ type: 'FILL', text: `FILL ${fillQty} @ ${fillPrice.toFixed(2)} (vs order #${resting.id})`, price: fillPrice, qty: fillQty, trade, restingId: resting.id, fifoPos, fifoTotal });
 
         if (resting.remaining <= 0) {
           resting.status = 'filled';
@@ -696,6 +703,8 @@ function matchOrder(order) {
 
       while (order.remaining > 0 && bidLevel.orders.length > 0) {
         const resting = bidLevel.orders[0];
+        const fifoPos = 1;
+        const fifoTotal = bidLevel.orders.length;
         const fillQty = Math.min(order.remaining, resting.remaining);
         const fillPrice = resting.price;
 
@@ -707,7 +716,7 @@ function matchOrder(order) {
         const trade = { buyOrderId: resting.id, sellOrderId: order.id, price: fillPrice, qty: fillQty, timestamp: Date.now(), aggressor: 'sell' };
         trades.push(trade);
 
-        steps.push({ type: 'FILL', text: `FILL ${fillQty} @ ${fillPrice.toFixed(2)} (vs order #${resting.id})`, price: fillPrice, qty: fillQty, trade });
+        steps.push({ type: 'FILL', text: `FILL ${fillQty} @ ${fillPrice.toFixed(2)} (vs order #${resting.id})`, price: fillPrice, qty: fillQty, trade, restingId: resting.id, fifoPos, fifoTotal });
 
         if (resting.remaining <= 0) {
           resting.status = 'filled';
@@ -1080,24 +1089,21 @@ function toggleStepMode() {
 }
 
 function updateFifoHighlight() {
-  // Peek at next step: if it's a FILL, highlight the resting order
-  const nextIdx = currentStepIndex + 1;
-  if (nextIdx < pendingSteps.length && pendingSteps[nextIdx].type === 'FILL') {
-    const trade = pendingSteps[nextIdx].trade;
-    // The resting order is the one that's not the aggressor
-    const aggressorStep = pendingSteps.find(s => s.type === 'NEW');
-    const aggressorId = aggressorStep ? aggressorStep.orderId : null;
-    highlightOrderId = trade.buyOrderId === aggressorId ? trade.sellOrderId : trade.buyOrderId;
-  } else {
-    highlightOrderId = null;
+  // Check current and next step — highlight if either is a FILL
+  function extractHighlight(step) {
+    if (!step || step.type !== 'FILL') return null;
+    return { orderId: step.restingId, price: step.price, position: step.fifoPos, total: step.fifoTotal };
   }
+  const curr = extractHighlight(pendingSteps[currentStepIndex]);
+  const next = extractHighlight(pendingSteps[currentStepIndex + 1]);
+  fifoHighlight = curr || next || null;
 }
 
 function showStepUI() {
   if (!stepMode) {
     // Instant mode: just render
     pendingSteps = [];
-    highlightOrderId = null;
+    fifoHighlight = null;
     render();
     processStepQueue();
     return;
@@ -1130,7 +1136,7 @@ function nextStep() {
     narr.textContent = 'Matching complete.';
     pendingSteps = [];
     currentStepIndex = 0;
-    highlightOrderId = null;
+    fifoHighlight = null;
     render();
     // Check for queued scenario orders
     setTimeout(() => {
@@ -1241,12 +1247,13 @@ function renderBook() {
     const visQty = levelVisibleQty(level);
     const isBest = i === askLevels.length - 1;
     const flash = flashLevels.has(level.price) ? ' ob-flash' : '';
-    const fifo = highlightOrderId && level.orders.some(o => o.id === highlightOrderId) ? ' ob-fifo-highlight' : '';
+    const isFifo = fifoHighlight && level.price === fifoHighlight.price;
     const depthPct = (cum / maxCum * 100).toFixed(1);
     const hasHidden = visQty < qty;
-    html += `<div class="ob-row ob-row-ask${isBest ? ' ob-row-best' : ''}${flash}${fifo}" onclick="clickPrice(${level.price})">
+    const fifoTag = isFifo ? `<span class="ob-fifo-tag">#${fifoHighlight.orderId} (${fifoHighlight.position}/${fifoHighlight.total})</span>` : '';
+    html += `<div class="ob-row ob-row-ask${isBest ? ' ob-row-best' : ''}${flash}${isFifo ? ' ob-fifo-highlight' : ''}" onclick="clickPrice(${level.price})">
       <div class="ob-depth-bar" style="width:${depthPct}%"></div>
-      <span class="ob-price">${level.price.toFixed(2)}</span>
+      <span class="ob-price">${level.price.toFixed(2)}${fifoTag}</span>
       <span>${hasHidden ? visQty + '+' : visQty} (${level.orders.length})</span>
       <span>${cum}</span>
     </div>`;
@@ -1272,12 +1279,13 @@ function renderBook() {
     const visQty = levelVisibleQty(level);
     const isBest = i === 0;
     const flash = flashLevels.has(level.price) ? ' ob-flash' : '';
-    const fifo = highlightOrderId && level.orders.some(o => o.id === highlightOrderId) ? ' ob-fifo-highlight' : '';
+    const isFifo = fifoHighlight && level.price === fifoHighlight.price;
     const depthPct = (cum / maxCum * 100).toFixed(1);
     const hasHidden = visQty < qty;
-    html += `<div class="ob-row ob-row-bid${isBest ? ' ob-row-best' : ''}${flash}${fifo}" onclick="clickPrice(${level.price})">
+    const fifoTag = isFifo ? `<span class="ob-fifo-tag">#${fifoHighlight.orderId} (${fifoHighlight.position}/${fifoHighlight.total})</span>` : '';
+    html += `<div class="ob-row ob-row-bid${isBest ? ' ob-row-best' : ''}${flash}${isFifo ? ' ob-fifo-highlight' : ''}" onclick="clickPrice(${level.price})">
       <div class="ob-depth-bar" style="width:${depthPct}%"></div>
-      <span class="ob-price">${level.price.toFixed(2)}</span>
+      <span class="ob-price">${level.price.toFixed(2)}${fifoTag}</span>
       <span>${hasHidden ? visQty + '+' : visQty} (${level.orders.length})</span>
       <span>${cum}</span>
     </div>`;
