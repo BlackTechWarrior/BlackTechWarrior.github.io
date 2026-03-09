@@ -220,6 +220,27 @@
     body.dark .ca-howto summary { background: #222; }
     .ca-howto-body { padding: 12px 16px; font-size: 13px; line-height: 1.6; }
 
+    /* ── Comparison table ── */
+    .ca-compare-panel {
+      border: 1px solid #e0e0e0; border-radius: 8px;
+      padding: 12px; margin-bottom: 16px; overflow-x: auto;
+    }
+    body.dark .ca-compare-panel { border-color: #333; }
+    .ca-compare-header {
+      display: grid; grid-template-columns: 1fr 45px 50px 45px 55px 45px 50px 55px;
+      padding: 4px 0; font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #595959; border-bottom: 1px solid #e0e0e0;
+      min-width: 420px;
+    }
+    body.dark .ca-compare-header { color: #9a9a9a; border-bottom-color: #333; }
+    .ca-compare-row {
+      display: grid; grid-template-columns: 1fr 45px 50px 45px 55px 45px 50px 55px;
+      padding: 4px 0; font-size: 12px; font-family: monospace;
+      border-bottom: 1px solid #f0f0f0; min-width: 420px;
+    }
+    body.dark .ca-compare-row { border-bottom-color: #2a2a2a; }
+    .ca-compare-row .ca-rate-cell { font-weight: 600; }
+
     /* ── Formulas table ── */
     .ca-formula-table {
       width: 100%; margin-top: 8px; border-collapse: collapse;
@@ -476,6 +497,18 @@
       <div class="ca-history-list" id="ca-history"></div>
     </div>
 
+    <!-- Comparison table -->
+    <div class="ca-compare-panel" id="ca-compare-panel" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="ca-card-title" style="margin-bottom:0">Pattern Comparison</span>
+        <button class="ca-reset-btn" onclick="clearComparison()">Clear</button>
+      </div>
+      <div class="ca-compare-header">
+        <span>Pattern</span><span>Lines</span><span>Assoc</span><span>Block</span><span>Replace</span><span>Hits</span><span>Misses</span><span>Rate</span>
+      </div>
+      <div id="ca-compare-body"></div>
+    </div>
+
     <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
   </main>
 
@@ -501,6 +534,8 @@ let queueResults = [];
 let briefing = [];
 let briefingIndex = 0;
 let flashTimeout = null;
+let comparisonRows = [];
+let lastPresetName = '';
 
 // ── Derived values ──
 function recalc() {
@@ -830,6 +865,7 @@ function stepQueue() {
       el.className = 'ca-narration ca-info';
       el.textContent = 'Pattern complete \u2014 ' + stats.hits + ' hits, ' + stats.misses + ' misses (' + rate + '% hit rate)';
       document.getElementById('ca-next-btn').classList.remove('visible');
+      if (lastPresetName) addComparisonRow(lastPresetName, stats.hits, stats.misses);
     }, 700);
   }
 }
@@ -985,6 +1021,7 @@ function loadPreset(name) {
   el.textContent = briefing[0];
   briefingIndex = 1;
 
+  lastPresetName = preset.name;
   document.getElementById('ca-next-btn').classList.add('visible');
   document.getElementById('ca-breakdown').innerHTML =
     'Step through to see each access';
@@ -994,6 +1031,56 @@ function loadPreset(name) {
   renderStats();
   renderQueue();
   showToast('Pattern: ' + preset.name);
+}
+
+// ── Comparison ──
+function addComparisonRow(patternName, hits, misses) {
+  var total = hits + misses;
+  var rate = total > 0 ? (hits / total * 100).toFixed(1) : '0.0';
+  var assocLabel = associativity === 1 ? 'DM' : associativity === totalLines ? 'FA' : associativity + '-way';
+  comparisonRows.push({
+    pattern: patternName,
+    lines: totalLines,
+    assoc: assocLabel,
+    block: blockSize,
+    replace: replacePolicy.toUpperCase(),
+    hits: hits,
+    misses: misses,
+    rate: rate
+  });
+  renderComparison();
+}
+
+function renderComparison() {
+  var panel = document.getElementById('ca-compare-panel');
+  var body = document.getElementById('ca-compare-body');
+  if (comparisonRows.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
+  var html = '';
+  for (var i = 0; i < comparisonRows.length; i++) {
+    var r = comparisonRows[i];
+    var rateColor = parseFloat(r.rate) >= 50 ? 'ca-color-hit' : 'ca-color-miss';
+    html += '<div class="ca-compare-row">' +
+      '<span>' + r.pattern + '</span>' +
+      '<span>' + r.lines + '</span>' +
+      '<span>' + r.assoc + '</span>' +
+      '<span>' + r.block + '</span>' +
+      '<span>' + r.replace + '</span>' +
+      '<span class="ca-color-hit">' + r.hits + '</span>' +
+      '<span class="ca-color-miss">' + r.misses + '</span>' +
+      '<span class="ca-rate-cell ' + rateColor + '">' + r.rate + '%</span>' +
+      '</div>';
+  }
+  body.innerHTML = html;
+}
+
+function clearComparison() {
+  comparisonRows = [];
+  renderComparison();
+  showToast('Comparison cleared');
 }
 
 // ── Keyboard ──
@@ -1042,7 +1129,7 @@ function showToast(msg) {
 
 // ── Ask AI ──
 function copyLearnPrompt() {
-  var prompt = 'Explain how CPU cache memory works. Cover: 1) How addresses split into tag, index, and offset bits for cache lookup. 2) Direct-mapped vs set-associative vs fully associative caches and their tradeoffs. 3) Spatial locality (why block size > 1 helps) and temporal locality (why recently used data hits). 4) LRU replacement policy and when eviction happens. 5) Thrashing \u2014 why two addresses mapping to the same set cause 0% hit rate in direct-mapped, and how associativity fixes it. Use an 8-bit address space with an 8-line cache for concrete examples.';
+  var prompt = 'Explain how CPU cache memory works. Cover: 1) How addresses split into tag, index, and offset bits for cache lookup. 2) Direct-mapped vs set-associative vs fully associative caches and their tradeoffs. 3) Spatial locality (why block size > 1 helps) and temporal locality (why recently used data hits). 4) Replacement policies: LRU (least recently used) vs FIFO (first in first out) vs Random \u2014 when does the choice matter? 5) Thrashing \u2014 why two addresses mapping to the same set cause 0% hit rate in direct-mapped, and how associativity fixes it. 6) Real-world patterns: explain why sequential array access gets ~75% hit rate (spatial locality), why a temporal loop gets 50% then improves on second pass, why power-of-2 strides and column traversal in row-major matrices cause worst-case conflict misses, and how random access with no locality serves as a baseline. Use an 8-bit address space with an 8-line cache for concrete examples.';
   navigator.clipboard.writeText(prompt).then(function() { showToast('Prompt copied to clipboard'); });
 }
 
