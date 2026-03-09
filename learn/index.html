@@ -1294,6 +1294,77 @@ const TOPICS = [
     order: 14,
   },
 
+  {
+    id: 'karnaugh-maps',
+    title: 'Karnaugh Maps',
+    shortDescription: 'A visual method for simplifying Boolean expressions by grouping adjacent cells.',
+    type: 'concept',
+    tags: ['fundamentals', 'boolean', 'minimization', 'combinational'],
+    category: 'foundations',
+    content: {
+      problem: 'A truth table with n inputs has 2<sup>n</sup> rows. Writing a sum-of-products (SOP) expression directly from the table gives one product term per 1-output row. For 4 inputs, that can be up to 16 terms. How do you find the simplest equivalent expression?',
+      howItWorks: '<strong>The K-map</strong> is a 2D grid where each cell is one row of the truth table, arranged so <em>adjacent cells differ by exactly one variable</em> (Gray code ordering). This means neighboring 1-cells can always be combined.<br><br>'
+        + '<strong>Grouping rules:</strong><br>'
+        + '\u2022 Groups must be rectangular and contain 2<sup>k</sup> cells (1, 2, 4, 8, \u2026).<br>'
+        + '\u2022 The grid wraps around \u2014 the leftmost column is adjacent to the rightmost, top row to bottom row.<br>'
+        + '\u2022 Every 1-cell must be covered by at least one group. Groups can overlap.<br>'
+        + '\u2022 Make groups as large as possible \u2014 each doubling eliminates one variable from that term.<br><br>'
+        + '<strong>Reading the result:</strong> For each group, identify which variables stay constant across all cells in the group. Variables that are 1 appear uncomplemented; variables that are 0 appear complemented. Variables that change within the group disappear. The final expression is the OR (sum) of all group terms.<br><br>'
+        + '<strong>Don\'t-cares (X):</strong> Inputs that can never occur (or whose output doesn\'t matter) can be treated as 0 or 1 \u2014 whichever makes groups larger. This is free simplification that the truth table alone can\'t reveal.<br><br>'
+        + '<strong>POS minimization:</strong> To get a product-of-sums (POS) form, group the 0-cells instead of the 1-cells. Each group of 0s gives a sum (OR) term, and the final expression is the AND of those terms.',
+      keyInsight: 'A group of 2<sup>k</sup> cells eliminates k variables. A single cell = 0 variables eliminated (full minterm). Two cells = 1 variable gone. Four cells = 2 variables gone. The K-map makes this visual \u2014 you literally see simplification as larger rectangles.',
+    },
+    interactive: kmapWidget,
+    tryItLink: '/kmap/',
+    relatedTopics: ['logic-gates', 'circuit-diagrams'],
+    order: 15,
+  },
+  {
+    id: 'flip-flops',
+    title: 'Flip-Flops & Latches',
+    shortDescription: 'How hardware remembers \u2014 level-sensitive latches vs edge-triggered flip-flops.',
+    type: 'concept',
+    tags: ['fundamentals', 'sequential', 'storage', 'clock'],
+    category: 'foundations',
+    content: {
+      problem: 'Logic gates are combinational \u2014 their output depends only on current inputs, with no memory. How does hardware store a bit?',
+      howItWorks: '<strong>SR latch:</strong> two cross-coupled NOR (or NAND) gates form a feedback loop. Setting S=1 stores a 1; setting R=1 stores a 0. The output holds its value when both inputs are 0. Problem: S=R=1 is undefined (forbidden state).<br><br>'
+        + '<strong>D latch:</strong> adds a gate to ensure only one of S/R is active. When Enable is high, the output <strong>follows</strong> the D input (transparent). When Enable goes low, the output <strong>latches</strong> and holds the last value of D. Problem: while the latch is transparent, any glitch on D passes straight through.<br><br>'
+        + '<strong>D flip-flop (edge-triggered):</strong> two D latches in series with inverted enable signals (leader-follower). The output changes <strong>only on the rising edge of the clock</strong>. During the rest of the cycle, the output is stable regardless of what D does. This is what makes synchronous design work \u2014 all flip-flops sample simultaneously at the clock edge, giving combinational logic a full cycle to settle.<br><br>'
+        + '<strong>Other types:</strong><br>'
+        + '\u2022 <strong>T flip-flop:</strong> toggles its output when T=1. Used in counters.<br>'
+        + '\u2022 <strong>JK flip-flop:</strong> like SR but J=K=1 toggles instead of being undefined. General-purpose but D is simpler and dominates modern design.<br><br>'
+        + '<strong>Setup and hold:</strong> D must be stable for a window around the clock edge \u2014 <em>setup time</em> before, <em>hold time</em> after. Violating these causes <strong>metastability</strong>: the flip-flop output can float at an intermediate voltage, potentially for an unpredictable duration.',
+      keyInsight: 'The D flip-flop is the universal storage element in synchronous digital design. Every register, every pipeline stage, every state machine is built from D flip-flops. The edge-triggered behavior creates a clean separation: combinational logic computes during the cycle, flip-flops capture the result at the edge.',
+    },
+    interactive: flipFlopWidget,
+    relatedTopics: ['logic-gates', 'setup-hold', 'pipelining', 'fsm'],
+    order: 16,
+  },
+  {
+    id: 'fsm',
+    title: 'Finite State Machines',
+    shortDescription: 'How hardware makes decisions that depend on history \u2014 states, transitions, and outputs.',
+    type: 'concept',
+    tags: ['fundamentals', 'sequential', 'state-machine', 'control'],
+    category: 'foundations',
+    content: {
+      problem: 'A combinational circuit\'s output depends only on current inputs. But many tasks need history: "output 1 only after seeing input sequence 1-0-1." How does hardware track where it is in a process?',
+      howItWorks: '<strong>An FSM</strong> has a finite set of <strong>states</strong>, stored in flip-flops. On each clock edge, the machine reads its current state and inputs, computes the <strong>next state</strong> and <strong>outputs</strong> via combinational logic, and transitions.<br><br>'
+        + '<strong>Moore vs Mealy:</strong><br>'
+        + '\u2022 <strong>Moore:</strong> outputs depend <em>only on the current state</em>. Outputs change one cycle after the input that caused the transition. Simpler, more predictable timing.<br>'
+        + '\u2022 <strong>Mealy:</strong> outputs depend on <em>current state AND current inputs</em>. Can respond in the same cycle as the input. Often needs fewer states than Moore, but outputs can glitch if inputs change asynchronously.<br><br>'
+        + '<strong>State encoding:</strong><br>'
+        + '\u2022 <strong>Binary:</strong> uses \u2308log<sub>2</sub>(N)\u2309 flip-flops for N states. Compact, but next-state logic can be complex.<br>'
+        + '\u2022 <strong>One-hot:</strong> one flip-flop per state, exactly one is high at a time. Uses more flip-flops but next-state logic is simpler and faster \u2014 preferred in FPGAs where flip-flops are abundant.<br><br>'
+        + '<strong>In practice:</strong> FSMs are everywhere in hardware. A traffic light controller, a UART receiver, a cache controller, a CPU\'s control unit, a matching engine\'s order processing pipeline \u2014 all are FSMs. The implementation is always: flip-flops for state + combinational logic for transitions and outputs.',
+      keyInsight: 'An FSM is the hardware equivalent of a state machine diagram. Flip-flops store "where am I?", combinational logic answers "given where I am and what I see, where do I go next?" Every sequential circuit, from a simple counter to a CPU, is an FSM.',
+    },
+    interactive: fsmWidget,
+    relatedTopics: ['flip-flops', 'logic-gates', 'setup-hold'],
+    order: 17,
+  },
+
   /* ── Timing & Performance ── */
   {
     id: 'critical-path',
@@ -1397,6 +1468,30 @@ const TOPICS = [
     tryItLink: '/adders/',
     relatedTopics: ['critical-path', 'pipelining', 'rca', 'cla', 'carry-select', 'cache-fundamentals'],
     order: 5,
+  },
+
+  {
+    id: 'pipeline-hazards',
+    title: 'Pipeline Hazards',
+    shortDescription: 'Data, control, and structural hazards \u2014 what breaks pipelining and how hardware fixes it.',
+    type: 'concept',
+    tags: ['timing', 'performance', 'pipelining', 'hazards'],
+    category: 'timing',
+    content: {
+      problem: 'Pipelining overlaps instruction execution for higher throughput. But what happens when instruction 2 needs the result of instruction 1, which hasn\'t finished yet?',
+      howItWorks: '<strong>Data hazards (RAW)</strong> \u2014 Read After Write. Instruction B reads a register that instruction A hasn\'t written back yet. Example:<br>'
+        + '<code>ADD R1, R2, R3</code> \u2014 writes R1 in WB stage (cycle 5)<br>'
+        + '<code>SUB R4, R1, R5</code> \u2014 needs R1 in ID stage (cycle 3)<br><br>'
+        + '<strong>Without forwarding:</strong> the pipeline must <strong>stall</strong> (insert bubble cycles) until the result is available. A 2-cycle stall per dependency devastates throughput.<br><br>'
+        + '<strong>Forwarding (bypassing):</strong> the result is available at the EX stage output <em>before</em> it\'s written to the register file. Hardware adds multiplexers that route the EX or MEM stage result directly to the next instruction\'s ALU input. This eliminates most stalls.<br><br>'
+        + '<strong>Load-use hazard:</strong> one case forwarding can\'t fully solve. A load instruction\'s data isn\'t available until the end of the MEM stage. If the very next instruction needs that value for EX, a <strong>1-cycle stall</strong> is unavoidable. Compilers reorder instructions to fill this slot when possible (delay slot scheduling).<br><br>'
+        + '<strong>Control hazards:</strong> branch instructions change the PC, but the pipeline has already fetched the next sequential instructions. Options: <strong>stall</strong> until the branch resolves (expensive), <strong>predict</strong> the branch direction (modern CPUs: ~95% accuracy), or <strong>flush</strong> the pipeline on misprediction.<br><br>'
+        + '<strong>Structural hazards:</strong> two instructions need the same hardware resource in the same cycle (e.g., one memory port for both instruction fetch and data load). Solved by duplicating resources (separate instruction and data caches).',
+      keyInsight: 'Forwarding is the key optimization. It works because the result exists inside the pipeline before it\'s written back \u2014 you just need wires (and muxes) to route it where it\'s needed. The only stall that remains in a well-designed pipeline is the 1-cycle load-use penalty.',
+    },
+    interactive: pipelineHazardWidget,
+    relatedTopics: ['pipelining', 'critical-path', 'area-vs-speed'],
+    order: 6,
   },
 
   /* ── Multiplier Architectures ── */
@@ -1586,6 +1681,30 @@ const TOPICS = [
     order: 1,
   },
 
+  {
+    id: 'endianness',
+    title: 'Endianness',
+    shortDescription: 'Big-endian vs little-endian \u2014 how multi-byte values map to memory addresses.',
+    type: 'concept',
+    tags: ['numbers', 'representation', 'memory'],
+    category: 'numbers',
+    content: {
+      problem: 'A 32-bit integer like <code>0x44332211</code> occupies 4 bytes. When stored at memory address 0x00, which byte goes where? Different processors answer this differently.',
+      howItWorks: '<strong>Big-endian:</strong> the <strong>most significant byte</strong> (MSB) is stored at the lowest address. <code>0x44332211</code> at address 0x00:<br>'
+        + '<code>Addr 0x00: 0x44 \u2502 0x01: 0x33 \u2502 0x02: 0x22 \u2502 0x03: 0x11</code><br>'
+        + 'Reads left-to-right, same as how we write numbers. Used by network protocols (TCP/IP), SPARC, and older Motorola/PowerPC.<br><br>'
+        + '<strong>Little-endian:</strong> the <strong>least significant byte</strong> (LSB) is stored at the lowest address. <code>0x44332211</code> at address 0x00:<br>'
+        + '<code>Addr 0x00: 0x11 \u2502 0x01: 0x22 \u2502 0x02: 0x33 \u2502 0x03: 0x44</code><br>'
+        + 'Looks "backwards" but has a hardware advantage: the address of the value doesn\'t change regardless of size. The byte at address 0 is always the least significant, whether you\'re reading 1, 2, or 4 bytes. This simplifies type casting in hardware. Used by x86, ARM (default), and RISC-V (default).<br><br>'
+        + '<strong>Network byte order:</strong> TCP/IP standardized big-endian. When an x86 machine sends a 16-bit port number, it must byte-swap it first (<code>htons()</code> in C). The receiver byte-swaps it back. This is a constant source of bugs when the conversion is forgotten.<br><br>'
+        + '<strong>Bi-endian:</strong> ARM and RISC-V can operate in either mode, configured at boot. In practice, little-endian dominates because the x86 ecosystem established it as the default for most software.',
+      keyInsight: 'Endianness only matters when you view memory as individual bytes. Inside the CPU, a 32-bit register is just a 32-bit value \u2014 there\'s no byte order. The issue arises at the boundary: storing to memory, sending over a network, or reading a binary file written by a different architecture.',
+    },
+    interactive: endiannessWidget,
+    relatedTopics: ['ieee754', 'twos-complement'],
+    order: 2,
+  },
+
   /* ── Order Book & Matching ── */
   {
     id: 'order-book-mechanics',
@@ -1674,6 +1793,51 @@ const TOPICS = [
     tryItLink: '/cache/',
     relatedTopics: ['fifo-queue', 'area-vs-speed'],
     order: 1,
+  },
+  {
+    id: 'write-policies',
+    title: 'Write Policies',
+    shortDescription: 'Write-through vs write-back \u2014 when and how cached writes reach main memory.',
+    type: 'concept',
+    tags: ['cache', 'memory', 'write-back', 'write-through', 'dirty bit'],
+    category: 'memory',
+    content: {
+      problem: 'When the CPU writes data that\'s in the cache, the cache copy is updated instantly. But main memory still has the old value. When should the cache send the update to memory \u2014 immediately, or later?',
+      howItWorks: '<strong>Write-through:</strong> Every write updates both the cache <em>and</em> main memory at the same time. The cache and memory always agree. Simple, but every store instruction generates a memory bus transaction, even if the same address is written repeatedly. A <strong>write buffer</strong> (small FIFO queue) helps: writes are posted to the buffer and drained to memory in the background, so the CPU doesn\'t stall on every store. If the buffer fills, the CPU must wait.<br><br>'
+        + '<strong>Write-back:</strong> Writes update only the cache. The cache line is marked <strong>dirty</strong> (a single bit per line). Memory is not touched until the dirty line is <strong>evicted</strong> \u2014 only then is the data written back. If the line is written 100 times before eviction, only 1 memory write occurs. This drastically reduces memory traffic, but adds complexity: on eviction, hardware must check the dirty bit and conditionally write back before loading the new line.<br><br>'
+        + '<strong>Write-allocate vs no-write-allocate:</strong> What happens on a <strong>write miss</strong> (the address isn\'t cached)? <strong>Write-allocate</strong> fetches the block into the cache first, then writes to it \u2014 betting on future accesses to the same block (spatial/temporal locality). <strong>No-write-allocate</strong> writes directly to memory without caching the block. Write-back caches almost always use write-allocate. Write-through caches can go either way.<br><br>'
+        + '<strong>Common pairings:</strong><br>'
+        + '\u2022 <strong>Write-back + write-allocate</strong> \u2014 most L1/L2 caches in modern CPUs. Minimizes memory traffic by absorbing repeated writes and caching on miss.<br>'
+        + '\u2022 <strong>Write-through + no-write-allocate</strong> \u2014 simpler, used in some embedded or GPU caches. Every write goes to memory; write misses skip the cache entirely.',
+      keyInsight: 'Write-back trades a 1-bit cost per cache line (the dirty bit) for a massive reduction in memory bus traffic. If a loop writes to the same array element 1000 times, write-through generates 1000 memory writes; write-back generates 1. This is why virtually every modern CPU cache uses write-back.',
+    },
+    interactive: writePolicyWidget,
+    tryItLink: '/cache/',
+    relatedTopics: ['cache-fundamentals', 'fifo-queue'],
+    order: 2,
+  },
+  {
+    id: 'replacement-policies',
+    title: 'Cache Replacement Policies',
+    shortDescription: 'LRU, FIFO, and Random \u2014 how caches decide which line to evict.',
+    type: 'concept',
+    tags: ['cache', 'memory', 'eviction', 'LRU', 'FIFO'],
+    category: 'memory',
+    content: {
+      problem: 'When a cache set is full and a new block must be loaded, one existing line must be evicted. Which one? The choice directly affects hit rate, and the hardware cost varies dramatically between policies.',
+      howItWorks: '<strong>LRU (Least Recently Used):</strong> evicts the line that hasn\'t been accessed the longest. Bets on temporal locality \u2014 recently used data is likely to be used again soon. For 2-way caches, LRU is trivial: a single bit per set tracks which way was accessed last. For 4-way, you need to track a full ordering of 4 items (4! = 24 states, 5 bits). For 8-way, exact LRU requires tracking 8! orderings \u2014 prohibitively expensive. Real 8+ way caches use <strong>pseudo-LRU</strong> (tree-based approximation with 7 bits for 8 ways).<br><br>'
+        + '<strong>FIFO (First In, First Out):</strong> evicts the line that was <em>loaded</em> earliest, regardless of whether it was accessed recently. Simpler hardware: just a counter per set pointing to the next victim. Downside: FIFO can evict hot data that was loaded long ago but is still being used frequently. This causes <strong>Belady\'s anomaly</strong> \u2014 more cache ways can actually <em>increase</em> misses for some access patterns (unlike LRU, which is immune to this).<br><br>'
+        + '<strong>Random:</strong> picks a victim at random. Essentially free hardware (just an LFSR or counter). No tracking state per set at all. Surprisingly competitive: for high-associativity caches (8+ ways), random is within 1\u20132% of LRU\'s hit rate on most workloads. This is why some real designs (ARM Cortex-A series L2) use random replacement.<br><br>'
+        + '<strong>Practical considerations:</strong><br>'
+        + '\u2022 LRU is optimal for caches with 2\u20134 ways where the tracking cost is low.<br>'
+        + '\u2022 Random is preferred when associativity is high and the silicon budget for tracking is better spent elsewhere.<br>'
+        + '\u2022 FIFO is rare in caches but common in TLBs and write buffers where simplicity matters.',
+      keyInsight: 'LRU\'s advantage shrinks as associativity grows. At 2-way, LRU clearly wins because every eviction decision is binary. At 16-way, tracking exact recency of 16 items costs more hardware than it saves in hit rate \u2014 random gets within a few percent for essentially zero cost. The right policy depends on the associativity budget.',
+    },
+    interactive: replacementPolicyWidget,
+    tryItLink: '/cache/',
+    relatedTopics: ['cache-fundamentals', 'write-policies', 'fifo-queue'],
+    order: 3,
   },
 ];
 
@@ -2294,6 +2458,1025 @@ function fifoWidget(container) {
   container.querySelector('#fifoEnq').addEventListener('click', enqueue);
   container.querySelector('#fifoDeq').addEventListener('click', dequeue);
   container.querySelector('#fifoReset').addEventListener('click', reset);
+  render();
+}
+
+function writePolicyWidget(container) {
+  const CACHE_LINES = 4;
+  const MEM_SIZE = 8;
+  let policy = 'write-through';
+  let cache = new Array(CACHE_LINES).fill(null); // {addr, val, dirty}
+  let mem = [];
+  let log = [];
+  let wbCount = 0;
+  let memWrites = 0;
+
+  function reset() {
+    cache = new Array(CACHE_LINES).fill(null);
+    mem = [];
+    for (let i = 0; i < MEM_SIZE; i++) mem.push({ addr: i, val: 0 });
+    log = [];
+    wbCount = 0;
+    memWrites = 0;
+    render();
+  }
+
+  function mapSet(addr) { return addr % CACHE_LINES; }
+
+  function doWrite(addr, val) {
+    const set = mapSet(addr);
+    const line = cache[set];
+
+    if (line && line.addr === addr) {
+      // Write hit
+      line.val = val;
+      if (policy === 'write-through') {
+        mem[addr].val = val;
+        memWrites++;
+        log.push(`<span style="color:#27ae60">HIT</span> Write addr ${addr} = ${val}. Cache + memory updated. <span style="color:#888">(mem write #${memWrites})</span>`);
+      } else {
+        line.dirty = true;
+        log.push(`<span style="color:#27ae60">HIT</span> Write addr ${addr} = ${val}. Cache updated, marked <strong style="color:#e67e22">dirty</strong>.`);
+      }
+    } else {
+      // Write miss — write-allocate: fetch then write
+      if (line && line.dirty) {
+        // Evict dirty line: write back
+        mem[line.addr].val = line.val;
+        memWrites++;
+        wbCount++;
+        log.push(`<span style="color:#e67e22">EVICT</span> Dirty line addr ${line.addr} written back to memory. <span style="color:#888">(mem write #${memWrites})</span>`);
+      }
+      // Allocate
+      cache[set] = { addr, val, dirty: false };
+      if (policy === 'write-through') {
+        mem[addr].val = val;
+        memWrites++;
+        log.push(`<span style="color:#e74c3c">MISS</span> Write addr ${addr} = ${val}. Allocated + memory updated. <span style="color:#888">(mem write #${memWrites})</span>`);
+      } else {
+        cache[set].dirty = true;
+        log.push(`<span style="color:#e74c3c">MISS</span> Write addr ${addr} = ${val}. Allocated, marked <strong style="color:#e67e22">dirty</strong>.`);
+      }
+    }
+    render();
+  }
+
+  function render() {
+    let h = '<div class="widget-label">Try it \u2014 Write Policies</div>';
+
+    // Policy toggle
+    h += '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">';
+    h += `<button class="wp-pol btn-t ${policy === 'write-through' ? 'on' : ''}" data-p="write-through">Write-Through</button>`;
+    h += `<button class="wp-pol btn-t ${policy === 'write-back' ? 'on' : ''}" data-p="write-back">Write-Back</button>`;
+    h += '<span style="margin-left:auto;font-size:12px;color:#888">Memory writes: <strong>' + memWrites + '</strong></span>';
+    h += '</div>';
+
+    // Input row
+    h += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">';
+    h += '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Addr <select id="wpAddr" style="font-family:monospace;font-size:13px;padding:3px 6px;border-radius:4px;border:1px solid #ccc;background:inherit;color:inherit">';
+    for (let i = 0; i < MEM_SIZE; i++) h += `<option value="${i}">${i}</option>`;
+    h += '</select></label>';
+    h += '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Value <input id="wpVal" type="number" min="0" max="99" value="1" style="width:50px;font-family:monospace;font-size:13px;padding:3px 6px;border-radius:4px;border:1px solid #ccc;background:inherit;color:inherit"></label>';
+    h += '<button class="btn-t" id="wpWrite">Write</button>';
+    h += '<button class="btn-t" id="wpReset" style="margin-left:auto">Reset</button>';
+    h += '</div>';
+
+    // Cache + Memory side by side
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;font-family:monospace">';
+
+    // Cache
+    h += '<div><div style="font-weight:600;margin-bottom:4px;font-family:sans-serif;font-size:12px">Cache <span style="color:#888">(4 lines, direct-mapped)</span></div>';
+    h += '<table style="width:100%;border-collapse:collapse">';
+    h += '<tr style="font-size:11px;color:#888"><th style="text-align:left;padding:2px 6px">Set</th><th style="text-align:left;padding:2px 6px">Addr</th><th style="text-align:left;padding:2px 6px">Val</th>';
+    if (policy === 'write-back') h += '<th style="text-align:left;padding:2px 6px">Dirty</th>';
+    h += '</tr>';
+    for (let i = 0; i < CACHE_LINES; i++) {
+      const line = cache[i];
+      const bg = line ? (line.dirty ? 'rgba(230,126,34,0.1)' : 'rgba(39,174,96,0.06)') : 'transparent';
+      h += `<tr style="background:${bg};border-bottom:1px solid rgba(128,128,128,0.15)">`;
+      h += `<td style="padding:3px 6px;color:#888">${i}</td>`;
+      if (line) {
+        h += `<td style="padding:3px 6px">${line.addr}</td>`;
+        h += `<td style="padding:3px 6px;font-weight:600">${line.val}</td>`;
+        if (policy === 'write-back') h += `<td style="padding:3px 6px">${line.dirty ? '<span style="color:#e67e22">1</span>' : '0'}</td>`;
+      } else {
+        h += '<td style="padding:3px 6px;color:#888">\u2014</td><td style="padding:3px 6px;color:#888">\u2014</td>';
+        if (policy === 'write-back') h += '<td style="padding:3px 6px;color:#888">\u2014</td>';
+      }
+      h += '</tr>';
+    }
+    h += '</table></div>';
+
+    // Memory
+    h += '<div><div style="font-weight:600;margin-bottom:4px;font-family:sans-serif;font-size:12px">Main Memory</div>';
+    h += '<table style="width:100%;border-collapse:collapse">';
+    h += '<tr style="font-size:11px;color:#888"><th style="text-align:left;padding:2px 6px">Addr</th><th style="text-align:left;padding:2px 6px">Val</th></tr>';
+    for (let i = 0; i < MEM_SIZE; i++) {
+      // Highlight if cache has a different (dirty) value for this addr
+      const set = mapSet(i);
+      const line = cache[set];
+      const stale = line && line.addr === i && line.dirty && line.val !== mem[i].val;
+      const bg = stale ? 'rgba(231,76,60,0.08)' : 'transparent';
+      h += `<tr style="background:${bg};border-bottom:1px solid rgba(128,128,128,0.15)">`;
+      h += `<td style="padding:3px 6px;color:#888">${i}</td>`;
+      h += `<td style="padding:3px 6px">${mem[i].val}${stale ? ' <span style="color:#e74c3c;font-size:10px">(stale)</span>' : ''}</td>`;
+      h += '</tr>';
+    }
+    h += '</table></div>';
+
+    h += '</div>';
+
+    // Log
+    if (log.length > 0) {
+      h += '<div style="margin-top:10px;font-size:12px;line-height:1.8;max-height:120px;overflow-y:auto;padding:6px 8px;border:1px solid rgba(128,128,128,0.2);border-radius:6px">';
+      const recent = log.slice(-6);
+      for (let i = recent.length - 1; i >= 0; i--) h += recent[i] + '<br>';
+      h += '</div>';
+    }
+
+    container.innerHTML = h;
+
+    // Bind events
+    container.querySelectorAll('.wp-pol').forEach(btn => {
+      btn.addEventListener('click', () => {
+        policy = btn.dataset.p;
+        // Reset on policy switch to avoid stale dirty state confusion
+        reset();
+      });
+    });
+    container.querySelector('#wpWrite').addEventListener('click', () => {
+      const addr = parseInt(container.querySelector('#wpAddr').value);
+      const val = parseInt(container.querySelector('#wpVal').value) || 0;
+      doWrite(addr, val);
+    });
+    container.querySelector('#wpReset').addEventListener('click', reset);
+  }
+
+  reset();
+}
+
+function kmapWidget(container) {
+  let vars = 2;
+  let cells = new Array(4).fill(0); // 0, 1, or 'x'
+
+  function grayOrder(n) {
+    if (n === 1) return [0, 1];
+    if (n === 2) return [0, 1, 3, 2]; // 00,01,11,10
+    return [0, 1, 3, 2];
+  }
+
+  function varLabel(idx) { return String.fromCharCode(65 + idx); }
+
+  function cellsForVars(n) { return 1 << n; }
+
+  function reset() {
+    cells = new Array(cellsForVars(vars)).fill(0);
+    render();
+  }
+
+  function getGroups() {
+    // Simple grouping for 2-var K-map (4 cells arranged as 2x2)
+    // For 3-var: 2x4, For 2-var: 2x2
+    // We'll find prime implicants using Quine-McCluskey-like approach for small maps
+    const n = cellsForVars(vars);
+    const minterms = [];
+    const dontcares = [];
+    for (let i = 0; i < n; i++) {
+      if (cells[i] === 1) minterms.push(i);
+      else if (cells[i] === 'x') dontcares.push(i);
+    }
+    if (minterms.length === 0) return { groups: [], expr: '0' };
+
+    const all = [...minterms, ...dontcares];
+    // Find all valid rectangular groups (power-of-2 sized)
+    const groups = [];
+
+    function canGroup(indices) {
+      // All indices must be 1 or x
+      return indices.every(i => cells[i] === 1 || cells[i] === 'x');
+    }
+
+    function diffBits(a, b) {
+      let d = a ^ b;
+      let count = 0;
+      while (d) { count += d & 1; d >>= 1; }
+      return count;
+    }
+
+    // Generate all possible groups: a group is defined by a mask (which bits are fixed)
+    // and a value for the fixed bits
+    const possibleGroups = [];
+    for (let mask = 0; mask < n; mask++) {
+      // mask bits = don't care positions within the group
+      // Check mask is valid: must have bits only in variable positions
+      const fixed = (~mask) & (n - 1);
+      const groupSize = 1 << popcount(mask);
+      if (groupSize < 1) continue;
+
+      // For each assignment of the fixed bits
+      for (let val = 0; val < n; val++) {
+        if ((val & mask) !== 0) continue; // fixed bits only
+        // Generate all members
+        const members = [];
+        for (let sub = 0; ; sub = (sub - mask) & mask) {
+          members.push(val | sub);
+          if (sub === mask) break;
+        }
+        if (members.length >= 2 && canGroup(members) && members.some(i => cells[i] === 1)) {
+          possibleGroups.push({ members: members.sort((a,b) => a-b), mask, val, size: members.length });
+        }
+      }
+    }
+
+    function popcount(x) { let c = 0; while (x) { c += x & 1; x >>= 1; } return c; }
+
+    // Sort by size descending (prefer larger groups)
+    possibleGroups.sort((a, b) => b.size - a.size);
+
+    // Greedy cover: pick largest groups that cover uncovered minterms
+    const covered = new Set();
+    const selected = [];
+    for (const g of possibleGroups) {
+      const coversNew = g.members.some(m => minterms.includes(m) && !covered.has(m));
+      if (coversNew) {
+        selected.push(g);
+        for (const m of g.members) {
+          if (minterms.includes(m)) covered.add(m);
+        }
+      }
+      if (covered.size === minterms.length) break;
+    }
+
+    // Also cover any remaining as single cells
+    for (const m of minterms) {
+      if (!covered.has(m)) {
+        selected.push({ members: [m], mask: 0, val: m, size: 1 });
+        covered.add(m);
+      }
+    }
+
+    // Build expression from groups
+    const terms = selected.map(g => {
+      const term = [];
+      for (let i = vars - 1; i >= 0; i--) {
+        const bit = 1 << i;
+        if (g.mask & bit) continue; // this variable is eliminated
+        term.push(g.val & bit ? varLabel(vars - 1 - i) : varLabel(vars - 1 - i) + "'");
+      }
+      return term.length === 0 ? '1' : term.join('');
+    });
+    const expr = terms.join(' + ') || '0';
+
+    return { groups: selected, expr };
+  }
+
+  function render() {
+    let h = '<div class="widget-label">Try it \u2014 K-Map Simplification</div>';
+
+    // Variable count selector
+    h += '<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">';
+    h += '<span style="font-size:12px;color:#888">Variables:</span>';
+    for (const v of [2, 3]) {
+      h += `<button class="btn-t km-vars ${vars === v ? 'on' : ''}" data-v="${v}">${v}</button>`;
+    }
+    h += '<button class="btn-t" id="kmReset" style="margin-left:auto">Reset</button>';
+    h += '</div>';
+
+    const n = cellsForVars(vars);
+    const { groups, expr } = getGroups();
+    const groupColors = ['rgba(52,152,219,0.25)', 'rgba(46,204,113,0.25)', 'rgba(231,76,60,0.25)', 'rgba(155,89,182,0.25)'];
+
+    // Build color map for cells
+    const cellColors = new Array(n).fill(null).map(() => []);
+    groups.forEach((g, gi) => {
+      g.members.forEach(m => cellColors[m].push(groupColors[gi % groupColors.length]));
+    });
+
+    if (vars === 2) {
+      // 2x2 grid: rows = A (0,1), cols = B (0,1)
+      h += '<table style="border-collapse:collapse;margin:0 auto;font-family:monospace;font-size:14px">';
+      h += `<tr><td style="padding:4px 10px;font-size:11px;color:#888"></td><td style="padding:4px 10px;font-size:11px;color:#888;text-align:center">${varLabel(1)}=0</td><td style="padding:4px 10px;font-size:11px;color:#888;text-align:center">${varLabel(1)}=1</td></tr>`;
+      for (let a = 0; a < 2; a++) {
+        h += `<tr><td style="padding:4px 10px;font-size:11px;color:#888">${varLabel(0)}=${a}</td>`;
+        for (let b = 0; b < 2; b++) {
+          const idx = a * 2 + b;
+          const val = cells[idx];
+          const bg = cellColors[idx].length > 0 ? cellColors[idx][0] : 'transparent';
+          const display = val === 'x' ? 'X' : val;
+          h += `<td class="km-cell" data-i="${idx}" style="width:48px;height:48px;text-align:center;border:1px solid rgba(128,128,128,0.3);cursor:pointer;font-weight:600;background:${bg};user-select:none">${display}</td>`;
+        }
+        h += '</tr>';
+      }
+      h += '</table>';
+    } else {
+      // 3-var: 2 rows (A), 4 cols (BC in Gray code: 00,01,11,10)
+      const colOrder = [0, 1, 3, 2];
+      const colLabels = ['00', '01', '11', '10'];
+      h += '<table style="border-collapse:collapse;margin:0 auto;font-family:monospace;font-size:14px">';
+      h += `<tr><td style="padding:4px 8px;font-size:11px;color:#888">${varLabel(0)}\\${varLabel(1)}${varLabel(2)}</td>`;
+      colLabels.forEach(l => { h += `<td style="padding:4px 10px;font-size:11px;color:#888;text-align:center">${l}</td>`; });
+      h += '</tr>';
+      for (let a = 0; a < 2; a++) {
+        h += `<tr><td style="padding:4px 10px;font-size:11px;color:#888">${a}</td>`;
+        for (let ci = 0; ci < 4; ci++) {
+          const idx = a * 4 + colOrder[ci];
+          const val = cells[idx];
+          const bg = cellColors[idx].length > 0 ? cellColors[idx][0] : 'transparent';
+          const display = val === 'x' ? 'X' : val;
+          h += `<td class="km-cell" data-i="${idx}" style="width:48px;height:48px;text-align:center;border:1px solid rgba(128,128,128,0.3);cursor:pointer;font-weight:600;background:${bg};user-select:none">${display}</td>`;
+        }
+        h += '</tr>';
+      }
+      h += '</table>';
+    }
+
+    h += '<div style="margin-top:10px;font-size:12px;color:#888;text-align:center">Click cells to cycle: 0 \u2192 1 \u2192 X \u2192 0</div>';
+
+    // Result
+    h += `<div style="margin-top:10px;font-size:14px;font-family:monospace;text-align:center;padding:8px;border-radius:6px;background:rgba(128,128,128,0.06)"><strong>SOP:</strong> ${expr}</div>`;
+
+    container.innerHTML = h;
+
+    // Bind events
+    container.querySelectorAll('.km-cell').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const i = parseInt(cell.dataset.i);
+        if (cells[i] === 0) cells[i] = 1;
+        else if (cells[i] === 1) cells[i] = 'x';
+        else cells[i] = 0;
+        render();
+      });
+    });
+    container.querySelectorAll('.km-vars').forEach(btn => {
+      btn.addEventListener('click', () => {
+        vars = parseInt(btn.dataset.v);
+        cells = new Array(cellsForVars(vars)).fill(0);
+        render();
+      });
+    });
+    container.querySelector('#kmReset').addEventListener('click', reset);
+  }
+
+  render();
+}
+
+function flipFlopWidget(container) {
+  let clk = 0;
+  let d = 0;
+  let q = 0;
+  let history = []; // {clk, d, q}
+  const MAX_HISTORY = 12;
+
+  function clockTick() {
+    clk = 1;
+    q = d; // D flip-flop: Q takes D on rising edge
+    history.push({ clk: 1, d, q });
+    if (history.length > MAX_HISTORY) history.shift();
+    render();
+  }
+
+  function toggleD() {
+    d = d ? 0 : 1;
+    history.push({ clk: 0, d, q });
+    if (history.length > MAX_HISTORY) history.shift();
+    render();
+  }
+
+  function reset() {
+    clk = 0; d = 0; q = 0;
+    history = [{ clk: 0, d: 0, q: 0 }];
+    render();
+  }
+
+  function render() {
+    let h = '<div class="widget-label">Try it \u2014 D Flip-Flop</div>';
+
+    // Current state
+    h += '<div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;flex-wrap:wrap">';
+    h += `<button class="btn-t" id="ffToggleD">D = ${d} (click to toggle)</button>`;
+    h += `<button class="btn-t on" id="ffClk">\u2191 Rising Edge</button>`;
+    h += `<span style="font-family:monospace;font-size:14px;font-weight:600">Q = ${q}</span>`;
+    h += '<button class="btn-t" id="ffReset" style="margin-left:auto">Reset</button>';
+    h += '</div>';
+
+    // Timing diagram
+    if (history.length > 1) {
+      const W = Math.min(container.clientWidth - 20, 500);
+      const stepW = Math.floor(W / Math.min(history.length, MAX_HISTORY));
+      const H = 100;
+      const rowH = 24;
+      const topPad = 4;
+
+      h += `<svg width="${stepW * Math.min(history.length, MAX_HISTORY) + 40}" height="${H}" style="display:block;font-family:monospace;font-size:11px">`;
+
+      const labels = ['CLK', 'D', 'Q'];
+      const keys = ['clk', 'd', 'q'];
+      const colors = ['#888', '#3498db', '#e67e22'];
+
+      labels.forEach((label, ri) => {
+        const y = topPad + ri * (rowH + 6);
+        h += `<text x="0" y="${y + rowH / 2 + 4}" fill="${colors[ri]}" font-size="11">${label}</text>`;
+
+        for (let i = 0; i < history.length; i++) {
+          const x = 32 + i * stepW;
+          const val = history[i][keys[ri]];
+          const highY = y + 2;
+          const lowY = y + rowH - 2;
+          const curY = val ? highY : lowY;
+
+          // Draw level
+          h += `<line x1="${x}" y1="${curY}" x2="${x + stepW}" y2="${curY}" stroke="${colors[ri]}" stroke-width="2"/>`;
+
+          // Draw transition from previous
+          if (i > 0) {
+            const prevVal = history[i - 1][keys[ri]];
+            const prevY = prevVal ? highY : lowY;
+            if (prevY !== curY) {
+              h += `<line x1="${x}" y1="${prevY}" x2="${x}" y2="${curY}" stroke="${colors[ri]}" stroke-width="2"/>`;
+            }
+          }
+
+          // Rising edge indicator for CLK
+          if (ri === 0 && history[i].clk === 1 && (i === 0 || history[i - 1].clk === 0)) {
+            h += `<line x1="${x}" y1="${y - 1}" x2="${x}" y2="${y + rowH + 1}" stroke="#e74c3c" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>`;
+          }
+        }
+      });
+
+      h += '</svg>';
+    }
+
+    h += '<div style="font-size:11px;color:#888;margin-top:6px">Toggle D freely, then click Rising Edge. Q only updates at the clock edge.</div>';
+
+    container.innerHTML = h;
+
+    container.querySelector('#ffToggleD').addEventListener('click', toggleD);
+    container.querySelector('#ffClk').addEventListener('click', clockTick);
+    container.querySelector('#ffReset').addEventListener('click', reset);
+  }
+
+  history = [{ clk: 0, d: 0, q: 0 }];
+  render();
+}
+
+function fsmWidget(container) {
+  // Sequence detector: detects "101" pattern (overlapping)
+  // States: S0 (idle), S1 (seen 1), S10 (seen 10), S101 (detected!)
+  const states = ['S0', 'S1', 'S10'];
+  const stateLabels = {
+    S0: 'Idle',
+    S1: 'Seen "1"',
+    S10: 'Seen "10"',
+  };
+  // Transition table: state -> { 0: nextState, 1: nextState }
+  const transitions = {
+    S0:  { 0: 'S0',  1: 'S1' },
+    S1:  { 0: 'S10', 1: 'S1' },
+    S10: { 0: 'S0',  1: 'S1' }, // S10 + 1 = detected "101", then back to S1 (overlap)
+  };
+  // Output: 1 when in S10 and input is 1 (Mealy)
+  function getOutput(state, input) {
+    return state === 'S10' && input === 1 ? 1 : 0;
+  }
+
+  let currentState = 'S0';
+  let inputHistory = [];
+  let stateHistory = ['S0'];
+  let outputHistory = [];
+
+  function feedInput(bit) {
+    const out = getOutput(currentState, bit);
+    currentState = transitions[currentState][bit];
+    inputHistory.push(bit);
+    stateHistory.push(currentState);
+    outputHistory.push(out);
+    render();
+  }
+
+  function reset() {
+    currentState = 'S0';
+    inputHistory = [];
+    stateHistory = ['S0'];
+    outputHistory = [];
+    render();
+  }
+
+  function render() {
+    let h = '<div class="widget-label">Try it \u2014 Sequence Detector FSM (detects "101")</div>';
+
+    // State diagram (simple text/visual)
+    const circleR = 28;
+    const svgW = Math.min(container.clientWidth - 20, 400);
+    const svgH = 120;
+    const positions = {
+      S0: { x: 60, y: 60 },
+      S1: { x: svgW / 2, y: 60 },
+      S10: { x: svgW - 60, y: 60 },
+    };
+
+    h += `<svg width="${svgW}" height="${svgH}" style="display:block;margin-bottom:10px;font-family:sans-serif">`;
+
+    // Draw transitions as arrows
+    const arrows = [
+      { from: 'S0', to: 'S1', label: '1', curve: 0 },
+      { from: 'S1', to: 'S10', label: '0', curve: 0 },
+      { from: 'S10', to: 'S1', label: '1/\u2705', curve: -30 },
+      { from: 'S10', to: 'S0', label: '0', curve: 30 },
+    ];
+
+    // Self loops
+    const selfLoops = [
+      { state: 'S0', label: '0' },
+      { state: 'S1', label: '1' },
+    ];
+
+    arrows.forEach(a => {
+      const from = positions[a.from];
+      const to = positions[a.to];
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const nx = dx / dist;
+      const ny = dy / dist;
+      const startX = from.x + nx * circleR;
+      const startY = from.y + ny * circleR;
+      const endX = to.x - nx * circleR;
+      const endY = to.y - ny * circleR;
+
+      if (a.curve !== 0) {
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2 + a.curve;
+        h += `<path d="M${startX},${startY} Q${midX},${midY} ${endX},${endY}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+        h += `<text x="${midX}" y="${midY + (a.curve > 0 ? 14 : -6)}" text-anchor="middle" font-size="11" fill="#888">${a.label}</text>`;
+      } else {
+        h += `<line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+        const labelX = (startX + endX) / 2;
+        const labelY = (startY + endY) / 2 - 8;
+        h += `<text x="${labelX}" y="${labelY}" text-anchor="middle" font-size="11" fill="#888">${a.label}</text>`;
+      }
+    });
+
+    selfLoops.forEach(sl => {
+      const p = positions[sl.state];
+      const loopY = p.y - circleR - 4;
+      h += `<path d="M${p.x - 10},${loopY} C${p.x - 20},${loopY - 28} ${p.x + 20},${loopY - 28} ${p.x + 10},${loopY}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+      h += `<text x="${p.x}" y="${loopY - 24}" text-anchor="middle" font-size="11" fill="#888">${sl.label}</text>`;
+    });
+
+    // Arrow marker
+    h += '<defs><marker id="fsmArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#888"/></marker></defs>';
+
+    // Draw states (circles)
+    states.forEach(s => {
+      const p = positions[s];
+      const isActive = currentState === s;
+      const fill = isActive ? 'rgba(52,152,219,0.2)' : 'rgba(128,128,128,0.05)';
+      const stroke = isActive ? '#3498db' : '#888';
+      const strokeW = isActive ? 2.5 : 1.5;
+      h += `<circle cx="${p.x}" cy="${p.y}" r="${circleR}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+      h += `<text x="${p.x}" y="${p.y + 1}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="${isActive ? 700 : 400}" fill="${isActive ? '#3498db' : '#666'}">${s}</text>`;
+      h += `<text x="${p.x}" y="${p.y + circleR + 14}" text-anchor="middle" font-size="10" fill="#888">${stateLabels[s]}</text>`;
+    });
+
+    h += '</svg>';
+
+    // Input buttons
+    h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">';
+    h += '<span style="font-size:12px;color:#888">Feed input:</span>';
+    h += '<button class="btn-t" id="fsmIn0" style="font-family:monospace;font-weight:600">0</button>';
+    h += '<button class="btn-t" id="fsmIn1" style="font-family:monospace;font-weight:600">1</button>';
+    h += '<button class="btn-t" id="fsmReset" style="margin-left:auto">Reset</button>';
+    h += '</div>';
+
+    // History
+    if (inputHistory.length > 0) {
+      h += '<div style="font-size:13px;font-family:monospace;line-height:1.8">';
+      h += '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">';
+      h += '<span style="color:#888;font-size:11px;min-width:50px">Input:</span>';
+      inputHistory.forEach((b, i) => {
+        const detected = outputHistory[i] === 1;
+        h += `<span style="display:inline-block;width:22px;text-align:center;${detected ? 'color:#27ae60;font-weight:700' : ''}">${b}</span>`;
+      });
+      h += '</div>';
+      h += '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">';
+      h += '<span style="color:#888;font-size:11px;min-width:50px">Output:</span>';
+      outputHistory.forEach(o => {
+        h += `<span style="display:inline-block;width:22px;text-align:center;${o ? 'color:#27ae60;font-weight:700' : 'color:#888'}">${o}</span>`;
+      });
+      h += '</div>';
+      h += '</div>';
+
+      const detections = outputHistory.filter(o => o === 1).length;
+      if (detections > 0) {
+        h += `<div style="margin-top:6px;font-size:12px;color:#27ae60;font-weight:600">"101" detected ${detections} time${detections > 1 ? 's' : ''}</div>`;
+      }
+    }
+
+    container.innerHTML = h;
+
+    container.querySelector('#fsmIn0').addEventListener('click', () => feedInput(0));
+    container.querySelector('#fsmIn1').addEventListener('click', () => feedInput(1));
+    container.querySelector('#fsmReset').addEventListener('click', reset);
+  }
+
+  render();
+}
+
+function pipelineHazardWidget(container) {
+  // 5-stage pipeline: IF, ID, EX, MEM, WB
+  const STAGES = ['IF', 'ID', 'EX', 'MEM', 'WB'];
+  const presets = [
+    {
+      name: 'No hazard',
+      instructions: [
+        { text: 'ADD R1, R2, R3', writes: 'R1', reads: ['R2', 'R3'] },
+        { text: 'SUB R4, R5, R6', writes: 'R4', reads: ['R5', 'R6'] },
+        { text: 'AND R7, R8, R9', writes: 'R7', reads: ['R8', 'R9'] },
+      ],
+    },
+    {
+      name: 'RAW hazard',
+      instructions: [
+        { text: 'ADD R1, R2, R3', writes: 'R1', reads: ['R2', 'R3'] },
+        { text: 'SUB R4, R1, R5', writes: 'R4', reads: ['R1', 'R5'] },
+        { text: 'AND R7, R8, R9', writes: 'R7', reads: ['R8', 'R9'] },
+      ],
+    },
+    {
+      name: 'Load-use',
+      instructions: [
+        { text: 'LW  R1, 0(R2)', writes: 'R1', reads: ['R2'], isLoad: true },
+        { text: 'ADD R3, R1, R4', writes: 'R3', reads: ['R1', 'R4'] },
+        { text: 'SUB R5, R6, R7', writes: 'R5', reads: ['R6', 'R7'] },
+      ],
+    },
+  ];
+
+  let forwarding = true;
+  let presetIdx = 1;
+
+  function simulate() {
+    const insts = presets[presetIdx].instructions;
+    const cycles = [];
+    const totalCycles = insts.length + STAGES.length + 2; // extra room for stalls
+    const schedule = []; // For each instruction: array of {stage, cycle}
+    const stalls = [];   // cycle indices where stalls occur
+    const forwards = []; // {fromInst, toInst, fromStage, cycle}
+
+    // Simple pipeline simulation
+    let nextStart = 0;
+    for (let i = 0; i < insts.length; i++) {
+      let startCycle = nextStart;
+      let stallCycles = 0;
+
+      // Check for data hazards with previous instructions
+      if (i > 0 && forwarding) {
+        for (let prev = 0; prev < i; prev++) {
+          const prevInst = insts[prev];
+          const curInst = insts[i];
+          if (curInst.reads.includes(prevInst.writes)) {
+            const prevStart = schedule[prev][0].cycle;
+            // With forwarding, result available after EX (cycle prevStart+2) or MEM for loads (prevStart+3)
+            const availCycle = prevInst.isLoad ? prevStart + 3 : prevStart + 2;
+            // Current inst needs it at EX (startCycle + 2)
+            const needCycle = startCycle + 2;
+            if (needCycle <= availCycle) {
+              const needed = availCycle - needCycle + (prevInst.isLoad ? 0 : 0);
+              if (prevInst.isLoad && needCycle <= availCycle) {
+                stallCycles = Math.max(stallCycles, availCycle - needCycle);
+              }
+              if (!prevInst.isLoad) {
+                // Can forward from EX output
+                forwards.push({ fromInst: prev, toInst: i, label: 'FWD', cycle: availCycle });
+              }
+            }
+          }
+        }
+      } else if (i > 0 && !forwarding) {
+        for (let prev = 0; prev < i; prev++) {
+          const prevInst = insts[prev];
+          const curInst = insts[i];
+          if (curInst.reads.includes(prevInst.writes)) {
+            const prevStart = schedule[prev][0].cycle;
+            // Without forwarding, result available after WB (prevStart + 4)
+            const availCycle = prevStart + 4;
+            const needCycle = startCycle + 1; // Need at ID
+            if (needCycle < availCycle) {
+              stallCycles = Math.max(stallCycles, availCycle - needCycle);
+            }
+          }
+        }
+      }
+
+      startCycle += stallCycles;
+      for (let s = 0; s < stallCycles; s++) stalls.push(nextStart + s);
+
+      const stages = STAGES.map((stage, si) => ({ stage, cycle: startCycle + si }));
+      schedule.push(stages);
+      nextStart = startCycle + 1;
+    }
+
+    return { schedule, stalls, forwards, insts };
+  }
+
+  function render() {
+    const { schedule, stalls, forwards, insts } = simulate();
+    const totalCycles = schedule.length > 0 ? schedule[schedule.length - 1][STAGES.length - 1].cycle + 1 : 5;
+
+    let h = '<div class="widget-label">Try it \u2014 Pipeline Hazards</div>';
+
+    // Controls
+    h += '<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">';
+    presets.forEach((p, i) => {
+      h += `<button class="btn-t ph-preset ${presetIdx === i ? 'on' : ''}" data-i="${i}">${p.name}</button>`;
+    });
+    h += `<label style="margin-left:auto;font-size:12px;display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="phFwd" ${forwarding ? 'checked' : ''}> Forwarding</label>`;
+    h += '</div>';
+
+    // Pipeline diagram
+    const cellW = 44;
+    const cellH = 28;
+    const labelW = 140;
+    const svgW = labelW + totalCycles * cellW + 10;
+    const svgH = insts.length * (cellH + 4) + 30;
+
+    h += `<div style="overflow-x:auto"><svg width="${svgW}" height="${svgH}" style="display:block;font-family:monospace;font-size:11px">`;
+
+    // Cycle headers
+    for (let c = 0; c < totalCycles; c++) {
+      h += `<text x="${labelW + c * cellW + cellW / 2}" y="12" text-anchor="middle" fill="#888" font-size="10">C${c + 1}</text>`;
+    }
+
+    const stageColors = {
+      IF: 'rgba(52,152,219,0.18)', ID: 'rgba(46,204,113,0.18)',
+      EX: 'rgba(231,76,60,0.18)', MEM: 'rgba(243,156,18,0.18)',
+      WB: 'rgba(155,89,182,0.18)',
+    };
+
+    schedule.forEach((stages, i) => {
+      const y = 20 + i * (cellH + 4);
+      // Instruction label
+      h += `<text x="2" y="${y + cellH / 2 + 4}" fill="#ccc" font-size="11">${insts[i].text}</text>`;
+
+      // Stall bubbles
+      if (i > 0) {
+        const prevEnd = schedule[i - 1][0].cycle;
+        const curStart = stages[0].cycle;
+        for (let c = prevEnd + 1; c < curStart; c++) {
+          const x = labelW + c * cellW;
+          h += `<rect x="${x + 1}" y="${y}" width="${cellW - 2}" height="${cellH}" rx="4" fill="rgba(231,76,60,0.1)" stroke="rgba(231,76,60,0.3)" stroke-width="1"/>`;
+          h += `<text x="${x + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" fill="#e74c3c" font-size="10">stall</text>`;
+        }
+      }
+
+      stages.forEach(({ stage, cycle }) => {
+        const x = labelW + cycle * cellW;
+        const isHazardStage = forwards.some(f => f.toInst === i && stage === 'EX');
+        const strokeColor = isHazardStage ? '#27ae60' : 'transparent';
+        h += `<rect x="${x + 1}" y="${y}" width="${cellW - 2}" height="${cellH}" rx="4" fill="${stageColors[stage]}" stroke="${strokeColor}" stroke-width="${isHazardStage ? 2 : 0}"/>`;
+        h += `<text x="${x + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" fill="#ccc" font-size="11" font-weight="600">${stage}</text>`;
+      });
+    });
+
+    // Forward arrows
+    forwards.forEach(f => {
+      const fromY = 20 + f.fromInst * (cellH + 4) + cellH;
+      const toY = 20 + f.toInst * (cellH + 4);
+      const x = labelW + f.cycle * cellW + cellW / 2;
+      h += `<line x1="${x}" y1="${fromY}" x2="${x}" y2="${toY}" stroke="#27ae60" stroke-width="2" marker-end="url(#phArrow)"/>`;
+      h += `<text x="${x + 6}" y="${(fromY + toY) / 2 + 3}" fill="#27ae60" font-size="9">FWD</text>`;
+    });
+
+    h += '<defs><marker id="phArrow" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><path d="M0,0 L6,2.5 L0,5 Z" fill="#27ae60"/></marker></defs>';
+
+    h += '</svg></div>';
+
+    // Summary
+    const totalClocks = schedule[schedule.length - 1][STAGES.length - 1].cycle + 1;
+    const idealClocks = insts.length + STAGES.length - 1;
+    const stallCount = totalClocks - idealClocks;
+    h += '<div style="font-size:12px;color:#888;margin-top:6px">';
+    h += `Total: ${totalClocks} cycles (ideal: ${idealClocks}${stallCount > 0 ? `, <span style="color:#e74c3c">${stallCount} stall${stallCount > 1 ? 's' : ''}</span>` : ', no stalls'})`;
+    if (forwards.length > 0) h += ` \u2014 <span style="color:#27ae60">${forwards.length} forward${forwards.length > 1 ? 's' : ''}</span>`;
+    h += '</div>';
+
+    container.innerHTML = h;
+
+    container.querySelectorAll('.ph-preset').forEach(btn => {
+      btn.addEventListener('click', () => { presetIdx = parseInt(btn.dataset.i); render(); });
+    });
+    container.querySelector('#phFwd').addEventListener('change', (e) => { forwarding = e.target.checked; render(); });
+  }
+
+  render();
+}
+
+function endiannessWidget(container) {
+  let hexVal = '44332211';
+  let bits = 32;
+
+  function render() {
+    const val = parseInt(hexVal, 16) || 0;
+    const numBytes = bits / 8;
+    const bytes = [];
+    for (let i = numBytes - 1; i >= 0; i--) {
+      bytes.push((val >>> (i * 8)) & 0xFF);
+    }
+
+    let h = '<div class="widget-label">Try it \u2014 Endianness</div>';
+
+    // Input
+    h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">';
+    h += '<span style="font-size:12px;color:#888">Width:</span>';
+    for (const b of [16, 32]) {
+      h += `<button class="btn-t en-bits ${bits === b ? 'on' : ''}" data-b="${b}">${b}-bit</button>`;
+    }
+    h += `<label style="font-size:12px;display:flex;align-items:center;gap:4px">0x<input id="enHex" type="text" value="${hexVal}" maxlength="${bits / 4}" style="width:${bits / 4 + 1}ch;font-family:monospace;font-size:14px;padding:3px 6px;border-radius:4px;border:1px solid #ccc;background:inherit;color:inherit"></label>`;
+    h += '</div>';
+
+    // Big-endian
+    h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">Big-Endian <span style="font-weight:400;color:#888">(MSB first)</span></div>';
+    h += '<div style="display:flex;gap:2px;margin-bottom:12px">';
+    bytes.forEach((b, i) => {
+      const isMSB = i === 0;
+      const isLSB = i === bytes.length - 1;
+      const bg = isMSB ? 'rgba(52,152,219,0.15)' : isLSB ? 'rgba(231,126,34,0.15)' : 'rgba(128,128,128,0.06)';
+      h += `<div style="text-align:center;flex:1;border:1px solid rgba(128,128,128,0.2);border-radius:4px;padding:6px 4px;background:${bg};font-family:monospace">`;
+      h += `<div style="font-size:10px;color:#888">0x${i.toString(16).padStart(2, '0')}</div>`;
+      h += `<div style="font-size:14px;font-weight:600">0x${b.toString(16).toUpperCase().padStart(2, '0')}</div>`;
+      h += '</div>';
+    });
+    h += '</div>';
+
+    // Little-endian
+    h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">Little-Endian <span style="font-weight:400;color:#888">(LSB first)</span></div>';
+    h += '<div style="display:flex;gap:2px;margin-bottom:8px">';
+    const leBytes = [...bytes].reverse();
+    leBytes.forEach((b, i) => {
+      const isMSB = b === bytes[0];
+      const isLSB = b === bytes[bytes.length - 1];
+      const bg = isLSB ? 'rgba(231,126,34,0.15)' : isMSB ? 'rgba(52,152,219,0.15)' : 'rgba(128,128,128,0.06)';
+      h += `<div style="text-align:center;flex:1;border:1px solid rgba(128,128,128,0.2);border-radius:4px;padding:6px 4px;background:${bg};font-family:monospace">`;
+      h += `<div style="font-size:10px;color:#888">0x${i.toString(16).padStart(2, '0')}</div>`;
+      h += `<div style="font-size:14px;font-weight:600">0x${b.toString(16).toUpperCase().padStart(2, '0')}</div>`;
+      h += '</div>';
+    });
+    h += '</div>';
+
+    h += '<div style="font-size:11px;color:#888"><span style="color:#3498db">\u25a0</span> MSB &nbsp; <span style="color:#e67e22">\u25a0</span> LSB &nbsp; Address increases left to right</div>';
+
+    container.innerHTML = h;
+
+    container.querySelector('#enHex').addEventListener('input', (e) => {
+      hexVal = e.target.value.replace(/[^0-9a-fA-F]/g, '').slice(0, bits / 4);
+      render();
+    });
+    container.querySelectorAll('.en-bits').forEach(btn => {
+      btn.addEventListener('click', () => {
+        bits = parseInt(btn.dataset.b);
+        hexVal = hexVal.slice(0, bits / 4).padStart(bits / 4, '0');
+        render();
+      });
+    });
+  }
+
+  render();
+}
+
+function replacementPolicyWidget(container) {
+  const WAYS = 4;
+  const ADDRESSES = [0, 2, 4, 0, 6, 2, 0, 4, 6, 0]; // demonstrate thrashing and re-access
+  let policy = 'lru';
+  let step = 0;
+
+  function simulate(pol, maxStep) {
+    const cache = []; // array of {addr, age, insertOrder}
+    let hits = 0;
+    let misses = 0;
+    const log = [];
+    let insertCounter = 0;
+    // Simple LFSR-style for deterministic "random"
+    let lfsr = 7;
+    function nextRand() { lfsr = ((lfsr >> 1) | ((lfsr ^ (lfsr >> 1)) << 3)) & 0xF; return lfsr % WAYS; }
+
+    for (let i = 0; i < maxStep; i++) {
+      const addr = ADDRESSES[i];
+      const hitIdx = cache.findIndex(c => c.addr === addr);
+
+      if (hitIdx >= 0) {
+        hits++;
+        // Update LRU age
+        if (pol === 'lru') {
+          const hitAge = cache[hitIdx].age;
+          cache.forEach(c => { if (c.age < hitAge) c.age++; });
+          cache[hitIdx].age = 0;
+        }
+        log.push({ addr, hit: true, evicted: null });
+      } else {
+        misses++;
+        let evicted = null;
+        if (cache.length < WAYS) {
+          cache.push({ addr, age: 0, insertOrder: insertCounter++ });
+          // Age others for LRU
+          cache.forEach((c, ci) => { if (ci < cache.length - 1) c.age++; });
+        } else {
+          let victimIdx;
+          if (pol === 'lru') {
+            victimIdx = cache.reduce((max, c, ci) => c.age > cache[max].age ? ci : max, 0);
+          } else if (pol === 'fifo') {
+            victimIdx = cache.reduce((min, c, ci) => c.insertOrder < cache[min].insertOrder ? ci : min, 0);
+          } else {
+            victimIdx = nextRand();
+          }
+          evicted = cache[victimIdx].addr;
+          cache.forEach(c => { if (pol === 'lru') c.age++; });
+          cache[victimIdx] = { addr, age: 0, insertOrder: insertCounter++ };
+        }
+        log.push({ addr, hit: false, evicted });
+      }
+    }
+
+    return { cache: [...cache], hits, misses, log };
+  }
+
+  function render() {
+    const maxStep = Math.min(step, ADDRESSES.length);
+    const result = simulate(policy, maxStep);
+
+    let h = '<div class="widget-label">Try it \u2014 Replacement Policies</div>';
+
+    // Policy toggle
+    h += '<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">';
+    for (const [key, label] of [['lru', 'LRU'], ['fifo', 'FIFO'], ['random', 'Random']]) {
+      h += `<button class="btn-t rp-pol ${policy === key ? 'on' : ''}" data-p="${key}">${label}</button>`;
+    }
+    h += `<span style="margin-left:auto;font-size:12px;color:#888">Hits: <strong style="color:#27ae60">${result.hits}</strong> Misses: <strong style="color:#e74c3c">${result.misses}</strong></span>`;
+    h += '</div>';
+
+    // Access sequence with current position
+    h += '<div style="font-size:12px;color:#888;margin-bottom:4px">Access sequence:</div>';
+    h += '<div style="display:flex;gap:3px;margin-bottom:10px;flex-wrap:wrap">';
+    ADDRESSES.forEach((addr, i) => {
+      let bg = 'rgba(128,128,128,0.06)';
+      let color = '#888';
+      let fw = '400';
+      if (i < maxStep) {
+        bg = result.log[i].hit ? 'rgba(39,174,96,0.15)' : 'rgba(231,76,60,0.15)';
+        color = result.log[i].hit ? '#27ae60' : '#e74c3c';
+        fw = '600';
+      }
+      if (i === maxStep) {
+        bg = 'rgba(52,152,219,0.2)';
+        color = '#3498db';
+        fw = '700';
+      }
+      h += `<span style="display:inline-block;width:28px;height:28px;line-height:28px;text-align:center;border-radius:4px;background:${bg};color:${color};font-weight:${fw};font-family:monospace;font-size:13px">${addr}</span>`;
+    });
+    h += '</div>';
+
+    // Cache state
+    h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">Cache (' + WAYS + '-way set):</div>';
+    h += '<div style="display:flex;gap:4px;margin-bottom:10px">';
+    for (let i = 0; i < WAYS; i++) {
+      const line = result.cache[i];
+      const bg = line ? 'rgba(128,128,128,0.08)' : 'transparent';
+      h += `<div style="flex:1;text-align:center;padding:8px 4px;border:1px solid rgba(128,128,128,0.2);border-radius:4px;font-family:monospace;background:${bg}">`;
+      h += line ? `<span style="font-weight:600">${line.addr}</span>` : '<span style="color:#888">\u2014</span>';
+      h += '</div>';
+    }
+    h += '</div>';
+
+    // Step controls
+    h += '<div style="display:flex;gap:8px;align-items:center">';
+    h += `<button class="btn-t" id="rpPrev" ${step <= 0 ? 'disabled' : ''}>\u2190 Prev</button>`;
+    h += `<button class="btn-t" id="rpNext" ${step >= ADDRESSES.length ? 'disabled' : ''}>Next \u2192</button>`;
+    h += '<button class="btn-t" id="rpReset">Reset</button>';
+    h += `<span style="font-size:12px;color:#888;margin-left:auto">Step ${maxStep}/${ADDRESSES.length}</span>`;
+    h += '</div>';
+
+    // Log
+    if (result.log.length > 0) {
+      const last = result.log[result.log.length - 1];
+      h += '<div style="margin-top:8px;font-size:12px;line-height:1.6;padding:6px 8px;border:1px solid rgba(128,128,128,0.2);border-radius:6px">';
+      if (last.hit) {
+        h += `<span style="color:#27ae60">HIT</span> \u2014 Address ${last.addr} found in cache.`;
+      } else {
+        h += `<span style="color:#e74c3c">MISS</span> \u2014 Address ${last.addr} loaded.`;
+        if (last.evicted !== null) h += ` Evicted address ${last.evicted}.`;
+      }
+      h += '</div>';
+    }
+
+    container.innerHTML = h;
+
+    container.querySelectorAll('.rp-pol').forEach(btn => {
+      btn.addEventListener('click', () => { policy = btn.dataset.p; step = 0; render(); });
+    });
+    container.querySelector('#rpPrev').addEventListener('click', () => { if (step > 0) { step--; render(); } });
+    container.querySelector('#rpNext').addEventListener('click', () => { if (step < ADDRESSES.length) { step++; render(); } });
+    container.querySelector('#rpReset').addEventListener('click', () => { step = 0; render(); });
+  }
+
   render();
 }
 
