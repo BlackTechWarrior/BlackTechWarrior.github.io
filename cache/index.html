@@ -1138,17 +1138,17 @@ function toggleTheme() {
   var text = document.getElementById('theme-text');
   if (body.classList.contains('dark')) {
     body.classList.remove('dark');
-    text.textContent = '\u263E';
+    text.innerHTML = '&#9790;';
     localStorage.setItem('theme', 'light');
   } else {
     body.classList.add('dark');
-    text.textContent = '\u263C';
+    text.innerHTML = '&#9788;';
     localStorage.setItem('theme', 'dark');
   }
 }
 document.addEventListener('DOMContentLoaded', function() {
   if (document.body.classList.contains('dark')) {
-    document.getElementById('theme-text').textContent = '\u263C';
+    document.getElementById('theme-text').innerHTML = '&#9788;';
   }
 });
 
