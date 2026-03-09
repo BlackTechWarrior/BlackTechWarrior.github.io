@@ -2966,85 +2966,57 @@ function fsmWidget(container) {
   function render() {
     let h = '<div class="widget-label">Try it \u2014 Sequence Detector FSM (detects "101")</div>';
 
-    // State diagram — triangle layout to avoid overlapping arrows
-    const circleR = 28;
-    const svgW = Math.min(container.clientWidth - 20, 360);
-    const svgH = 170;
-    const positions = {
-      S0: { x: 60, y: 50 },
-      S1: { x: svgW - 60, y: 50 },
-      S10: { x: svgW / 2, y: 140 },
-    };
+    // State diagram — wide horizontal layout with hardcoded positions
+    // All label positions are manually placed to guarantee no overlaps
+    const R = 28;
+    const svgW = 420;
+    const svgH = 220;
 
-    h += `<svg width="${svgW}" height="${svgH}" style="display:block;margin-bottom:10px;font-family:sans-serif">`;
+    // States in a row with generous spacing, vertically centered
+    const cy = 100;
+    const S0 = { x: 70, y: cy };
+    const S1 = { x: 210, y: cy };
+    const S10 = { x: 350, y: cy };
 
-    // Arrow marker (define first so it's available)
+    h += `<div style="overflow-x:auto"><svg width="${svgW}" height="${svgH}" style="display:block;margin-bottom:10px;font-family:sans-serif">`;
     h += '<defs><marker id="fsmArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#888"/></marker></defs>';
 
-    // Helper: draw arrow between two points with offset from circle edge
-    function arrow(from, to, label, curveDir) {
-      const dx = to.x - from.x;
-      const dy = to.y - from.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const nx = dx / dist;
-      const ny = dy / dist;
-      const sx = from.x + nx * circleR;
-      const sy = from.y + ny * circleR;
-      const ex = to.x - nx * circleR;
-      const ey = to.y - ny * circleR;
-      // Perpendicular offset for curve
-      const px = -ny * (curveDir || 0);
-      const py = nx * (curveDir || 0);
-      const mx = (sx + ex) / 2 + px;
-      const my = (sy + ey) / 2 + py;
-      if (curveDir) {
-        h += `<path d="M${sx},${sy} Q${mx},${my} ${ex},${ey}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-      } else {
-        h += `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-      }
-      // Label along the midpoint
-      const lx = curveDir ? mx : (sx + ex) / 2;
-      const ly = curveDir ? my : (sy + ey) / 2;
-      const offX = -ny * 10;
-      const offY = nx * 10;
-      h += `<text x="${lx + offX}" y="${ly + offY}" text-anchor="middle" font-size="11" fill="#888">${label}</text>`;
-    }
+    // ── S0 self-loop (input 0) — loops above-left ──
+    h += `<path d="M${S0.x - 12},${S0.y - R} C${S0.x - 36},${S0.y - R - 40} ${S0.x + 14},${S0.y - R - 40} ${S0.x + 10},${S0.y - R}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${S0.x}" y="${S0.y - R - 34}" text-anchor="middle" font-size="11" fill="#888">0</text>`;
 
-    // Transitions
-    arrow(positions.S0, positions.S1, '1', 0);             // S0 --1--> S1 (top, straight)
-    arrow(positions.S1, positions.S10, '0', 0);             // S1 --0--> S10 (right side down)
-    arrow(positions.S10, positions.S1, '1 / detect', -20);  // S10 --1--> S1 (right side up, curved away)
-    arrow(positions.S10, positions.S0, '0', 20);            // S10 --0--> S0 (left side up, curved away)
+    // ── S0 → S1 (input 1) — straight line, label above ──
+    h += `<line x1="${S0.x + R}" y1="${S0.y}" x2="${S1.x - R}" y2="${S1.y}" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${(S0.x + S1.x) / 2}" y="${S0.y - 12}" text-anchor="middle" font-size="11" fill="#888">1</text>`;
 
-    // Self loops
-    const selfLoops = [
-      { state: 'S0', label: '0', side: 'left' },
-      { state: 'S1', label: '1', side: 'right' },
-    ];
-    selfLoops.forEach(sl => {
-      const p = positions[sl.state];
-      const offX = sl.side === 'left' ? -1 : 1;
-      const loopX = p.x + offX * (circleR + 4);
-      const loopY = p.y - circleR - 4;
-      h += `<path d="M${p.x + offX * 8},${loopY} C${loopX - 8},${loopY - 30} ${loopX + 16 * offX},${loopY - 20} ${p.x + offX * 12},${loopY}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-      h += `<text x="${loopX + offX * 6}" y="${loopY - 22}" text-anchor="middle" font-size="11" fill="#888">${sl.label}</text>`;
-    });
+    // ── S1 self-loop (input 1) — loops above-right ──
+    h += `<path d="M${S1.x - 10},${S1.y - R} C${S1.x - 14},${S1.y - R - 40} ${S1.x + 36},${S1.y - R - 40} ${S1.x + 12},${S1.y - R}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${S1.x + 2}" y="${S1.y - R - 34}" text-anchor="middle" font-size="11" fill="#888">1</text>`;
 
-    // Draw states (circles) — drawn last so they're on top
-    states.forEach(s => {
-      const p = positions[s];
+    // ── S1 → S10 (input 0) — straight line, label above ──
+    h += `<line x1="${S1.x + R}" y1="${S1.y}" x2="${S10.x - R}" y2="${S10.y}" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${(S1.x + S10.x) / 2}" y="${S1.y - 12}" text-anchor="middle" font-size="11" fill="#888">0</text>`;
+
+    // ── S10 → S1 (input 1, detect!) — curved above ──
+    h += `<path d="M${S10.x - R + 4},${S10.y - 10} Q${(S1.x + S10.x) / 2},${S10.y - 70} ${S1.x + R - 4},${S1.y - 10}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${(S1.x + S10.x) / 2}" y="${S10.y - 56}" text-anchor="middle" font-size="11" fill="#27ae60" font-weight="600">1 / detect</text>`;
+
+    // ── S10 → S0 (input 0) — curved well below to clear state labels ──
+    h += `<path d="M${S10.x - R + 4},${S10.y + 14} Q${(S0.x + S10.x) / 2},${S10.y + 90} ${S0.x + R - 4},${S0.y + 14}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${(S0.x + S10.x) / 2}" y="${S10.y + 76}" text-anchor="middle" font-size="11" fill="#888">0</text>`;
+
+    // ── Draw states (circles on top of arrows) ──
+    [[S0, 'S0'], [S1, 'S1'], [S10, 'S10']].forEach(([p, s]) => {
       const isActive = currentState === s;
       const fill = isActive ? 'rgba(52,152,219,0.2)' : 'rgba(128,128,128,0.05)';
       const stroke = isActive ? '#3498db' : '#888';
       const strokeW = isActive ? 2.5 : 1.5;
-      h += `<circle cx="${p.x}" cy="${p.y}" r="${circleR}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
+      h += `<circle cx="${p.x}" cy="${p.y}" r="${R}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
       h += `<text x="${p.x}" y="${p.y + 1}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="${isActive ? 700 : 400}" fill="${isActive ? '#3498db' : '#666'}">${s}</text>`;
-      // Labels below for top states, above for bottom state
-      const labelY = s === 'S10' ? p.y + circleR + 14 : p.y + circleR + 14;
-      h += `<text x="${p.x}" y="${labelY}" text-anchor="middle" font-size="10" fill="#888">${stateLabels[s]}</text>`;
+      h += `<text x="${p.x}" y="${p.y + R + 16}" text-anchor="middle" font-size="10" fill="#888">${stateLabels[s]}</text>`;
     });
 
-    h += '</svg>';
+    h += '</svg></div>';
 
     // Input buttons
     h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">';
@@ -3366,7 +3338,9 @@ function endiannessWidget(container) {
 
 function replacementPolicyWidget(container) {
   const WAYS = 4;
-  const ADDRESSES = [0, 2, 4, 6, 0, 8, 2, 6, 10, 4, 0, 8, 2, 10, 6, 0]; // 6 unique addrs in 4-way cache — evictions from step 5, policies diverge
+  // Hot working set (0,2,4) re-accessed often + cold addresses (6,8,10) disrupt.
+  // LRU keeps hot data; FIFO evicts it because it was loaded earliest.
+  const ADDRESSES = [0, 2, 4, 6, 0, 2, 8, 0, 2, 4, 10, 0, 2, 4, 8, 0];
   let policy = 'lru';
   let step = 0;
 
@@ -3376,9 +3350,7 @@ function replacementPolicyWidget(container) {
     let misses = 0;
     const log = [];
     let insertCounter = 0;
-    // Simple LFSR-style for deterministic "random"
-    let lfsr = 7;
-    function nextRand() { lfsr = ((lfsr >> 1) | ((lfsr ^ (lfsr >> 1)) << 3)) & 0xF; return lfsr % WAYS; }
+    function nextRand() { return Math.floor(Math.random() * WAYS); }
 
     for (let i = 0; i < maxStep; i++) {
       const addr = ADDRESSES[i];
