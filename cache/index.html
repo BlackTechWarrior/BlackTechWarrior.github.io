@@ -181,6 +181,8 @@
     body.dark .ca-preset-btn { border-color: #333; }
     body.dark .ca-preset-btn:hover { border-color: #87ceeb; }
     .ca-preset-btn strong { display: block; font-size: 13px; margin-bottom: 2px; }
+    .ca-preset-btn em { font-style: normal; color: #0066cc; font-size: 11px; }
+    body.dark .ca-preset-btn em { color: #87ceeb; }
 
     /* ── History ── */
     .ca-history-panel {
@@ -382,7 +384,7 @@
       </div>
       <div class="ca-config-item">
         <label for="ca-lines">Cache Lines</label>
-        <select id="ca-lines" onchange="updateConfig()">
+        <select id="ca-lines" onchange="onLinesChanged()">
           <option value="4">4</option>
           <option value="8" selected>8</option>
           <option value="16">16</option>
@@ -454,31 +456,31 @@
           <div class="ca-preset-grid">
             <button class="ca-preset-btn" onclick="loadPreset('sequential')" aria-label="Pattern: Sequential Access">
               <strong>Sequential</strong>
-              Iterate through consecutive addresses. Spatial locality means most accesses hit after the first block fetch.
+              Iterate through consecutive addresses. Spatial locality means most accesses hit after the first block fetch. <em>Best with block size &ge; 2.</em>
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('temporal')" aria-label="Pattern: Temporal Loop">
               <strong>Temporal Loop</strong>
-              Same blocks accessed twice. Like a loop body re-reading its variables. Second pass hits from temporal locality.
+              Same blocks accessed twice. Like a loop body re-reading its variables. Second pass hits from temporal locality. <em>Works with any config.</em>
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('thrashing')" aria-label="Pattern: Thrashing">
               <strong>Thrashing</strong>
-              Two addresses fight for the same set. Happens in direct-mapped caches. Switch to 2-way to fix it.
+              Two addresses fight for the same set. <em>Use direct-mapped, then switch to 2-way and reload to fix it.</em>
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('stride')" aria-label="Pattern: Power-of-2 Stride">
               <strong>Power-of-2 Stride</strong>
-              Strided access pattern that creates worst-case conflict misses in direct-mapped caches.
+              Strided access pattern that creates worst-case conflict misses. <em>Use direct-mapped to see conflicts; increase associativity to reduce them.</em>
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('lru-vs-fifo')" aria-label="Pattern: LRU vs FIFO">
               <strong>LRU vs FIFO</strong>
-              Overfill a set, then re-access early entries. Switch replacement policy and reload to see different eviction choices.
+              Overfill a set, then re-access early entries to see different eviction choices. <em>Requires &ge; 2-way. Run with LRU, then switch to FIFO and reload.</em>
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('column')" aria-label="Pattern: Column Traversal">
               <strong>Column Traversal</strong>
-              Access column 0 of a row-major matrix. Every row maps to the same set, causing repeated conflict misses.
+              Access column 0 of a row-major matrix. Every row maps to the same set, causing repeated conflict misses. <em>Use direct-mapped to see thrashing; increase associativity to fit more rows.</em>
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('random')" aria-label="Pattern: Random">
               <strong>Random</strong>
-              20 random addresses with no locality. The baseline for comparing against structured patterns.
+              20 random addresses with no locality. The baseline for comparing against structured patterns. <em>Works with any config.</em>
             </button>
           </div>
           <button class="btn-t" onclick="copyLearnPrompt()" style="margin-top:10px;">Ask AI about this</button>
@@ -543,6 +545,7 @@ let queueResults = [];
 let briefing = [];
 let briefingIndex = 0;
 let flashTimeout = null;
+let completionTimeout = null;
 let comparisonRows = [];
 let lastPresetName = '';
 
@@ -558,7 +561,8 @@ function recalc() {
 
 function rebuildAssocOptions() {
   var sel = document.getElementById('ca-assoc');
-  var current = associativity;
+  var prev = associativity;
+
   sel.innerHTML = '';
   var opt1 = document.createElement('option');
   opt1.value = '1'; opt1.textContent = 'Direct Mapped';
@@ -569,8 +573,12 @@ function rebuildAssocOptions() {
     opt.textContent = w === totalLines ? 'Fully Assoc (' + w + '-Way)' : w + '-Way';
     sel.appendChild(opt);
   }
-  if (current > totalLines) current = 1;
-  sel.value = '' + current;
+
+  // Try to keep the previous selection; clamp if invalid
+  if (prev > totalLines) prev = totalLines;
+  sel.value = '' + prev;
+  // If the value didn't stick (not a valid option), fall back to direct-mapped
+  if (parseInt(sel.value) !== prev) sel.value = '1';
   associativity = parseInt(sel.value);
 }
 
@@ -585,6 +593,7 @@ function initCache() {
 }
 
 function resetCache() {
+  if (completionTimeout) { clearTimeout(completionTimeout); completionTimeout = null; }
   initCache();
   accessHistory = [];
   stats = { hits: 0, misses: 0 };
@@ -606,11 +615,17 @@ function resetCache() {
   showToast('Cache reset');
 }
 
+function onLinesChanged() {
+  totalLines = parseInt(document.getElementById('ca-lines').value);
+  rebuildAssocOptions();
+  updateConfig();
+}
+
 function updateConfig() {
   blockSize = parseInt(document.getElementById('ca-block-size').value);
   totalLines = parseInt(document.getElementById('ca-lines').value);
+  associativity = parseInt(document.getElementById('ca-assoc').value);
   replacePolicy = document.getElementById('ca-replace').value;
-  rebuildAssocOptions();
   recalc();
   resetCache();
 }
@@ -867,14 +882,16 @@ function stepQueue() {
   flashTimeout = setTimeout(function() { renderCache(); }, 600);
 
   if (queuePos >= accessQueue.length) {
-    setTimeout(function() {
-      var total = stats.hits + stats.misses;
-      var rate = total > 0 ? (stats.hits / total * 100).toFixed(1) : '0.0';
+    var finalHits = stats.hits, finalMisses = stats.misses, finalPreset = lastPresetName;
+    completionTimeout = setTimeout(function() {
+      completionTimeout = null;
+      var total = finalHits + finalMisses;
+      var rate = total > 0 ? (finalHits / total * 100).toFixed(1) : '0.0';
       var el = document.getElementById('ca-narration');
       el.className = 'ca-narration ca-info';
-      el.textContent = 'Pattern complete \u2014 ' + stats.hits + ' hits, ' + stats.misses + ' misses (' + rate + '% hit rate)';
+      el.textContent = 'Pattern complete \u2014 ' + finalHits + ' hits, ' + finalMisses + ' misses (' + rate + '% hit rate)';
       document.getElementById('ca-next-btn').classList.remove('visible');
-      if (lastPresetName) addComparisonRow(lastPresetName, stats.hits, stats.misses);
+      if (finalPreset) addComparisonRow(finalPreset, finalHits, finalMisses);
     }, 700);
   }
 }
@@ -949,25 +966,34 @@ function generatePreset(name) {
       };
     }
     case 'lru-vs-fifo': {
-      // Access assoc+1 blocks mapping to set 0, then re-access the earliest
+      // Needs >= 2-way to be meaningful
       var ways = associativity;
       if (ways < 2) ways = 2;
+      // Collect all block-aligned addresses that map to set 0
+      var set0 = [];
+      for (var a = 0; a < 256; a += stride) set0.push(a);
+      // Need ways blocks to fill + 2 extras for evictions
+      if (set0.length < ways + 2) ways = Math.max(set0.length - 2, 2);
       var addrs = [];
-      // Fill set 0 with `ways` unique blocks
-      for (var i = 0; i < ways; i++) addrs.push(i * stride < 256 ? i * stride : (i * bs) % 256);
-      // Access one more to cause eviction
-      var extra = ways * stride < 256 ? ways * stride : ((ways * bs) % 256);
-      addrs.push(extra);
-      // Re-access the first (was it evicted?)
-      addrs.push(addrs[0]);
-      // Also re-access the second
-      addrs.push(addrs[1]);
+      // (a) Fill set 0 with `ways` distinct blocks
+      for (var i = 0; i < ways; i++) addrs.push(set0[i]);
+      // (b) Re-access first two to refresh LRU timestamps
+      addrs.push(set0[0]);
+      addrs.push(set0[1]);
+      // (c) New block forces eviction — LRU evicts oldest untouched, FIFO evicts first loaded
+      addrs.push(set0[ways]);
+      // (d) Re-access first block — LRU kept it (recently used), FIFO evicted it (first in)
+      addrs.push(set0[0]);
+      // Another new block to force second eviction
+      addrs.push(set0[ways + 1]);
+      // Re-access second block
+      addrs.push(set0[1]);
       return {
         name: 'LRU vs FIFO',
         addresses: addrs,
         briefing: [
-          'Fill one set with ' + ways + ' blocks, then access one more to force an eviction. Then re-access the first two blocks.',
-          'With LRU, the least recently used block gets evicted. With FIFO, the first one placed gets evicted regardless of recent access. Try switching replacement policy and reloading to see the difference.'
+          'Fill set 0 with ' + ways + ' blocks (' + addrs.slice(0, ways).join(', ') + '), re-access the first two to refresh them, then introduce new blocks to force evictions.',
+          'With LRU, the recently re-accessed blocks survive because they were just used. With FIFO, the first blocks loaded are evicted regardless of recent access. Switch replacement policy and reload to compare.'
         ]
       };
     }
