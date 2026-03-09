@@ -207,19 +207,6 @@
     body.dark .ca-history-hit { color: #2ecc71; }
     body.dark .ca-history-miss { color: #e74c3c; }
 
-    /* ── How-to ── */
-    .ca-howto {
-      border: 1px solid #e0e0e0; border-radius: 8px;
-      margin-bottom: 16px; overflow: hidden;
-    }
-    body.dark .ca-howto { border-color: #333; }
-    .ca-howto summary {
-      padding: 12px 16px; cursor: pointer; font-weight: 600;
-      font-size: 14px; background: #fafafa;
-    }
-    body.dark .ca-howto summary { background: #222; }
-    .ca-howto-body { padding: 12px 16px; font-size: 13px; line-height: 1.6; }
-
     /* ── Comparison table ── */
     .ca-compare-panel {
       border: 1px solid #e0e0e0; border-radius: 8px;
@@ -317,15 +304,13 @@
     </div>
 
     <h1>Cache Simulator</h1>
-    <p style="text-align:center;color:#595959;margin-top:-8px;margin-bottom:16px;font-size:14px;">
-      Visualize how CPU caches map, store, and evict memory blocks
-    </p>
+    <p class="subtitle">Visualize how CPU caches map, store, and evict memory blocks</p>
 
     <!-- How to Use -->
-    <details class="ca-howto">
-      <summary>How to Use</summary>
-      <div class="ca-howto-body">
-        <p>A cache simulator helps you understand how CPU caches work: how memory addresses map to cache locations, when data is found quickly (hits) versus fetched from main memory (misses), and how different cache organizations affect performance. This tool is essential for computer architecture courses, understanding memory hierarchy, and building intuition about locality and cache behavior.</p>
+    <details class="how-to">
+      <summary>How to use</summary>
+      <div class="how-to-body">
+        <p>This cache simulator lets you access memory addresses and watch how a CPU cache maps, stores, and evicts data in real time. Step through preset access patterns to see spatial locality, temporal locality, thrashing, and conflict misses in action across direct-mapped, set-associative, and fully associative cache configurations with LRU, FIFO, and random replacement policies.</p>
         <p><strong>Configure</strong> the cache using the dropdowns above. Block size determines how many consecutive bytes are fetched together (spatial locality). Cache lines sets the total capacity. Associativity controls how many ways per set. More ways means fewer conflict misses but more hardware cost. Replacement policy (LRU, FIFO, Random) determines which line gets evicted when a set is full.</p>
         <p><strong>Access addresses</strong> by typing a number (0&ndash;255) and clicking Access, or load a preset pattern and step through with the Next button or <strong>Spacebar</strong>.</p>
         <p><strong>Watch the breakdown</strong> above the cache table. It shows how each address splits into <span style="color:#3498db;font-weight:600">tag</span>, <span style="color:#27ae60;font-weight:600">index</span>, and <span style="color:#e67e22;font-weight:600">offset</span> bits, which determines where data maps in the cache.</p>
