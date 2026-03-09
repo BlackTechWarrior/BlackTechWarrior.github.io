@@ -325,11 +325,11 @@
     <details class="ca-howto">
       <summary>How to Use</summary>
       <div class="ca-howto-body">
-        <p>A cache simulator helps you understand how CPU caches work &mdash; how memory addresses map to cache locations, when data is found quickly (hits) versus fetched from main memory (misses), and how different cache organizations affect performance. This tool is essential for computer architecture courses, understanding memory hierarchy, and building intuition about locality and cache behavior.</p>
-        <p><strong>Configure</strong> the cache using the dropdowns above. Block size determines how many consecutive bytes are fetched together (spatial locality). Cache lines sets the total capacity. Associativity controls how many ways per set &mdash; more ways means fewer conflict misses but more hardware cost. Replacement policy (LRU, FIFO, Random) determines which line gets evicted when a set is full.</p>
+        <p>A cache simulator helps you understand how CPU caches work: how memory addresses map to cache locations, when data is found quickly (hits) versus fetched from main memory (misses), and how different cache organizations affect performance. This tool is essential for computer architecture courses, understanding memory hierarchy, and building intuition about locality and cache behavior.</p>
+        <p><strong>Configure</strong> the cache using the dropdowns above. Block size determines how many consecutive bytes are fetched together (spatial locality). Cache lines sets the total capacity. Associativity controls how many ways per set. More ways means fewer conflict misses but more hardware cost. Replacement policy (LRU, FIFO, Random) determines which line gets evicted when a set is full.</p>
         <p><strong>Access addresses</strong> by typing a number (0&ndash;255) and clicking Access, or load a preset pattern and step through with the Next button or <strong>Spacebar</strong>.</p>
-        <p><strong>Watch the breakdown</strong> &mdash; it shows how each address splits into <span style="color:#3498db;font-weight:600">tag</span>, <span style="color:#27ae60;font-weight:600">index</span>, and <span style="color:#e67e22;font-weight:600">offset</span> bits, which determines where data maps in the cache.</p>
-        <p><strong>Try different configs</strong> with the same pattern. Load Thrashing in direct-mapped mode, then switch to 2-way and reload &mdash; see how associativity eliminates conflict misses.</p>
+        <p><strong>Watch the breakdown</strong> above the cache table. It shows how each address splits into <span style="color:#3498db;font-weight:600">tag</span>, <span style="color:#27ae60;font-weight:600">index</span>, and <span style="color:#e67e22;font-weight:600">offset</span> bits, which determines where data maps in the cache.</p>
+        <p><strong>Try different configs</strong> with the same pattern. Load Thrashing in direct-mapped mode, then switch to 2-way and reload to see how associativity eliminates conflict misses.</p>
         <details style="margin-top:8px">
           <summary style="cursor:pointer;font-weight:600;font-size:13px">Bit Split Formulas</summary>
           <table class="ca-formula-table">
@@ -449,11 +449,11 @@
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('temporal')" aria-label="Pattern: Temporal Loop">
               <strong>Temporal Loop</strong>
-              Same blocks accessed twice. Like a loop body re-reading its variables &mdash; second pass hits from temporal locality.
+              Same blocks accessed twice. Like a loop body re-reading its variables. Second pass hits from temporal locality.
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('thrashing')" aria-label="Pattern: Thrashing">
               <strong>Thrashing</strong>
-              Two addresses fight for the same set. Happens in direct-mapped caches &mdash; switch to 2-way to fix it.
+              Two addresses fight for the same set. Happens in direct-mapped caches. Switch to 2-way to fix it.
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('stride')" aria-label="Pattern: Power-of-2 Stride">
               <strong>Power-of-2 Stride</strong>
@@ -465,11 +465,11 @@
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('column')" aria-label="Pattern: Column Traversal">
               <strong>Column Traversal</strong>
-              Access column 0 of a row-major matrix. Every row maps to the same set &mdash; a classic real-world conflict miss scenario.
+              Access column 0 of a row-major matrix. Every row maps to the same set, causing repeated conflict misses.
             </button>
             <button class="ca-preset-btn" onclick="loadPreset('random')" aria-label="Pattern: Random">
               <strong>Random</strong>
-              20 random addresses with no locality. The baseline &mdash; compare against structured patterns to see how much locality matters.
+              20 random addresses with no locality. The baseline for comparing against structured patterns.
             </button>
           </div>
           <button class="btn-t" onclick="copyLearnPrompt()" style="margin-top:10px;">Ask AI about this</button>
