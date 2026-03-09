@@ -1298,7 +1298,7 @@ const TOPICS = [
     id: 'karnaugh-maps',
     title: 'Karnaugh Maps',
     shortDescription: 'A visual method for simplifying Boolean expressions by grouping adjacent cells.',
-    type: 'concept',
+    type: 'tool',
     tags: ['fundamentals', 'boolean', 'minimization', 'combinational'],
     category: 'foundations',
     content: {
@@ -2861,13 +2861,14 @@ function flipFlopWidget(container) {
 
     // Timing diagram
     if (history.length > 1) {
-      const W = Math.min(container.clientWidth - 20, 500);
-      const stepW = Math.floor(W / Math.min(history.length, MAX_HISTORY));
+      const stepW = 30;
       const H = 100;
       const rowH = 24;
       const topPad = 4;
+      const svgWidth = 32 + history.length * stepW + 8;
 
-      h += `<svg width="${stepW * Math.min(history.length, MAX_HISTORY) + 40}" height="${H}" style="display:block;font-family:monospace;font-size:11px">`;
+      h += `<div style="overflow-x:auto;max-width:100%">`;
+      h += `<svg width="${svgWidth}" height="${H}" style="display:block;font-family:monospace;font-size:11px">`;
 
       const labels = ['CLK', 'D', 'Q'];
       const keys = ['clk', 'd', 'q'];
@@ -2904,6 +2905,7 @@ function flipFlopWidget(container) {
       });
 
       h += '</svg>';
+      h += '</div>';
     }
 
     h += '<div style="font-size:11px;color:#888;margin-top:6px">Toggle D freely, then click Rising Edge. Q only updates at the clock edge.</div>';
@@ -2964,69 +2966,71 @@ function fsmWidget(container) {
   function render() {
     let h = '<div class="widget-label">Try it \u2014 Sequence Detector FSM (detects "101")</div>';
 
-    // State diagram (simple text/visual)
+    // State diagram — triangle layout to avoid overlapping arrows
     const circleR = 28;
-    const svgW = Math.min(container.clientWidth - 20, 400);
-    const svgH = 120;
+    const svgW = Math.min(container.clientWidth - 20, 360);
+    const svgH = 170;
     const positions = {
-      S0: { x: 60, y: 60 },
-      S1: { x: svgW / 2, y: 60 },
-      S10: { x: svgW - 60, y: 60 },
+      S0: { x: 60, y: 50 },
+      S1: { x: svgW - 60, y: 50 },
+      S10: { x: svgW / 2, y: 140 },
     };
 
     h += `<svg width="${svgW}" height="${svgH}" style="display:block;margin-bottom:10px;font-family:sans-serif">`;
 
-    // Draw transitions as arrows
-    const arrows = [
-      { from: 'S0', to: 'S1', label: '1', curve: 0 },
-      { from: 'S1', to: 'S10', label: '0', curve: 0 },
-      { from: 'S10', to: 'S1', label: '1/\u2705', curve: -30 },
-      { from: 'S10', to: 'S0', label: '0', curve: 30 },
-    ];
+    // Arrow marker (define first so it's available)
+    h += '<defs><marker id="fsmArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#888"/></marker></defs>';
 
-    // Self loops
-    const selfLoops = [
-      { state: 'S0', label: '0' },
-      { state: 'S1', label: '1' },
-    ];
-
-    arrows.forEach(a => {
-      const from = positions[a.from];
-      const to = positions[a.to];
+    // Helper: draw arrow between two points with offset from circle edge
+    function arrow(from, to, label, curveDir) {
       const dx = to.x - from.x;
       const dy = to.y - from.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       const nx = dx / dist;
       const ny = dy / dist;
-      const startX = from.x + nx * circleR;
-      const startY = from.y + ny * circleR;
-      const endX = to.x - nx * circleR;
-      const endY = to.y - ny * circleR;
-
-      if (a.curve !== 0) {
-        const midX = (startX + endX) / 2;
-        const midY = (startY + endY) / 2 + a.curve;
-        h += `<path d="M${startX},${startY} Q${midX},${midY} ${endX},${endY}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-        h += `<text x="${midX}" y="${midY + (a.curve > 0 ? 14 : -6)}" text-anchor="middle" font-size="11" fill="#888">${a.label}</text>`;
+      const sx = from.x + nx * circleR;
+      const sy = from.y + ny * circleR;
+      const ex = to.x - nx * circleR;
+      const ey = to.y - ny * circleR;
+      // Perpendicular offset for curve
+      const px = -ny * (curveDir || 0);
+      const py = nx * (curveDir || 0);
+      const mx = (sx + ex) / 2 + px;
+      const my = (sy + ey) / 2 + py;
+      if (curveDir) {
+        h += `<path d="M${sx},${sy} Q${mx},${my} ${ex},${ey}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
       } else {
-        h += `<line x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-        const labelX = (startX + endX) / 2;
-        const labelY = (startY + endY) / 2 - 8;
-        h += `<text x="${labelX}" y="${labelY}" text-anchor="middle" font-size="11" fill="#888">${a.label}</text>`;
+        h += `<line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
       }
-    });
+      // Label along the midpoint
+      const lx = curveDir ? mx : (sx + ex) / 2;
+      const ly = curveDir ? my : (sy + ey) / 2;
+      const offX = -ny * 10;
+      const offY = nx * 10;
+      h += `<text x="${lx + offX}" y="${ly + offY}" text-anchor="middle" font-size="11" fill="#888">${label}</text>`;
+    }
 
+    // Transitions
+    arrow(positions.S0, positions.S1, '1', 0);             // S0 --1--> S1 (top, straight)
+    arrow(positions.S1, positions.S10, '0', 0);             // S1 --0--> S10 (right side down)
+    arrow(positions.S10, positions.S1, '1 / detect', -20);  // S10 --1--> S1 (right side up, curved away)
+    arrow(positions.S10, positions.S0, '0', 20);            // S10 --0--> S0 (left side up, curved away)
+
+    // Self loops
+    const selfLoops = [
+      { state: 'S0', label: '0', side: 'left' },
+      { state: 'S1', label: '1', side: 'right' },
+    ];
     selfLoops.forEach(sl => {
       const p = positions[sl.state];
+      const offX = sl.side === 'left' ? -1 : 1;
+      const loopX = p.x + offX * (circleR + 4);
       const loopY = p.y - circleR - 4;
-      h += `<path d="M${p.x - 10},${loopY} C${p.x - 20},${loopY - 28} ${p.x + 20},${loopY - 28} ${p.x + 10},${loopY}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-      h += `<text x="${p.x}" y="${loopY - 24}" text-anchor="middle" font-size="11" fill="#888">${sl.label}</text>`;
+      h += `<path d="M${p.x + offX * 8},${loopY} C${loopX - 8},${loopY - 30} ${loopX + 16 * offX},${loopY - 20} ${p.x + offX * 12},${loopY}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+      h += `<text x="${loopX + offX * 6}" y="${loopY - 22}" text-anchor="middle" font-size="11" fill="#888">${sl.label}</text>`;
     });
 
-    // Arrow marker
-    h += '<defs><marker id="fsmArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#888"/></marker></defs>';
-
-    // Draw states (circles)
+    // Draw states (circles) — drawn last so they're on top
     states.forEach(s => {
       const p = positions[s];
       const isActive = currentState === s;
@@ -3035,7 +3039,9 @@ function fsmWidget(container) {
       const strokeW = isActive ? 2.5 : 1.5;
       h += `<circle cx="${p.x}" cy="${p.y}" r="${circleR}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
       h += `<text x="${p.x}" y="${p.y + 1}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="${isActive ? 700 : 400}" fill="${isActive ? '#3498db' : '#666'}">${s}</text>`;
-      h += `<text x="${p.x}" y="${p.y + circleR + 14}" text-anchor="middle" font-size="10" fill="#888">${stateLabels[s]}</text>`;
+      // Labels below for top states, above for bottom state
+      const labelY = s === 'S10' ? p.y + circleR + 14 : p.y + circleR + 14;
+      h += `<text x="${p.x}" y="${labelY}" text-anchor="middle" font-size="10" fill="#888">${stateLabels[s]}</text>`;
     });
 
     h += '</svg>';
@@ -3275,14 +3281,49 @@ function endiannessWidget(container) {
   let hexVal = '44332211';
   let bits = 32;
 
-  function render() {
+  function getBytes() {
     const val = parseInt(hexVal, 16) || 0;
     const numBytes = bits / 8;
     const bytes = [];
     for (let i = numBytes - 1; i >= 0; i--) {
       bytes.push((val >>> (i * 8)) & 0xFF);
     }
+    return bytes;
+  }
 
+  function renderBytes() {
+    const bytes = getBytes();
+    const beContainer = container.querySelector('#enBE');
+    const leContainer = container.querySelector('#enLE');
+    if (!beContainer || !leContainer) return;
+
+    let beH = '';
+    bytes.forEach((b, i) => {
+      const isMSB = i === 0;
+      const isLSB = i === bytes.length - 1;
+      const bg = isMSB ? 'rgba(52,152,219,0.15)' : isLSB ? 'rgba(231,126,34,0.15)' : 'rgba(128,128,128,0.06)';
+      beH += `<div style="text-align:center;flex:1;border:1px solid rgba(128,128,128,0.2);border-radius:4px;padding:6px 4px;background:${bg};font-family:monospace">`;
+      beH += `<div style="font-size:10px;color:#888">0x${i.toString(16).padStart(2, '0')}</div>`;
+      beH += `<div style="font-size:14px;font-weight:600">0x${b.toString(16).toUpperCase().padStart(2, '0')}</div>`;
+      beH += '</div>';
+    });
+    beContainer.innerHTML = beH;
+
+    let leH = '';
+    const leBytes = [...bytes].reverse();
+    leBytes.forEach((b, i) => {
+      const isMSB = b === bytes[0];
+      const isLSB = b === bytes[bytes.length - 1];
+      const bg = isLSB ? 'rgba(231,126,34,0.15)' : isMSB ? 'rgba(52,152,219,0.15)' : 'rgba(128,128,128,0.06)';
+      leH += `<div style="text-align:center;flex:1;border:1px solid rgba(128,128,128,0.2);border-radius:4px;padding:6px 4px;background:${bg};font-family:monospace">`;
+      leH += `<div style="font-size:10px;color:#888">0x${i.toString(16).padStart(2, '0')}</div>`;
+      leH += `<div style="font-size:14px;font-weight:600">0x${b.toString(16).toUpperCase().padStart(2, '0')}</div>`;
+      leH += '</div>';
+    });
+    leContainer.innerHTML = leH;
+  }
+
+  function render() {
     let h = '<div class="widget-label">Try it \u2014 Endianness</div>';
 
     // Input
@@ -3296,40 +3337,20 @@ function endiannessWidget(container) {
 
     // Big-endian
     h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">Big-Endian <span style="font-weight:400;color:#888">(MSB first)</span></div>';
-    h += '<div style="display:flex;gap:2px;margin-bottom:12px">';
-    bytes.forEach((b, i) => {
-      const isMSB = i === 0;
-      const isLSB = i === bytes.length - 1;
-      const bg = isMSB ? 'rgba(52,152,219,0.15)' : isLSB ? 'rgba(231,126,34,0.15)' : 'rgba(128,128,128,0.06)';
-      h += `<div style="text-align:center;flex:1;border:1px solid rgba(128,128,128,0.2);border-radius:4px;padding:6px 4px;background:${bg};font-family:monospace">`;
-      h += `<div style="font-size:10px;color:#888">0x${i.toString(16).padStart(2, '0')}</div>`;
-      h += `<div style="font-size:14px;font-weight:600">0x${b.toString(16).toUpperCase().padStart(2, '0')}</div>`;
-      h += '</div>';
-    });
-    h += '</div>';
+    h += '<div id="enBE" style="display:flex;gap:2px;margin-bottom:12px"></div>';
 
     // Little-endian
     h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">Little-Endian <span style="font-weight:400;color:#888">(LSB first)</span></div>';
-    h += '<div style="display:flex;gap:2px;margin-bottom:8px">';
-    const leBytes = [...bytes].reverse();
-    leBytes.forEach((b, i) => {
-      const isMSB = b === bytes[0];
-      const isLSB = b === bytes[bytes.length - 1];
-      const bg = isLSB ? 'rgba(231,126,34,0.15)' : isMSB ? 'rgba(52,152,219,0.15)' : 'rgba(128,128,128,0.06)';
-      h += `<div style="text-align:center;flex:1;border:1px solid rgba(128,128,128,0.2);border-radius:4px;padding:6px 4px;background:${bg};font-family:monospace">`;
-      h += `<div style="font-size:10px;color:#888">0x${i.toString(16).padStart(2, '0')}</div>`;
-      h += `<div style="font-size:14px;font-weight:600">0x${b.toString(16).toUpperCase().padStart(2, '0')}</div>`;
-      h += '</div>';
-    });
-    h += '</div>';
+    h += '<div id="enLE" style="display:flex;gap:2px;margin-bottom:8px"></div>';
 
     h += '<div style="font-size:11px;color:#888"><span style="color:#3498db">\u25a0</span> MSB &nbsp; <span style="color:#e67e22">\u25a0</span> LSB &nbsp; Address increases left to right</div>';
 
     container.innerHTML = h;
+    renderBytes();
 
     container.querySelector('#enHex').addEventListener('input', (e) => {
       hexVal = e.target.value.replace(/[^0-9a-fA-F]/g, '').slice(0, bits / 4);
-      render();
+      renderBytes();
     });
     container.querySelectorAll('.en-bits').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -3345,7 +3366,7 @@ function endiannessWidget(container) {
 
 function replacementPolicyWidget(container) {
   const WAYS = 4;
-  const ADDRESSES = [0, 2, 4, 0, 6, 2, 0, 4, 6, 0]; // demonstrate thrashing and re-access
+  const ADDRESSES = [0, 2, 4, 6, 0, 8, 2, 6, 10, 4, 0, 8, 2, 10, 6, 0]; // 6 unique addrs in 4-way cache — evictions from step 5, policies diverge
   let policy = 'lru';
   let step = 0;
 
