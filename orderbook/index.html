@@ -763,7 +763,7 @@ function matchOrder(order) {
     }
   } else if (order.remaining === 0) {
     order.status = 'filled';
-    steps.push({ type: 'DONE', text: `Order #${order.id} fully filled` });
+    steps.push({ type: 'DONE', text: `Order #${order.id} fully filled`, orderId: order.id });
   }
 
   return steps;
@@ -810,15 +810,22 @@ function applyStep(step) {
     const incoming = allOrders[step.incomingId];
     resting.filled += step.qty;
     resting.remaining -= step.qty;
-    incoming.filled += step.qty;
-    incoming.remaining -= step.qty;
-    trades.push(step.trade);
     if (resting.remaining <= 0) {
       resting.status = 'filled';
       removeFromBook(resting);
     } else {
       resting.status = 'partial';
     }
+    if (incoming) {
+      incoming.filled += step.qty;
+      incoming.remaining -= step.qty;
+      if (incoming.remaining <= 0) {
+        incoming.status = 'filled';
+      } else if (incoming.filled > 0) {
+        incoming.status = 'partial';
+      }
+    }
+    trades.push(step.trade);
   } else if (step.type === 'ICEBERG') {
     const order = allOrders[step.orderId];
     order.remaining = step.refillQty;
@@ -831,6 +838,9 @@ function applyStep(step) {
   } else if (step.type === 'REJECT') {
     const order = allOrders[step.orderId];
     if (order) order.status = 'cancelled';
+  } else if (step.type === 'DONE') {
+    const order = allOrders[step.orderId];
+    if (order) order.status = 'filled';
   }
 }
 

@@ -1304,6 +1304,7 @@ const TOPICS = [
     type: 'tool',
     tags: ['fundamentals', 'boolean', 'minimization', 'combinational'],
     category: 'foundations',
+    tool: 'kmap',
     content: {
       problem: 'A truth table with n inputs has 2<sup>n</sup> rows. Writing a sum-of-products (SOP) expression directly from the table gives one product term per 1-output row. For 4 inputs, that can be up to 16 terms. How do you find the simplest equivalent expression?',
       howItWorks: '<strong>The K-map</strong> is a 2D grid where each cell is one row of the truth table, arranged so <em>adjacent cells differ by exactly one variable</em> (Gray code ordering). This means neighboring 1-cells can always be combined.<br><br>'
