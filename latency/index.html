@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive order processing latency simulator. Visualize how orders flow through trading system pipelines, compare software vs FPGA paths, and explore bottlenecks.">
+  <meta property="og:title" content="Latency Simulator | p14m.com">
+  <meta property="og:description" content="Interactive order processing latency simulator with step-by-step pipeline visualization.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://p14m.com/latency/">
+  <title>Latency Simulator | p14m.com</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    /* ── Latency-specific styles ── */
+
+    .lt-metrics-bar {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      padding: 10px 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      flex-wrap: wrap;
+    }
+    body.dark .lt-metrics-bar { border-color: #444; }
+    .lt-metric { text-align: center; }
+    .lt-metric-label { color: #595959; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    body.dark .lt-metric-label { color: #9a9a9a; }
+    .lt-metric-value { font-weight: 600; font-family: monospace; font-size: 14px; }
+
+    /* ── Pipeline area ── */
+    .lt-pipeline-area {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px 16px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+    body.dark .lt-pipeline-area { border-color: #444; }
+
+    .lt-path { margin-bottom: 16px; }
+    .lt-path:last-child { margin-bottom: 0; }
+    .lt-path-hidden { display: none; }
+
+    .lt-path-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      color: #595959;
+    }
+    body.dark .lt-path-label { color: #9a9a9a; }
+
+    .lt-stages {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      min-width: min-content;
+    }
+
+    .lt-stage {
+      min-width: 90px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 10px 8px;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+      background: #fafafa;
+    }
+    body.dark .lt-stage { border-left-color: #444; border-right-color: #444; border-bottom-color: #444; background: #232323; }
+    .lt-stage:hover { box-shadow: 0 0 0 2px rgba(0,102,204,0.3); }
+    body.dark .lt-stage:hover { box-shadow: 0 0 0 2px rgba(135,206,235,0.3); }
+
+    .lt-stage-active {
+      box-shadow: 0 0 0 2px #e67e22 !important;
+    }
+
+    .lt-stage-done {
+      opacity: 0.5;
+    }
+
+    .lt-stage-label {
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    .lt-stage-latency {
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .lt-stage-desc {
+      font-size: 10px;
+      color: #595959;
+      margin-top: 4px;
+      line-height: 1.3;
+    }
+    body.dark .lt-stage-desc { color: #9a9a9a; }
+
+    .lt-stage-bar {
+      height: 3px;
+      border-radius: 2px;
+      background: #e0e0e0;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    body.dark .lt-stage-bar { background: #444; }
+    .lt-stage-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .lt-arrow {
+      font-size: 16px;
+      color: #cccccc;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+    body.dark .lt-arrow { color: #555; }
+
+    .lt-path-total {
+      text-align: right;
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 8px;
+      color: #595959;
+    }
+    body.dark .lt-path-total { color: #9a9a9a; }
+
+    /* ── Compare divider ── */
+    .lt-compare-divider {
+      border-top: 1px dashed #e0e0e0;
+      margin: 16px 0;
+      position: relative;
+    }
+    body.dark .lt-compare-divider { border-top-color: #444; }
+    .lt-compare-label {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      padding: 0 8px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #9a9a9a;
+    }
+    body.dark .lt-compare-label { background: #1a1a1a; }
+
+    /* ── Stage colors (top border) ── */
+    .lt-stage-network { border-top: 3px solid #3498db; }
+    .lt-stage-parse { border-top: 3px solid #9b59b6; }
+    .lt-stage-risk { border-top: 3px solid #e74c3c; }
+    .lt-stage-match { border-top: 3px solid #2ecc71; }
+    .lt-stage-fill { border-top: 3px solid #f39c12; }
+    .lt-stage-wan { border-top: 3px solid #e67e22; }
+
+    .lt-bar-network { background: #3498db; }
+    .lt-bar-parse { background: #9b59b6; }
+    .lt-bar-risk { background: #e74c3c; }
+    .lt-bar-match { background: #2ecc71; }
+    .lt-bar-fill { background: #f39c12; }
+    .lt-bar-wan { background: #e67e22; }
+
+    body.dark .lt-stage-network { border-top-color: #5ba3c9; }
+    body.dark .lt-stage-parse { border-top-color: #9678ad; }
+    body.dark .lt-stage-risk { border-top-color: #c46b6b; }
+    body.dark .lt-stage-match { border-top-color: #5fad7a; }
+    body.dark .lt-stage-fill { border-top-color: #c9a24e; }
+    body.dark .lt-stage-wan { border-top-color: #b8814e; }
+
+    body.dark .lt-bar-network { background: #5ba3c9; }
+    body.dark .lt-bar-parse { background: #9678ad; }
+    body.dark .lt-bar-risk { background: #c46b6b; }
+    body.dark .lt-bar-match { background: #5fad7a; }
+    body.dark .lt-bar-fill { background: #c9a24e; }
+    body.dark .lt-bar-wan { background: #b8814e; }
+
+    /* ── Layout: pipeline + side panel ── */
+    .lt-layout {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 700px) {
+      .lt-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ── Waterfall breakdown ── */
+    .lt-waterfall {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    body.dark .lt-waterfall { border-color: #444; }
+
+    .lt-waterfall-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      color: #595959;
+    }
+    body.dark .lt-waterfall-title { color: #9a9a9a; }
+
+    .lt-waterfall-row {
+      margin-bottom: 12px;
+    }
+    .lt-waterfall-row:last-child { margin-bottom: 0; }
+
+    .lt-waterfall-label {
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .lt-waterfall-label span:last-child {
+      font-family: monospace;
+      color: #595959;
+    }
+    body.dark .lt-waterfall-label span:last-child { color: #9a9a9a; }
+
+    .lt-waterfall-bar {
+      display: flex;
+      height: 20px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+    body.dark .lt-waterfall-bar { background: #222; }
+
+    .lt-waterfall-seg {
+      height: 100%;
+      position: relative;
+      transition: width 0.3s;
+    }
+    .lt-waterfall-seg:hover {
+      opacity: 0.8;
+    }
+
+    .lt-waterfall-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      font-size: 11px;
+    }
+    .lt-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .lt-legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ── Side panel cards ── */
+    .lt-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    body.dark .lt-card { border-color: #444; }
+
+    .lt-card-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Controls ── */
+    .lt-send-btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      background: #0066cc;
+      color: white;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+      margin-bottom: 8px;
+    }
+    .lt-send-btn:hover { background: #0055aa; }
+    body.dark .lt-send-btn { background: #87ceeb; color: #1a1a1a; }
+    body.dark .lt-send-btn:hover { background: #6bb8d9; }
+
+    .lt-compare-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .lt-reset-btn {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      color: inherit;
+      font-family: inherit;
+    }
+    body.dark .lt-reset-btn { border-color: #444; }
+    .lt-reset-btn:hover { border-color: #0066cc; }
+    body.dark .lt-reset-btn:hover { border-color: #87ceeb; }
+
+    /* ── Stage editor ── */
+    .lt-edit-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .lt-edit-row label {
+      flex: 1;
+      font-size: 11px;
+    }
+    .lt-edit-row input {
+      width: 70px;
+      padding: 4px 6px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      text-align: right;
+      background: transparent;
+      color: inherit;
+    }
+    body.dark .lt-edit-row input { border-color: #444; }
+    .lt-edit-row .lt-unit { font-size: 11px; color: #9a9a9a; }
+
+    /* ── Step mode ── */
+    .lt-step-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .lt-step-btn {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      color: inherit;
+      font-family: inherit;
+      display: none;
+    }
+    body.dark .lt-step-btn { border-color: #444; }
+    .lt-step-btn:hover { border-color: #0066cc; }
+    body.dark .lt-step-btn:hover { border-color: #87ceeb; }
+    .lt-step-btn.visible { display: block; }
+
+    .lt-narration {
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 8px 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: #fafafa;
+      display: none;
+      margin-top: 8px;
+    }
+    body.dark .lt-narration { background: #222; border-color: #444; }
+    .lt-narration.visible { display: block; }
+
+    /* ── Scenarios ── */
+    .lt-scenario-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .lt-scenario-btn {
+      padding: 8px 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 12px;
+      color: inherit;
+      transition: border-color 0.15s;
+      line-height: 1.4;
+    }
+    .lt-scenario-btn:hover { border-color: #0066cc; }
+    body.dark .lt-scenario-btn { border-color: #444; }
+    body.dark .lt-scenario-btn:hover { border-color: #87ceeb; }
+    .lt-scenario-btn strong { display: block; font-size: 13px; margin-bottom: 2px; }
+
+    /* ── Order history ── */
+    .lt-history-panel {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+    body.dark .lt-history-panel { border-color: #444; }
+
+    .lt-history-header, .lt-history-row {
+      display: grid;
+      grid-template-columns: 40px 80px 1fr 80px;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 12px;
+      font-family: monospace;
+      align-items: center;
+    }
+    .lt-history-header {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: #595959;
+      font-family: inherit;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e0e0e0;
+      margin-bottom: 4px;
+    }
+    body.dark .lt-history-header { color: #9a9a9a; border-bottom-color: #444; }
+    .lt-history-row { border-bottom: 1px solid #f0f0f0; }
+    body.dark .lt-history-row { border-bottom-color: #2a2a2a; }
+
+    .lt-history-stages {
+      display: flex;
+      gap: 2px;
+    }
+    .lt-history-seg {
+      height: 14px;
+      border-radius: 2px;
+      font-size: 9px;
+      line-height: 14px;
+      text-align: center;
+      color: white;
+      overflow: hidden;
+      min-width: 4px;
+    }
+
+    .lt-history-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .lt-empty {
+      color: #9a9a9a;
+      font-style: italic;
+      padding: 12px 0;
+      font-size: 12px;
+    }
+
+    /* ── Flash ── */
+    @keyframes lt-pulse {
+      0%, 100% { box-shadow: 0 0 0 2px #e67e22; }
+      50% { box-shadow: 0 0 0 4px rgba(230, 126, 34, 0.4); }
+    }
+    .lt-stage-active {
+      animation: lt-pulse 0.8s ease-in-out infinite;
+    }
+
+    /* ── Responsive ── */
+    .lt-insight-row {
+      display: flex;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    body.dark .lt-insight-row { border-bottom-color: #2a2a2a; }
+    .lt-insight-row:last-child { border-bottom: none; }
+    .lt-insight-label {
+      font-weight: 600;
+      white-space: nowrap;
+      min-width: 110px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: #595959;
+      padding-top: 1px;
+    }
+    body.dark .lt-insight-label { color: #9a9a9a; }
+    .lt-insight-value { font-family: monospace; }
+
+    @media (max-width: 700px) {
+      .lt-stages { flex-wrap: wrap; gap: 8px; }
+      .lt-arrow { display: none; }
+      .lt-stage { min-width: 60px; }
+      .lt-insight-row { flex-direction: column; gap: 2px; }
+      .lt-insight-label { min-width: unset; }
+    }
+  </style>
+</head>
+<body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+<main class="container">
+  <div class="nav-row">
+    <div class="nav-links">
+      <a href="/" class="back-link">&larr; p14m.com</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/adders/">Adders</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/bits/">Bits</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/cache/">Cache</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/circuitgen/">CircuitGen</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/kmap/">K-Map</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/multipliers/">Multipliers</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/orderbook/">OrderBook</a>
+      <span style="color:#cccccc;">|</span>
+      <a href="/learn/">Learn</a>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-text">&#9790;</span>
+    </button>
+  </div>
+
+  <h1>Latency Simulator</h1>
+  <p class="subtitle">Visualize how orders flow through trading system pipelines &mdash; compare software vs hardware paths</p>
+
+  <details class="how-to">
+    <summary>How to use</summary>
+    <div class="how-to-body">
+      <p>This simulator shows how a trading order travels through a processing pipeline &mdash; from network arrival to fill confirmation. Each stage has a latency in nanoseconds, and the total tick-to-trade time is the sum of all stages.</p>
+      <p><strong>Latency ranges</strong>: Real-world software tick-to-trade is typically 5&ndash;50 &micro;s for competitive firms. FPGA-accelerated paths achieve 0.5&ndash;2 &micro;s. FPGA latencies aren't truly constant &mdash; they're deterministic with very low jitter (nanosecond variance), compared to software which has microsecond-level jitter from context switches, cache misses, and garbage collection. The default values here model a competitive software firm vs an FPGA setup. Edit the latencies to explore &ldquo;what if&rdquo; scenarios.</p>
+      <p><strong>The pipeline</strong> shows each processing stage as a box. When an order flows through, stages light up in sequence. The latency breakdown bar below shows the proportional time spent at each stage.</p>
+      <p><strong>Send Order</strong> pushes a new order into the pipeline. In auto mode it animates through all stages. In step mode, press "Next Step" or spacebar to advance one stage at a time.</p>
+      <p><strong>Compare Mode</strong> shows two pipeline paths side by side (e.g., software vs FPGA). Send an order and watch both paths process simultaneously to see where the FPGA saves time.</p>
+      <p><strong>Edit latencies</strong> by changing the nanosecond values in the Controls panel. This lets you model "what if risk check was slower?" or "what if we moved to colocation?"</p>
+      <p><strong>Scenarios</strong> preset the pipeline configuration and queue orders to demonstrate specific concepts: baseline paths, FPGA acceleration, colocation effects, burst traffic queuing, and pipeline bottlenecks.</p>
+      <p><strong>Burst mode</strong> sends multiple orders to show queuing effects. When the pipeline is busy, incoming orders wait &mdash; their total latency includes queue time plus processing time.</p>
+    </div>
+  </details>
+
+  <!-- Metrics bar -->
+  <div class="lt-metrics-bar">
+    <div class="lt-metric"><div class="lt-metric-label">Tick-to-Trade</div><div class="lt-metric-value" id="lt-ttt">--</div></div>
+    <div class="lt-metric"><div class="lt-metric-label">Bottleneck</div><div class="lt-metric-value" id="lt-bottleneck">--</div></div>
+    <div class="lt-metric"><div class="lt-metric-label">Orders</div><div class="lt-metric-value" id="lt-orders-count">0</div></div>
+    <div class="lt-metric"><div class="lt-metric-label">Avg Latency</div><div class="lt-metric-value" id="lt-avg">--</div></div>
+  </div>
+
+  <!-- Pipeline visualization -->
+  <div class="lt-pipeline-area">
+    <div class="lt-path" id="lt-path-a"></div>
+    <div class="lt-compare-divider lt-path-hidden" id="lt-divider">
+      <span class="lt-compare-label">vs</span>
+    </div>
+    <div class="lt-path lt-path-hidden" id="lt-path-b"></div>
+  </div>
+
+  <!-- Main layout: waterfall + controls -->
+  <div class="lt-layout">
+    <div class="lt-waterfall" id="lt-waterfall"></div>
+    <div>
+      <!-- Controls -->
+      <div class="lt-card">
+        <div class="lt-card-title">Controls</div>
+        <button class="lt-send-btn" onclick="sendOrder()">Send Order</button>
+        <div class="lt-compare-toggle">
+          <input type="checkbox" id="lt-compare-check" onchange="toggleCompare()">
+          <label for="lt-compare-check" style="font-size:13px;cursor:pointer;">Compare mode (Software vs FPGA)</label>
+        </div>
+        <div id="lt-editor-a"></div>
+        <button class="lt-reset-btn" onclick="resetPipeline()">Reset</button>
+      </div>
+
+      <!-- Step mode -->
+      <div class="lt-card">
+        <div class="lt-card-title">Step Mode</div>
+        <div class="lt-step-toggle">
+          <input type="checkbox" id="lt-step-check" onchange="toggleStepMode()">
+          <label for="lt-step-check" style="font-size:13px;cursor:pointer;">Walk through pipeline step-by-step</label>
+        </div>
+        <button class="lt-step-btn" id="lt-step-next" onclick="nextStep()">Next Step (Space)</button>
+        <div class="lt-narration" id="lt-narration"></div>
+      </div>
+
+      <!-- Scenarios -->
+      <div class="lt-card">
+        <div class="lt-card-title">Scenarios</div>
+        <div class="lt-scenario-grid">
+          <button class="lt-scenario-btn" onclick="loadScenario('baseline')">
+            <strong>Baseline Software Path</strong>
+            Standard software trading pipeline with typical stage latencies.
+          </button>
+          <button class="lt-scenario-btn" onclick="loadScenario('fpga')">
+            <strong>Software vs FPGA</strong>
+            Side-by-side comparison showing where hardware acceleration wins.
+          </button>
+          <button class="lt-scenario-btn" onclick="loadScenario('colocation')">
+            <strong>Colocation vs Remote</strong>
+            Same pipeline, but one path adds a 20,000 ns WAN hop each way.
+          </button>
+          <button class="lt-scenario-btn" onclick="loadScenario('burst')">
+            <strong>Burst Traffic</strong>
+            4 orders back-to-back &mdash; shows queuing delay buildup.
+          </button>
+          <button class="lt-scenario-btn" onclick="loadScenario('bottleneck')">
+            <strong>Slow Risk Check</strong>
+            Risk check at 15,000 ns bottlenecks the entire pipeline.
+          </button>
+        </div>
+        <button class="btn-t" onclick="copyLearnPrompt()" style="margin-top:10px;">Ask AI about this</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Run insights -->
+  <div class="lt-card" id="lt-insights" style="display:none">
+    <div class="lt-card-title">Run Insights</div>
+    <div id="lt-insights-body"></div>
+  </div>
+
+  <!-- Order history -->
+  <div class="lt-history-panel">
+    <div class="lt-card-title">Order History</div>
+    <div class="lt-history-header">
+      <span>ID</span><span>Path</span><span>Stage Breakdown</span><span>Total</span>
+    </div>
+    <div class="lt-history-list" id="lt-history"></div>
+  </div>
+
+  <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
+</main>
+
+<div id="toast" class="toast" style="display:none;"></div>
+
+<script>
+/* ================================================================
+   LATENCY SIMULATOR ENGINE
+   ================================================================ */
+
+// ── Stage definitions ──
+var STAGE_DEFS = {
+  ingress:  { id: 'ingress',  label: 'Network\nIngress',  color: 'network', desc: 'Order arrives over the network. Includes NIC processing, kernel bypass or interrupt handling, and delivery to the application. Software: 1\u201310 \u00B5s. FPGA: 100\u2013500 ns.' },
+  parse:    { id: 'parse',    label: 'Parse &\nDecode',    color: 'parse',   desc: 'Raw bytes are deserialized into a structured order message. Includes FIX/binary protocol parsing, field validation, and symbol lookup. Software: 0.5\u20135 \u00B5s. FPGA: 50\u2013200 ns.' },
+  risk:     { id: 'risk',     label: 'Risk\nCheck',        color: 'risk',    desc: 'Pre-trade risk validation. Checks position limits, buying power, order size limits, and regulatory constraints. Must pass before matching. Software: 1\u201315 \u00B5s. FPGA: 100\u2013500 ns.' },
+  match:    { id: 'match',    label: 'Matching\nEngine',   color: 'match',   desc: 'The core price-time priority matching algorithm. Walks the order book, fills against resting orders, and generates trades. Software: 0.5\u20135 \u00B5s. FPGA: 50\u2013300 ns.' },
+  fill:     { id: 'fill',     label: 'Fill &\nReport',     color: 'fill',    desc: 'Trade confirmations are generated, execution reports are serialized, and downstream systems (clearing, market data) are notified. Software: 0.3\u20132 \u00B5s. FPGA: 30\u2013100 ns.' },
+  egress:   { id: 'egress',   label: 'Network\nEgress',    color: 'network', desc: 'Execution report is transmitted back to the client. Includes serialization, TCP send, and NIC transmission. Software: 1\u201310 \u00B5s. FPGA: 100\u2013500 ns.' },
+  wan:      { id: 'wan',      label: 'WAN\nHop',           color: 'wan',     desc: 'Additional network hop over a wide-area network. Adds round-trip propagation delay from remote datacenter to exchange. Typically 5\u201350 ms depending on distance.' },
+};
+
+// ── Path presets ──
+function makeSoftwarePath() {
+  return {
+    name: 'Software',
+    stages: [
+      { id: 'ingress', latency: 1500 },
+      { id: 'parse',   latency: 800 },
+      { id: 'risk',    latency: 3000 },
+      { id: 'match',   latency: 1200 },
+      { id: 'fill',    latency: 500 },
+      { id: 'egress',  latency: 1500 },
+    ]
+  };
+}
+
+function makeFpgaPath() {
+  return {
+    name: 'FPGA',
+    stages: [
+      { id: 'ingress', latency: 300 },
+      { id: 'parse',   latency: 80 },
+      { id: 'risk',    latency: 200 },
+      { id: 'match',   latency: 150 },
+      { id: 'fill',    latency: 50 },
+      { id: 'egress',  latency: 300 },
+    ]
+  };
+}
+
+function makeRemotePath() {
+  return {
+    name: 'Remote',
+    stages: [
+      { id: 'wan',     latency: 20000 },
+      { id: 'ingress', latency: 1500 },
+      { id: 'parse',   latency: 800 },
+      { id: 'risk',    latency: 3000 },
+      { id: 'match',   latency: 1200 },
+      { id: 'fill',    latency: 500 },
+      { id: 'egress',  latency: 1500 },
+      { id: 'wan',     latency: 20000 },
+    ]
+  };
+}
+
+function makeColoPath() {
+  return {
+    name: 'Colocated',
+    stages: [
+      { id: 'ingress', latency: 1500 },
+      { id: 'parse',   latency: 800 },
+      { id: 'risk',    latency: 3000 },
+      { id: 'match',   latency: 1200 },
+      { id: 'fill',    latency: 500 },
+      { id: 'egress',  latency: 1500 },
+    ]
+  };
+}
+
+function makeBottleneckPath() {
+  return {
+    name: 'Bottleneck',
+    stages: [
+      { id: 'ingress', latency: 1500 },
+      { id: 'parse',   latency: 800 },
+      { id: 'risk',    latency: 15000 },
+      { id: 'match',   latency: 1200 },
+      { id: 'fill',    latency: 500 },
+      { id: 'egress',  latency: 1500 },
+    ]
+  };
+}
+
+function pathTotal(path) {
+  return path.stages.reduce(function(s, st) { return s + st.latency; }, 0);
+}
+
+function pathBottleneck(path) {
+  var max = 0, name = '';
+  for (var i = 0; i < path.stages.length; i++) {
+    if (path.stages[i].latency > max) {
+      max = path.stages[i].latency;
+      name = STAGE_DEFS[path.stages[i].id].label.replace('\n', ' ');
+    }
+  }
+  return { name: name, latency: max };
+}
+
+// ── State ──
+var pathA = makeSoftwarePath();
+var pathB = makeFpgaPath();
+var compareMode = false;
+var stepMode = false;
+var pendingSteps = [];
+var currentStepIndex = 0;
+var orderHistory = [];
+var nextOrderId = 1;
+var animTimer = null;
+var activeOrders = []; // orders currently in flight
+
+// ── Step generation ──
+function generateSteps(order, path) {
+  var steps = [];
+  var cumulative = 0;
+  steps.push({
+    type: 'NEW',
+    text: 'Order #' + order.id + ' enters the ' + path.name + ' pipeline.',
+    pathName: path.name,
+    orderId: order.id,
+    stageIdx: -1
+  });
+
+  for (var i = 0; i < path.stages.length; i++) {
+    var stage = path.stages[i];
+    var def = STAGE_DEFS[stage.id];
+    cumulative += stage.latency;
+    steps.push({
+      type: 'STAGE',
+      text: def.label.replace('\n', ' ') + ' (' + formatNs(stage.latency) + '): ' + def.desc,
+      pathName: path.name,
+      orderId: order.id,
+      stageIdx: i,
+      latency: stage.latency,
+      cumulative: cumulative,
+      stageId: stage.id
+    });
+  }
+
+  steps.push({
+    type: 'DONE',
+    text: 'Order #' + order.id + ' complete. Total tick-to-trade: ' + formatNs(cumulative) + '.',
+    pathName: path.name,
+    orderId: order.id,
+    stageIdx: path.stages.length,
+    totalLatency: cumulative
+  });
+
+  return steps;
+}
+
+function generateCompareSteps(orderId) {
+  var stepsA = generateSteps({ id: orderId }, pathA);
+  var stepsB = generateSteps({ id: orderId }, pathB);
+  var merged = [];
+
+  // Interleave: NEW A, NEW B, then STAGE A[0], STAGE B[0], ...
+  merged.push(stepsA[0]); // NEW for path A
+  merged.push(stepsB[0]); // NEW for path B
+
+  var maxStages = Math.max(pathA.stages.length, pathB.stages.length);
+  for (var i = 0; i < maxStages; i++) {
+    if (i + 1 < stepsA.length - 1) merged.push(stepsA[i + 1]); // STAGE for A
+    if (i + 1 < stepsB.length - 1) merged.push(stepsB[i + 1]); // STAGE for B
+  }
+
+  // DONE for both
+  merged.push(stepsA[stepsA.length - 1]);
+  merged.push(stepsB[stepsB.length - 1]);
+
+  // Final comparison
+  var totalA = pathTotal(pathA);
+  var totalB = pathTotal(pathB);
+  var diff = Math.abs(totalA - totalB);
+  var faster = totalA < totalB ? pathA.name : pathB.name;
+  var pct = ((diff / Math.max(totalA, totalB)) * 100).toFixed(1);
+  merged.push({
+    type: 'COMPARE',
+    text: faster + ' is ' + formatNs(diff) + ' faster (' + pct + '% reduction). ' + pathA.name + ': ' + formatNs(totalA) + ' vs ' + pathB.name + ': ' + formatNs(totalB) + '.',
+    stageIdx: -1
+  });
+
+  return merged;
+}
+
+// ── Send order ──
+function sendOrder() {
+  if (pendingSteps.length > 0) return; // busy
+
+  var id = nextOrderId++;
+  var steps;
+
+  if (compareMode) {
+    steps = generateCompareSteps(id);
+  } else {
+    steps = generateSteps({ id: id }, pathA);
+  }
+
+  if (stepMode) {
+    pendingSteps = steps;
+    currentStepIndex = 0;
+    showStepUI();
+  } else {
+    // Auto-play through steps
+    pendingSteps = steps;
+    currentStepIndex = 0;
+    autoPlay();
+  }
+}
+
+function sendBurst(count) {
+  if (pendingSteps.length > 0) return;
+
+  var allSteps = [];
+  var queueDelay = 0;
+  var pipelineTime = pathTotal(pathA);
+
+  for (var i = 0; i < count; i++) {
+    var id = nextOrderId++;
+    var steps = generateSteps({ id: id }, pathA);
+
+    if (i > 0) {
+      allSteps.push({
+        type: 'QUEUE',
+        text: 'Order #' + id + ' queued. Wait time: ' + formatNs(queueDelay) + '. The pipeline is single-threaded \u2014 each order must fully complete before the next begins.',
+        stageIdx: -1,
+        orderId: id,
+        queueDelay: queueDelay
+      });
+    }
+
+    for (var j = 0; j < steps.length; j++) {
+      var step = Object.assign({}, steps[j]);
+      if (step.type === 'DONE') {
+        step.totalLatency = step.totalLatency + queueDelay;
+        step.text = 'Order #' + id + ' complete. Processing: ' + formatNs(pipelineTime) + (queueDelay > 0 ? ' + queue wait: ' + formatNs(queueDelay) : '') + '. Total: ' + formatNs(step.totalLatency) + '.';
+      }
+      allSteps.push(step);
+    }
+    queueDelay += pipelineTime;
+  }
+
+  if (stepMode) {
+    pendingSteps = allSteps;
+    currentStepIndex = 0;
+    showStepUI();
+  } else {
+    pendingSteps = allSteps;
+    currentStepIndex = 0;
+    autoPlay();
+  }
+}
+
+// ── Auto-play ──
+function autoPlay() {
+  if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+  var narr = document.getElementById('lt-narration');
+  narr.classList.add('visible');
+  document.getElementById('lt-step-next').classList.add('visible');
+
+  var totalAnimTime = 3000;
+  var pathTime = pathTotal(pathA);
+
+  function playNext() {
+    if (currentStepIndex >= pendingSteps.length) {
+      animTimer = null;
+      narr.textContent = 'Complete.';
+      document.getElementById('lt-step-next').classList.remove('visible');
+      renderInsights();
+      pendingSteps = [];
+      currentStepIndex = 0;
+      return;
+    }
+    var step = pendingSteps[currentStepIndex];
+    applyAndShowStep(step);
+    currentStepIndex++;
+
+    var delay = 300;
+    if (step.type === 'STAGE') {
+      delay = Math.max(200, (step.latency / pathTime) * totalAnimTime);
+    }
+    animTimer = setTimeout(playNext, delay);
+  }
+  playNext();
+}
+
+// ── Step mode ──
+function toggleStepMode() {
+  stepMode = document.getElementById('lt-step-check').checked;
+  if (!stepMode) {
+    if (pendingSteps.length > 0 && animTimer === null) {
+      // Switch to auto-play for remaining steps
+      autoPlay();
+    }
+  } else {
+    if (animTimer) {
+      clearTimeout(animTimer);
+      animTimer = null;
+    }
+  }
+}
+
+function nextStep() {
+  if (pendingSteps.length === 0) return;
+  if (currentStepIndex >= pendingSteps.length) {
+    document.getElementById('lt-narration').textContent = 'Complete.';
+    document.getElementById('lt-step-next').classList.remove('visible');
+    renderInsights();
+    pendingSteps = [];
+    currentStepIndex = 0;
+    return;
+  }
+  applyAndShowStep(pendingSteps[currentStepIndex]);
+  currentStepIndex++;
+  if (currentStepIndex >= pendingSteps.length) {
+    setTimeout(function() {
+      document.getElementById('lt-narration').textContent = 'Complete.';
+      document.getElementById('lt-step-next').classList.remove('visible');
+      renderInsights();
+      pendingSteps = [];
+      currentStepIndex = 0;
+    }, 200);
+  }
+}
+
+function showStepUI() {
+  var narr = document.getElementById('lt-narration');
+  var btn = document.getElementById('lt-step-next');
+  narr.classList.add('visible');
+  btn.classList.add('visible');
+  if (pendingSteps.length > 0) {
+    applyAndShowStep(pendingSteps[0]);
+    currentStepIndex = 1;
+  }
+}
+
+function applyAndShowStep(step) {
+  var narr = document.getElementById('lt-narration');
+  narr.textContent = step.text;
+
+  // Update pipeline highlight
+  highlightStage('a', step.pathName === pathA.name ? step.stageIdx : -1, step.pathName === pathA.name);
+  if (compareMode) {
+    highlightStage('b', step.pathName === pathB.name ? step.stageIdx : -1, step.pathName === pathB.name);
+  }
+
+  // On DONE, record to history
+  if (step.type === 'DONE') {
+    var path = step.pathName === pathA.name ? pathA : pathB;
+    orderHistory.push({
+      id: step.orderId,
+      pathName: step.pathName,
+      stages: path.stages.slice(),
+      total: step.totalLatency,
+      queueDelay: 0
+    });
+    renderMetrics();
+    renderHistory();
+  }
+}
+
+function highlightStage(pathId, activeIdx, isActive) {
+  var el = document.getElementById('lt-path-' + pathId);
+  if (!el) return;
+  var stages = el.querySelectorAll('.lt-stage');
+  for (var i = 0; i < stages.length; i++) {
+    stages[i].classList.remove('lt-stage-active', 'lt-stage-done');
+    if (isActive && i < activeIdx) stages[i].classList.add('lt-stage-done');
+    if (isActive && i === activeIdx) stages[i].classList.add('lt-stage-active');
+  }
+  // Update stage bar fills
+  var path = pathId === 'a' ? pathA : pathB;
+  for (var i = 0; i < stages.length; i++) {
+    var fill = stages[i].querySelector('.lt-stage-bar-fill');
+    if (fill) {
+      if (isActive && i < activeIdx) fill.style.width = '100%';
+      else if (isActive && i === activeIdx) fill.style.width = '50%';
+      else fill.style.width = '0%';
+    }
+  }
+}
+
+// Spacebar
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Space' && pendingSteps.length > 0 && stepMode) {
+    e.preventDefault();
+    nextStep();
+  }
+});
+
+/* ================================================================
+   SCENARIOS
+   ================================================================ */
+
+function loadScenario(name) {
+  resetPipeline();
+  stepMode = true;
+  document.getElementById('lt-step-check').checked = true;
+
+  switch (name) {
+    case 'baseline':
+      pathA = makeSoftwarePath();
+      compareMode = false;
+      document.getElementById('lt-compare-check').checked = false;
+      renderAll();
+      pendingSteps = [
+        { type: 'INFO', text: 'Baseline software trading pipeline. 6 stages from network arrival to fill confirmation. Total: ' + formatNs(pathTotal(pathA)) + '.', stageIdx: -1 },
+        { type: 'INFO', text: 'The bottleneck is the risk check at ' + formatNs(pathA.stages[2].latency) + ' \u2014 pre-trade validation is the most computationally expensive stage in software. Watch how each stage contributes to the total latency.', stageIdx: -1 },
+      ];
+      currentStepIndex = 0;
+      queueOrderAfterInfo();
+      showToast('Scenario: Baseline Software Path');
+      break;
+
+    case 'fpga':
+      pathA = makeSoftwarePath();
+      pathB = makeFpgaPath();
+      compareMode = true;
+      document.getElementById('lt-compare-check').checked = true;
+      renderAll();
+      pendingSteps = [
+        { type: 'INFO', text: 'Software vs FPGA comparison. Both paths have the same stages, but the FPGA processes parse, risk, match, and fill in dedicated hardware.', stageIdx: -1 },
+        { type: 'INFO', text: 'The FPGA also has a direct NIC-to-FPGA path, bypassing the kernel entirely. Processing stages: ' + formatNs(pathTotal(pathA) - 3000) + ' (software) vs ' + formatNs(pathTotal(pathB) - 600) + ' (FPGA). Network: ' + formatNs(3000) + ' vs ' + formatNs(600) + '.', stageIdx: -1 },
+      ];
+      currentStepIndex = 0;
+      queueCompareOrderAfterInfo();
+      showToast('Scenario: Software vs FPGA');
+      break;
+
+    case 'colocation':
+      pathA = makeColoPath();
+      pathB = makeRemotePath();
+      compareMode = true;
+      document.getElementById('lt-compare-check').checked = true;
+      renderAll();
+      pendingSteps = [
+        { type: 'INFO', text: 'Colocation vs remote trading. The colocated path connects directly to the exchange. The remote path adds a 20,000 ns WAN hop each way.', stageIdx: -1 },
+        { type: 'INFO', text: 'The processing pipeline is identical. The entire difference is network propagation: ' + formatNs(40000) + ' of pure distance penalty. This is why firms pay millions for colocation racks.', stageIdx: -1 },
+      ];
+      currentStepIndex = 0;
+      queueCompareOrderAfterInfo();
+      showToast('Scenario: Colocation vs Remote');
+      break;
+
+    case 'burst':
+      pathA = makeSoftwarePath();
+      compareMode = false;
+      document.getElementById('lt-compare-check').checked = false;
+      renderAll();
+      pendingSteps = [
+        { type: 'INFO', text: 'Burst traffic: 4 orders arrive simultaneously. The pipeline processes one order at a time \u2014 a single-threaded matching engine.', stageIdx: -1 },
+        { type: 'INFO', text: 'Each order after the first must wait for the pipeline to clear. Order #2 waits ' + formatNs(pathTotal(pathA)) + ', order #3 waits ' + formatNs(pathTotal(pathA) * 2) + ', and so on. This queuing delay is why throughput matters as much as latency.', stageIdx: -1 },
+      ];
+      currentStepIndex = 0;
+      queueBurstAfterInfo(4);
+      showToast('Scenario: Burst Traffic');
+      break;
+
+    case 'bottleneck':
+      pathA = makeBottleneckPath();
+      compareMode = false;
+      document.getElementById('lt-compare-check').checked = false;
+      renderAll();
+      var bn = pathBottleneck(pathA);
+      pendingSteps = [
+        { type: 'INFO', text: 'A single slow stage dominates the entire pipeline. Risk check is at ' + formatNs(15000) + ' while other stages total ' + formatNs(pathTotal(pathA) - 15000) + '.', stageIdx: -1 },
+        { type: 'INFO', text: 'The risk check is ' + (15000 / pathTotal(pathA) * 100).toFixed(0) + '% of the total latency. Optimizing any other stage barely moves the needle \u2014 this is Amdahl\'s law in action. The bottleneck sets the floor.', stageIdx: -1 },
+      ];
+      currentStepIndex = 0;
+      queueOrderAfterInfo();
+      showToast('Scenario: Slow Risk Check');
+      break;
+  }
+
+  showStepUI();
+}
+
+var pendingOrderQueue = null;
+
+function queueOrderAfterInfo() {
+  pendingOrderQueue = { type: 'single' };
+}
+
+function queueCompareOrderAfterInfo() {
+  pendingOrderQueue = { type: 'compare' };
+}
+
+function queueBurstAfterInfo(count) {
+  pendingOrderQueue = { type: 'burst', count: count };
+}
+
+// Override nextStep to handle INFO -> order transition
+var _origNextStep = nextStep;
+nextStep = function() {
+  if (pendingSteps.length === 0) return;
+
+  // If current step is INFO, just show it
+  if (currentStepIndex < pendingSteps.length && pendingSteps[currentStepIndex].type === 'INFO') {
+    var narr = document.getElementById('lt-narration');
+    narr.textContent = pendingSteps[currentStepIndex].text;
+    currentStepIndex++;
+
+    // If we've exhausted INFO steps and have a pending order queue, generate order steps
+    if (currentStepIndex >= pendingSteps.length && pendingOrderQueue) {
+      var orderSteps;
+      if (pendingOrderQueue.type === 'compare') {
+        var id = nextOrderId++;
+        orderSteps = generateCompareSteps(id);
+      } else if (pendingOrderQueue.type === 'burst') {
+        // Generate burst steps inline
+        orderSteps = [];
+        var queueDelay = 0;
+        var pipelineTime = pathTotal(pathA);
+        for (var i = 0; i < pendingOrderQueue.count; i++) {
+          var id = nextOrderId++;
+          var steps = generateSteps({ id: id }, pathA);
+          if (i > 0) {
+            orderSteps.push({
+              type: 'QUEUE',
+              text: 'Order #' + id + ' queued. Wait time: ' + formatNs(queueDelay) + '. The pipeline is occupied \u2014 this order sits in the queue.',
+              stageIdx: -1,
+              orderId: id,
+              queueDelay: queueDelay
+            });
+          }
+          for (var j = 0; j < steps.length; j++) {
+            var step = Object.assign({}, steps[j]);
+            if (step.type === 'DONE') {
+              step.totalLatency = step.totalLatency + queueDelay;
+              step.text = 'Order #' + id + ' complete. Processing: ' + formatNs(pipelineTime) + (queueDelay > 0 ? ' + queue: ' + formatNs(queueDelay) : '') + ' = ' + formatNs(step.totalLatency) + '.';
+            }
+            orderSteps.push(step);
+          }
+          queueDelay += pipelineTime;
+        }
+      } else {
+        var id = nextOrderId++;
+        orderSteps = generateSteps({ id: id }, pathA);
+      }
+      pendingSteps = pendingSteps.concat(orderSteps);
+      pendingOrderQueue = null;
+    }
+    return;
+  }
+
+  _origNextStep();
+};
+
+/* ================================================================
+   RENDERING
+   ================================================================ */
+
+function renderAll() {
+  renderPipeline();
+  renderWaterfall();
+  renderMetrics();
+  renderHistory();
+  renderEditor();
+}
+
+function renderPipeline() {
+  renderPath('a', pathA);
+  if (compareMode) {
+    document.getElementById('lt-divider').classList.remove('lt-path-hidden');
+    document.getElementById('lt-path-b').classList.remove('lt-path-hidden');
+    renderPath('b', pathB);
+  } else {
+    document.getElementById('lt-divider').classList.add('lt-path-hidden');
+    document.getElementById('lt-path-b').classList.add('lt-path-hidden');
+  }
+}
+
+function renderPath(pathId, path) {
+  var el = document.getElementById('lt-path-' + pathId);
+  var total = pathTotal(path);
+  var html = '<div class="lt-path-label">' + path.name + ' Path</div>';
+  html += '<div class="lt-stages">';
+  for (var i = 0; i < path.stages.length; i++) {
+    var stage = path.stages[i];
+    var def = STAGE_DEFS[stage.id];
+    var widthPct = Math.max(10, (stage.latency / total * 100));
+    if (i > 0) html += '<span class="lt-arrow">\u25B6</span>';
+    html += '<div class="lt-stage lt-stage-' + def.color + '" style="flex: 0 0 ' + widthPct.toFixed(1) + '%" onclick="clickStage(\'' + pathId + '\',' + i + ')">';
+    html += '<div class="lt-stage-label">' + def.label.replace('\n', '<br>') + '</div>';
+    html += '<div class="lt-stage-latency">' + formatNs(stage.latency) + '</div>';
+    html += '<div class="lt-stage-bar"><div class="lt-stage-bar-fill lt-bar-' + def.color + '"></div></div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  html += '<div class="lt-path-total">Total: ' + formatNs(pathTotal(path)) + '</div>';
+  el.innerHTML = html;
+}
+
+function renderWaterfall() {
+  var el = document.getElementById('lt-waterfall');
+  var html = '<div class="lt-waterfall-title">Latency Breakdown</div>';
+
+  function renderBar(path) {
+    var total = pathTotal(path);
+    html += '<div class="lt-waterfall-row">';
+    html += '<div class="lt-waterfall-label"><span>' + path.name + '</span><span>' + formatNs(total) + '</span></div>';
+    html += '<div class="lt-waterfall-bar">';
+    for (var i = 0; i < path.stages.length; i++) {
+      var stage = path.stages[i];
+      var def = STAGE_DEFS[stage.id];
+      var pct = (stage.latency / Math.max(total, 1) * 100).toFixed(1);
+      html += '<div class="lt-waterfall-seg lt-bar-' + def.color + '" style="width:' + pct + '%" title="' + def.label.replace('\n', ' ') + ': ' + formatNs(stage.latency) + '"></div>';
+    }
+    html += '</div></div>';
+  }
+
+  renderBar(pathA);
+  if (compareMode) renderBar(pathB);
+
+  // Normalize bars to same scale in compare mode
+  if (compareMode) {
+    var maxTotal = Math.max(pathTotal(pathA), pathTotal(pathB));
+    // Re-render with normalized widths
+    html = '<div class="lt-waterfall-title">Latency Breakdown</div>';
+    function renderBarNormalized(path) {
+      var total = pathTotal(path);
+      var barWidth = (total / maxTotal * 100).toFixed(1);
+      html += '<div class="lt-waterfall-row">';
+      html += '<div class="lt-waterfall-label"><span>' + path.name + '</span><span>' + formatNs(total) + '</span></div>';
+      html += '<div class="lt-waterfall-bar" style="position:relative">';
+      html += '<div style="display:flex;width:' + barWidth + '%">';
+      for (var i = 0; i < path.stages.length; i++) {
+        var stage = path.stages[i];
+        var def = STAGE_DEFS[stage.id];
+        var pct = (stage.latency / Math.max(total, 1) * 100).toFixed(1);
+        html += '<div class="lt-waterfall-seg lt-bar-' + def.color + '" style="width:' + pct + '%" title="' + def.label.replace('\n', ' ') + ': ' + formatNs(stage.latency) + '"></div>';
+      }
+      html += '</div></div></div>';
+    }
+    renderBarNormalized(pathA);
+    renderBarNormalized(pathB);
+  }
+
+  // Legend
+  html += '<div class="lt-waterfall-legend">';
+  var seen = {};
+  var allStages = pathA.stages.concat(compareMode ? pathB.stages : []);
+  for (var i = 0; i < allStages.length; i++) {
+    var def = STAGE_DEFS[allStages[i].id];
+    if (seen[def.color]) continue;
+    seen[def.color] = true;
+    html += '<span class="lt-legend-item"><span class="lt-legend-swatch lt-bar-' + def.color + '"></span>' + def.label.replace('\n', ' ') + '</span>';
+  }
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+function renderMetrics() {
+  var tttEl = document.getElementById('lt-ttt');
+  var bnEl = document.getElementById('lt-bottleneck');
+  var countEl = document.getElementById('lt-orders-count');
+  var avgEl = document.getElementById('lt-avg');
+
+  tttEl.textContent = formatNs(pathTotal(pathA));
+  var bn = pathBottleneck(pathA);
+  bnEl.textContent = bn.name + ' (' + formatNs(bn.latency) + ')';
+  countEl.textContent = orderHistory.length;
+
+  if (orderHistory.length > 0) {
+    var sum = 0;
+    for (var i = 0; i < orderHistory.length; i++) sum += orderHistory[i].total;
+    avgEl.textContent = formatNs(Math.round(sum / orderHistory.length));
+  } else {
+    avgEl.textContent = '--';
+  }
+}
+
+function renderHistory() {
+  var el = document.getElementById('lt-history');
+  if (orderHistory.length === 0) {
+    el.innerHTML = '<div class="lt-empty">No orders processed yet</div>';
+    return;
+  }
+  var html = '';
+  for (var i = orderHistory.length - 1; i >= 0; i--) {
+    var o = orderHistory[i];
+    var total = o.total;
+    html += '<div class="lt-history-row">';
+    html += '<span>' + o.id + '</span>';
+    html += '<span>' + o.pathName + '</span>';
+    html += '<span class="lt-history-stages">';
+    for (var j = 0; j < o.stages.length; j++) {
+      var stage = o.stages[j];
+      var def = STAGE_DEFS[stage.id];
+      var pct = (stage.latency / total * 100).toFixed(1);
+      html += '<span class="lt-history-seg lt-bar-' + def.color + '" style="width:' + pct + '%" title="' + def.label.replace('\n', ' ') + ': ' + formatNs(stage.latency) + '">' + (parseFloat(pct) > 12 ? formatNs(stage.latency) : '') + '</span>';
+    }
+    html += '</span>';
+    html += '<span>' + formatNs(total) + '</span>';
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderEditor() {
+  var el = document.getElementById('lt-editor-a');
+  var html = '';
+  for (var i = 0; i < pathA.stages.length; i++) {
+    var stage = pathA.stages[i];
+    var def = STAGE_DEFS[stage.id];
+    html += '<div class="lt-edit-row">';
+    html += '<label>' + def.label.replace('\n', ' ') + '</label>';
+    html += '<input type="number" min="0" step="10" value="' + stage.latency + '" onchange="editLatency(' + i + ', this.value)">';
+    html += '<span class="lt-unit">ns</span>';
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function editLatency(idx, value) {
+  var v = parseInt(value);
+  if (isNaN(v) || v < 0) return;
+  pathA.stages[idx].latency = v;
+  renderPipeline();
+  renderWaterfall();
+  renderMetrics();
+}
+
+function clickStage(pathId, idx) {
+  var path = pathId === 'a' ? pathA : pathB;
+  var stage = path.stages[idx];
+  var def = STAGE_DEFS[stage.id];
+  var narr = document.getElementById('lt-narration');
+  narr.classList.add('visible');
+  narr.textContent = def.label.replace('\n', ' ') + ' (' + formatNs(stage.latency) + '): ' + def.desc;
+}
+
+/* ================================================================
+   INSIGHTS
+   ================================================================ */
+
+function renderInsights() {
+  var panel = document.getElementById('lt-insights');
+  var body = document.getElementById('lt-insights-body');
+  if (orderHistory.length === 0) { panel.style.display = 'none'; return; }
+
+  var rows = [];
+  var totalA = pathTotal(pathA);
+
+  // Bottleneck
+  var bn = pathBottleneck(pathA);
+  var bnPct = (bn.latency / totalA * 100).toFixed(0);
+  rows.push({ label: 'Bottleneck', value: bn.name + ' is ' + bnPct + '% of total latency \u2014 optimizing other stages yields diminishing returns (Amdahl\u2019s law)' });
+
+  // Network overhead
+  var networkNs = 0;
+  for (var i = 0; i < pathA.stages.length; i++) {
+    if (pathA.stages[i].id === 'ingress' || pathA.stages[i].id === 'egress') networkNs += pathA.stages[i].latency;
+  }
+  var netPct = (networkNs / totalA * 100).toFixed(0);
+  rows.push({ label: 'Network overhead', value: 'Network in+out is ' + netPct + '% of tick-to-trade (' + formatNs(networkNs) + ') \u2014 even with zero processing, this is the floor' });
+
+  // FPGA speedup (if compare mode)
+  if (compareMode) {
+    var totalB = pathTotal(pathB);
+    var speedup = (totalA / totalB).toFixed(1);
+    var procA = 0, procB = 0, netA = 0, netB = 0;
+    for (var i = 0; i < pathA.stages.length; i++) {
+      if (pathA.stages[i].id === 'ingress' || pathA.stages[i].id === 'egress') netA += pathA.stages[i].latency;
+      else procA += pathA.stages[i].latency;
+    }
+    for (var i = 0; i < pathB.stages.length; i++) {
+      if (pathB.stages[i].id === 'ingress' || pathB.stages[i].id === 'egress') netB += pathB.stages[i].latency;
+      else procB += pathB.stages[i].latency;
+    }
+    var procSpeedup = (procA / procB).toFixed(1);
+    var netSpeedup = netA > 0 && netB > 0 ? (netA / netB).toFixed(1) : '--';
+    rows.push({ label: 'FPGA speedup', value: pathB.name + ' is ' + speedup + 'x faster. Processing: ' + formatNs(procA) + ' \u2192 ' + formatNs(procB) + ' (' + procSpeedup + 'x). Network: ' + formatNs(netA) + ' \u2192 ' + formatNs(netB) + ' (' + netSpeedup + 'x)' });
+  }
+
+  // Queue penalty (if burst orders exist)
+  var maxQueue = 0, maxQueueOrder = null;
+  for (var i = 0; i < orderHistory.length; i++) {
+    var o = orderHistory[i];
+    var processing = 0;
+    for (var j = 0; j < o.stages.length; j++) processing += o.stages[j].latency;
+    var queueTime = o.total - processing;
+    if (queueTime > maxQueue) { maxQueue = queueTime; maxQueueOrder = o; }
+  }
+  if (maxQueue > 0 && maxQueueOrder) {
+    var processing = maxQueueOrder.total - maxQueue;
+    var queuePct = (maxQueue / maxQueueOrder.total * 100).toFixed(0);
+    rows.push({ label: 'Queue penalty', value: 'Order #' + maxQueueOrder.id + ' effective latency: ' + formatNs(maxQueueOrder.total) + ' (' + formatNs(maxQueue) + ' queue + ' + formatNs(processing) + ' processing). ' + queuePct + '% of time spent waiting.' });
+  }
+
+  // Theoretical min
+  rows.push({ label: 'Theoretical min', value: 'Even at 0 ns processing, network floor is ' + formatNs(networkNs) + ' \u2014 speed of light sets the limit' });
+
+  var html = '';
+  for (var i = 0; i < rows.length; i++) {
+    html += '<div class="lt-insight-row">';
+    html += '<span class="lt-insight-label">' + rows[i].label + '</span>';
+    html += '<span class="lt-insight-value">' + rows[i].value + '</span>';
+    html += '</div>';
+  }
+  body.innerHTML = html;
+  panel.style.display = 'block';
+}
+
+/* ================================================================
+   CONTROLS
+   ================================================================ */
+
+function toggleCompare() {
+  compareMode = document.getElementById('lt-compare-check').checked;
+  renderAll();
+}
+
+function resetPipeline() {
+  if (animTimer) { clearTimeout(animTimer); animTimer = null; }
+  pendingSteps = [];
+  currentStepIndex = 0;
+  pendingOrderQueue = null;
+  orderHistory = [];
+  nextOrderId = 1;
+  document.getElementById('lt-narration').textContent = '';
+  document.getElementById('lt-narration').classList.remove('visible');
+  document.getElementById('lt-step-next').classList.remove('visible');
+  // Clear highlights
+  highlightStage('a', -1, false);
+  highlightStage('b', -1, false);
+  document.getElementById('lt-insights').style.display = 'none';
+  renderAll();
+  showToast('Pipeline reset');
+}
+
+/* ================================================================
+   UTILITIES
+   ================================================================ */
+
+function formatNs(ns) {
+  if (ns >= 1000000) return (ns / 1000000).toFixed(2) + ' ms';
+  if (ns >= 10000) return (ns / 1000).toFixed(1) + ' \u00B5s';
+  return ns.toLocaleString() + ' ns';
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.style.display = 'none'; }, 2000);
+}
+
+function copyLearnPrompt() {
+  var prompt = 'I\'m learning about order processing latency in trading systems using an interactive simulator. Please explain:\n\n1. What is tick-to-trade latency? Walk through the stages an order passes through: network ingress, parsing/decoding, risk check, matching engine, fill generation, and network egress. What happens at each stage?\n\n2. Why is the risk check typically the slowest stage in a software pipeline? What checks need to happen before an order can be matched?\n\n3. How do FPGAs reduce latency? Which stages benefit most from hardware acceleration, and why do network stages stay the same?\n\n4. What is colocation and why does it matter? Explain the physics of network propagation delay and why firms pay millions for rack space next to the exchange.\n\n5. Explain queuing effects in burst traffic. If a pipeline takes 2,450 ns per order and 4 orders arrive simultaneously, what is the effective latency for each order? How does this relate to throughput vs latency tradeoffs?\n\n6. What is Amdahl\'s law and how does it apply to pipeline bottlenecks? If one stage is 10x slower than the others, how much does optimizing the fast stages help?\n\nUse concrete numbers (nanoseconds) and analogies where helpful.';
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(prompt).then(function() { showToast('Prompt copied \u2014 paste it into any AI chat'); });
+  }
+}
+
+function toggleTheme() {
+  var body = document.body;
+  var themeText = document.getElementById('theme-text');
+  if (body.classList.contains('dark')) {
+    body.classList.remove('dark');
+    themeText.innerHTML = '&#9790;';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark');
+    themeText.innerHTML = '&#9788;';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', function() {
+  var themeText = document.getElementById('theme-text');
+  if (document.body.classList.contains('dark')) {
+    themeText.innerHTML = '&#9788;';
+  }
+  setTimeout(function() {
+    renderAll();
+  }, 0);
+});
+</script>
+</body>
+</html>

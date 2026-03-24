@@ -422,6 +422,8 @@
       <span style="color:#cccccc;">|</span>
       <a href="/kmap/">K-Map</a>
       <span style="color:#cccccc;">|</span>
+      <a href="/latency/">Latency</a>
+      <span style="color:#cccccc;">|</span>
       <a href="/multipliers/">Multipliers</a>
       <span style="color:#cccccc;">|</span>
       <a href="/learn/">Learn</a>
@@ -1520,19 +1522,22 @@ function showToast(msg) {
 
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', function() {
-  seedBook(100.00);
-  render();
-  scrollToSpread();
-
-  // Default price hint
-  const ba = bestAsk();
-  if (ba !== null) document.getElementById('ob-price').value = ba.toFixed(2);
-
-  // Theme sync
+  // Theme sync (instant — no layout work)
   const themeText = document.getElementById('theme-text');
   if (document.body.classList.contains('dark')) {
     themeText.innerHTML = '&#9788;';
   }
+
+  // Defer heavy init so the browser paints the static shell first
+  setTimeout(function() {
+    seedBook(100.00);
+    render();
+    scrollToSpread();
+
+    // Default price hint
+    const ba = bestAsk();
+    if (ba !== null) document.getElementById('ob-price').value = ba.toFixed(2);
+  }, 0);
 });
 
 function toggleTheme() {

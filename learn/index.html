@@ -828,6 +828,8 @@
         <span style="color:#cccccc;">|</span>
         <a href="/kmap/">K-Map</a>
         <span style="color:#cccccc;">|</span>
+        <a href="/latency/">Latency</a>
+        <span style="color:#cccccc;">|</span>
         <a href="/multipliers/">Multipliers</a>
         <span style="color:#cccccc;">|</span>
         <a href="/orderbook/">OrderBook</a>
@@ -3693,7 +3695,7 @@ function route() {
 }
 
 window.addEventListener('hashchange', route);
-document.addEventListener('DOMContentLoaded', route);
+document.addEventListener('DOMContentLoaded', function() { setTimeout(route, 0); });
 </script>
 </body>
 </html>
