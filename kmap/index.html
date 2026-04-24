@@ -15,6 +15,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
   <link rel="stylesheet" href="/shared.css">
+  <script src="/lib/feedback.js" defer></script>
   <style>
     /* ── K-Map Specific ── */
     .km-tbl {
@@ -317,10 +318,9 @@
       <div class="result-label" style="margin-top:0;">Circuit Diagram<span class="tag">Gate-Level</span></div>
       <div id="circuitWrap" class="circuit-wrap"></div>
     </div>
+    <div class="feedback-box" data-topic="tool-kmap" data-label="Was this tool useful?"></div>
 
-    <div class="footer">
-&copy; 2026 <a href="/">p14m.com</a>
-    </div>
+    <div class="footer">&copy; 2026 <a href="/">p14m.com</a> <span class="footer-sep">·</span> <a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Submit feedback</a></div>
   </main>
 
   <div id="toast" class="toast" style="display: none;"></div>
