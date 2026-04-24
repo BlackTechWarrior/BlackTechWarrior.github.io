@@ -9,18 +9,13 @@ body {
     max-width: 700px;
 }
 
-/* ── Dark mode (index-specific) ── */
-body.dark .quote { border-color: #444444; }
-body.dark .profile-picture { border-color: #444444; }
-body.dark .header { border-bottom-color: #444444; }
-
 /* ── Header ── */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    border-bottom: 2px solid #cccccc;
+    border-bottom: 1px solid var(--rule);
     padding-bottom: 15px;
 }
 
@@ -36,7 +31,7 @@ body.dark .header { border-bottom-color: #444444; }
     aspect-ratio: 1;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #cccccc;
+    border: 2px solid var(--rule);
 }
 
 h1 {
@@ -46,13 +41,16 @@ h1 {
 
 /* ── Quote ── */
 .quote {
-    border: 1px solid #e0e0e0;
-    padding: 8px 12px;
+    border: 1px solid var(--rule);
+    padding: 10px 14px;
     margin: 15px 0;
-    border-radius: 6px;
-    font-style: italic;
-    font-size: 14px;
-    opacity: 0.85;
+    border-radius: 8px;
+    font-family: var(--f-display);
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.55;
+    letter-spacing: -0.003em;
+    opacity: 0.92;
 }
 
 .attribution {
@@ -81,16 +79,14 @@ h1 {
 
 /* ── Headings ── */
 h2 {
-    font-size: 1.3em;
+    font-family: var(--f-display);
+    font-size: 1.35em;
     margin-top: 0;
     margin-bottom: 15px;
-    font-weight: 600;
+    font-weight: 500;
+    letter-spacing: -0.01em;
     padding-bottom: 8px;
-    border-bottom: 2px solid #0066cc;
-}
-
-body.dark h2 {
-    border-bottom-color: grey;
+    border-bottom: 1px solid var(--accent);
 }
 
 /* ── Lists ── */

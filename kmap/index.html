@@ -20,114 +20,134 @@
     .km-tbl {
       border-collapse: collapse;
       margin: 0 auto;
-      font-family: monospace;
+      font-family: var(--f-mono);
     }
     .km-tbl th, .km-tbl td { text-align: center; padding: 0; }
     .km-hdr {
       font-size: 13px;
       font-weight: 500;
-      color: #595959;
+      color: var(--muted);
       padding: 6px 10px !important;
     }
-    body.dark .km-hdr { color: #9a9a9a; }
+    body.dark .km-hdr { color: var(--muted); }
 
     .km-cell {
       width: 48px;
       height: 48px;
       font-size: 16px;
       font-weight: 600;
-      border: 1px solid #cccccc;
+      border: 1px solid var(--rule);
       transition: all 0.12s;
+      position: relative;
     }
-    body.dark .km-cell { border-color: #444444; }
     .km-cell span { position: relative; z-index: 2; }
-    .km-cell.v1 { color: #0066cc; }
-    .km-cell.v0 { color: #595959; }
-    .km-cell.vx { color: #e67e22; }
-    body.dark .km-cell.v1 { color: #87ceeb; }
-    body.dark .km-cell.v0 { color: #6b6b6b; }
-    body.dark .km-cell.vx { color: #f39c12; }
+    /* Secondary-group inner ring for cells belonging to 2+ groups */
+    .km-cell[data-extra-group]::before {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border: 2px dashed var(--km-extra-border, transparent);
+      border-radius: 3px;
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* Tertiary ring (very rare — deepest overlap) */
+    .km-cell[data-extra-group-2]::after {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      border: 1px dotted var(--km-extra-border-2, transparent);
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .km-cell.v1 { color: var(--accent); }
+    .km-cell.v0 { color: var(--muted); }
+    .km-cell.vx { color: var(--mant); }
+    body.dark .km-cell.v1 { color: var(--accent); }
+    body.dark .km-cell.v0 { color: var(--muted); }
+    body.dark .km-cell.vx { color: var(--warn); }
     .km-cell.click { cursor: pointer; }
-    .km-cell.click:hover { border-color: #0066cc; background: rgba(0, 102, 204, 0.05) !important; }
-    body.dark .km-cell.click:hover { border-color: #87ceeb; background: rgba(135, 206, 235, 0.1) !important; }
+    .km-cell.click:hover { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 5%, transparent) !important; }
+    body.dark .km-cell.click:hover { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 10%, transparent) !important; }
 
     .tt {
       border-collapse: collapse;
       font-size: 13px;
       margin: 0 auto;
-      font-family: monospace;
+      font-family: var(--f-mono);
     }
     .tt th {
       padding: 8px 14px;
-      border-bottom: 2px solid #cccccc;
+      border-bottom: 2px solid var(--rule);
       font-weight: 600;
       position: sticky;
       top: 0;
-      background: #ffffff;
+      background: var(--paper);
     }
-    body.dark .tt th { border-bottom-color: #444444; background: #1a1a1a; }
+    body.dark .tt th { border-bottom-color: var(--rule); background: var(--paper); }
     .tt td {
       padding: 6px 14px;
-      border-bottom: 1px solid #eeeeee;
+      border-bottom: 1px solid var(--rule-soft);
       text-align: center;
-      color: #595959;
+      color: var(--muted);
     }
-    body.dark .tt td { border-bottom-color: #333333; color: #9a9a9a; }
-    .tt tr:hover td { background: rgba(0, 102, 204, 0.03); }
-    body.dark .tt tr:hover td { background: rgba(135, 206, 235, 0.05); }
-    .tt .o1 { color: #0066cc; font-weight: 600; }
-    .tt .o0 { color: #595959; }
-    .tt .ox { color: #e67e22; font-weight: 600; }
-    body.dark .tt .o1 { color: #87ceeb; }
-    body.dark .tt .o0 { color: #6b6b6b; }
-    body.dark .tt .ox { color: #f39c12; }
+    body.dark .tt td { border-bottom-color: var(--ink); color: var(--muted); }
+    .tt tr:hover td { background: color-mix(in oklab, var(--accent) 3%, transparent); }
+    body.dark .tt tr:hover td { background: color-mix(in oklab, var(--accent) 5%, transparent); }
+    .tt .o1 { color: var(--accent); font-weight: 600; }
+    .tt .o0 { color: var(--muted); }
+    .tt .ox { color: var(--mant); font-weight: 600; }
+    body.dark .tt .o1 { color: var(--accent); }
+    body.dark .tt .o0 { color: var(--muted); }
+    body.dark .tt .ox { color: var(--warn); }
 
     .tag {
       display: inline-block;
-      background: rgba(0, 102, 204, 0.1);
+      background: color-mix(in oklab, var(--accent) 10%, transparent);
       border-radius: 3px;
       padding: 2px 6px;
       font-size: 10px;
-      color: #0066cc;
+      color: var(--accent);
       font-weight: 500;
       margin-left: 6px;
     }
-    body.dark .tag { background: rgba(135, 206, 235, 0.15); color: #87ceeb; }
-    .tag.xor { background: rgba(230, 126, 34, 0.1); color: #e67e22; }
-    body.dark .tag.xor { background: rgba(243, 156, 18, 0.15); color: #f39c12; }
+    body.dark .tag { background: color-mix(in oklab, var(--accent) 15%, transparent); color: var(--accent); }
+    .tag.xor { background: rgba(230, 126, 34, 0.1); color: var(--mant); }
+    body.dark .tag.xor { background: color-mix(in oklab, var(--warn) 15%, transparent); color: var(--warn); }
 
     .mint-box {
-      background: #f9f9f9;
-      border: 1px solid #cccccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 6px;
       padding: 10px 14px;
       font-size: 13px;
-      font-family: monospace;
-      color: #555555;
+      font-family: var(--f-mono);
+      color: var(--muted);
       line-height: 1.8;
     }
-    body.dark .mint-box { background: #2a2a2a; border-color: #444444; color: #aaaaaa; }
+    body.dark .mint-box { background: var(--paper-2); border-color: var(--rule); color: var(--muted); }
     .mint-box .sym { font-weight: 600; }
-    .mint-box .dc { color: #e67e22; }
-    body.dark .mint-box .dc { color: #f39c12; }
+    .mint-box .dc { color: var(--mant); }
+    body.dark .mint-box .dc { color: var(--warn); }
 
     .steps-box {
-      background: #f9f9f9;
-      border: 1px solid #cccccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 6px;
       padding: 14px 16px;
       font-size: 13px;
       line-height: 1.7;
     }
-    body.dark .steps-box { background: #2a2a2a; border-color: #444444; color: #cccccc; }
+    body.dark .steps-box { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
     .steps-box .step { margin-bottom: 12px; }
     .steps-box .step:last-child { margin-bottom: 0; }
-    .steps-box .step-num { font-weight: 700; color: #0066cc; margin-right: 4px; }
-    body.dark .steps-box .step-num { color: #87ceeb; }
+    .steps-box .step-num { font-weight: 700; color: var(--accent); margin-right: 4px; }
+    body.dark .steps-box .step-num { color: var(--accent); }
     .steps-box .step-title { font-weight: 600; }
-    .steps-box .step-body { margin-top: 4px; padding-left: 20px; color: #555555; }
-    body.dark .steps-box .step-body { color: #aaaaaa; }
-    .steps-box .step-body code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 3px; font-family: monospace; }
+    .steps-box .step-body { margin-top: 4px; padding-left: 20px; color: var(--muted); }
+    body.dark .steps-box .step-body { color: var(--muted); }
+    .steps-box .step-body code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 3px; font-family: var(--f-mono); }
     body.dark .steps-box .step-body code { background: rgba(255,255,255,0.08); }
     .steps-box .step-body ul { margin: 4px 0 0 0; padding-left: 18px; }
     .steps-box .step-body li { margin-bottom: 2px; }
@@ -144,10 +164,10 @@
 
     .manual-indicator {
       font-size: 12px;
-      color: #e67e22;
+      color: var(--mant);
       font-weight: 500;
     }
-    body.dark .manual-indicator { color: #f39c12; }
+    body.dark .manual-indicator { color: var(--warn); }
 
     .kmap-header {
       display: flex;
@@ -157,10 +177,10 @@
     }
 
     .circuit-wrap {
-      overflow: auto; border: 1px solid #e0e0e0; border-radius: 6px;
-      background: #fafafa; min-height: 150px; position: relative;
+      overflow: auto; border: 1px solid var(--rule); border-radius: 6px;
+      background: var(--paper-2); min-height: 150px; position: relative;
     }
-    body.dark .circuit-wrap { border-color: #444444; background: #1e1e1e; }
+    body.dark .circuit-wrap { border-color: var(--rule); background: var(--paper); }
     .circuit-wrap svg { display: block; min-width: 100%; }
 
     @media (max-width: 600px) {
@@ -181,21 +201,21 @@
     <div class="nav-row">
       <div class="nav-links">
         <a href="/" class="back-link">&larr; p14m.com</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/adders/">Adders</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/bits/">Bits</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/cache/">Cache</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/circuitgen/">CircuitGen</a>
-        <span style="color:#cccccc;">|</span>
-        <a href="/latency/">Latency</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
+        <a href="/float/">Float</a>
+        <span>|</span>
         <a href="/multipliers/">Multipliers</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/orderbook/">OrderBook</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/learn/">Learn</a>
       </div>
       <button class="theme-toggle" onclick="toggleTheme()">
@@ -677,8 +697,8 @@ function getMintermIndex(env, varNames) {
 /* ───────── colors ───────── */
 
 const GROUP_COLORS = [
-  "rgba(220, 53, 69, 0.15)", "rgba(0, 123, 255, 0.15)", "rgba(40, 167, 69, 0.15)",
-  "rgba(255, 193, 7, 0.15)", "rgba(111, 66, 193, 0.15)", "rgba(232, 62, 140, 0.15)",
+  "color-mix(in oklab, var(--error) 15%, transparent)", "rgba(0, 123, 255, 0.15)", "color-mix(in oklab, var(--success) 15%, transparent)",
+  "color-mix(in oklab, var(--warn) 15%, transparent)", "rgba(111, 66, 193, 0.15)", "rgba(232, 62, 140, 0.15)",
   "rgba(23, 162, 184, 0.15)", "rgba(108, 117, 125, 0.15)",
 ];
 const GROUP_BORDERS = [
@@ -1635,12 +1655,40 @@ function render() {
     row.forEach((val, ci) => {
       const key = `${ri},${ci}`;
       const gIdxs = cellGroupMap[key] || [];
-      const bg = state.showGroups && gIdxs.length > 0 ? GROUP_COLORS[gIdxs[0] % GROUP_COLORS.length] : 'transparent';
-      const border = state.showGroups && gIdxs.length > 0 ? `2px solid ${GROUP_BORDERS[gIdxs[0] % GROUP_BORDERS.length]}` : '';
+      const showing = state.showGroups && gIdxs.length > 0;
+
+      // Multi-group background: diagonal stripes let every overlapping group's hue show through
+      let bg = 'transparent';
+      if (showing) {
+        if (gIdxs.length === 1) {
+          bg = GROUP_COLORS[gIdxs[0] % GROUP_COLORS.length];
+        } else {
+          const stops = gIdxs.map((g, i) => {
+            const c = GROUP_COLORS[g % GROUP_COLORS.length];
+            const s = (i / gIdxs.length) * 100;
+            const e = ((i + 1) / gIdxs.length) * 100;
+            return `${c} ${s.toFixed(2)}% ${e.toFixed(2)}%`;
+          }).join(', ');
+          bg = `linear-gradient(135deg, ${stops})`;
+        }
+      }
+
+      // Primary group's solid border. Additional groups become inset dashed/dotted rings
+      // (via ::before / ::after pseudo-elements driven by data-extra-group CSS vars).
+      const border = showing ? `2px solid ${GROUP_BORDERS[gIdxs[0] % GROUP_BORDERS.length]}` : '';
+      const extra1 = showing && gIdxs.length >= 2
+        ? ` data-extra-group style="--km-extra-border:${GROUP_BORDERS[gIdxs[1] % GROUP_BORDERS.length]};`
+        : ' style="';
+      const extra2Attr = showing && gIdxs.length >= 3
+        ? ` data-extra-group-2`
+        : '';
+      const extra2Var = showing && gIdxs.length >= 3
+        ? `--km-extra-border-2:${GROUP_BORDERS[gIdxs[2] % GROUP_BORDERS.length]};`
+        : '';
       const cls = val === 1 ? 'v1' : val === 'X' ? 'vx' : 'v0';
-      const clickCls = 'click';
       const borderStyle = border ? `border: ${border};` : '';
-      html += `<td class="km-cell ${cls} ${clickCls}" data-r="${ri}" data-c="${ci}" style="background: ${bg}; ${borderStyle}">
+
+      html += `<td class="km-cell ${cls} click" data-r="${ri}" data-c="${ci}"${extra2Attr}${extra1}${extra2Var}background: ${bg}; ${borderStyle}">
         <span>${val === 'X' ? 'X' : val}</span>
       </td>`;
     });
@@ -1808,7 +1856,7 @@ function render() {
       Circuit.interact(svg, circuit, circuitWrap);
       circuitPanel.style.display = 'block';
     } catch (e) {
-      circuitWrap.innerHTML = '<div style="padding:20px;color:#595959;font-style:italic;">Could not render circuit: ' + e.message + '</div>';
+      circuitWrap.innerHTML = '<div style="padding:20px;color:var(--muted);font-style:italic;">Could not render circuit: ' + e.message + '</div>';
       circuitPanel.style.display = 'block';
     }
   } else {

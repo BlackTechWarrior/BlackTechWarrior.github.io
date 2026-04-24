@@ -27,8 +27,8 @@
     }
     .filter-btn {
       background: transparent;
-      border: 1px solid #cccccc;
-      color: #595959;
+      border: 1px solid var(--rule);
+      color: var(--muted);
       border-radius: 16px;
       padding: 5px 14px;
       font-family: inherit;
@@ -37,11 +37,11 @@
       transition: all 0.15s;
       white-space: nowrap;
     }
-    .filter-btn:hover { border-color: #999999; color: #333333; }
-    .filter-btn.on { background: #0066cc; color: white; border-color: #0066cc; }
-    body.dark .filter-btn { border-color: #444444; color: #9a9a9a; }
-    body.dark .filter-btn:hover { border-color: #666666; color: #cccccc; }
-    body.dark .filter-btn.on { background: #87ceeb; color: #1a1a1a; border-color: #87ceeb; }
+    .filter-btn:hover { border-color: var(--muted); color: var(--ink); }
+    .filter-btn.on { background: var(--accent); color: white; border-color: var(--accent); }
+    body.dark .filter-btn { border-color: var(--rule); color: var(--muted); }
+    body.dark .filter-btn:hover { border-color: var(--muted); color: var(--rule); }
+    body.dark .filter-btn.on { background: var(--accent); color: var(--paper); border-color: var(--accent); }
 
     /* ── Category Header ── */
     .cat-header {
@@ -49,17 +49,17 @@
       font-weight: 600;
       margin: 0 0 6px 0;
       padding-bottom: 6px;
-      border-bottom: 2px solid #0066cc;
+      border-bottom: 2px solid var(--accent);
     }
     body.dark .cat-header { border-bottom-color: grey; }
 
     .cat-intro {
       font-size: 13px;
-      color: #595959;
+      color: var(--muted);
       margin-bottom: 14px;
       line-height: 1.6;
     }
-    body.dark .cat-intro { color: #9a9a9a; }
+    body.dark .cat-intro { color: var(--muted); }
 
     /* ── Topic Cards ── */
     .card-grid {
@@ -70,7 +70,7 @@
     }
 
     .topic-card {
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--rule);
       border-radius: 8px;
       padding: 14px;
       cursor: pointer;
@@ -79,10 +79,10 @@
       color: inherit;
       display: block;
     }
-    .topic-card:hover { border-color: #0066cc; box-shadow: 0 2px 8px rgba(0,102,204,0.08); }
+    .topic-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px color-mix(in oklab, var(--accent) 8%, transparent); }
     .topic-card:visited { color: inherit; }
-    body.dark .topic-card { border-color: #333333; }
-    body.dark .topic-card:hover { border-color: #87ceeb; box-shadow: 0 2px 8px rgba(135,206,235,0.08); }
+    body.dark .topic-card { border-color: var(--ink); }
+    body.dark .topic-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px color-mix(in oklab, var(--accent) 8%, transparent); }
 
     .card-title {
       font-weight: 600;
@@ -91,10 +91,10 @@
     }
     .card-desc {
       font-size: 12px;
-      color: #595959;
+      color: var(--muted);
       line-height: 1.5;
     }
-    body.dark .card-desc { color: #9a9a9a; }
+    body.dark .card-desc { color: var(--muted); }
 
     .card-meta {
       display: flex;
@@ -112,34 +112,34 @@
       white-space: nowrap;
     }
     .tag-tool {
-      background: rgba(0,102,204,0.08);
-      color: #0066cc;
-      border: 1px solid rgba(0,102,204,0.2);
+      background: color-mix(in oklab, var(--accent) 8%, transparent);
+      color: var(--accent);
+      border: 1px solid color-mix(in oklab, var(--accent) 20%, transparent);
     }
     body.dark .tag-tool {
-      background: rgba(135,206,235,0.1);
-      color: #87ceeb;
-      border-color: rgba(135,206,235,0.2);
+      background: color-mix(in oklab, var(--accent) 10%, transparent);
+      color: var(--accent);
+      border-color: color-mix(in oklab, var(--accent) 20%, transparent);
     }
     .tag-concept {
       background: rgba(30,126,52,0.08);
-      color: #1e7e34;
+      color: var(--success);
       border: 1px solid rgba(30,126,52,0.2);
     }
     body.dark .tag-concept {
-      background: rgba(76,175,80,0.1);
-      color: #4caf50;
-      border-color: rgba(76,175,80,0.2);
+      background: color-mix(in oklab, var(--success) 10%, transparent);
+      color: var(--success);
+      border-color: color-mix(in oklab, var(--success) 20%, transparent);
     }
     .tag-breakdown {
-      background: rgba(255,193,7,0.1);
-      color: #856404;
-      border: 1px solid rgba(255,193,7,0.25);
+      background: color-mix(in oklab, var(--warn) 10%, transparent);
+      color: var(--warn);
+      border: 1px solid color-mix(in oklab, var(--warn) 25%, transparent);
     }
     body.dark .tag-breakdown {
-      background: rgba(255,193,7,0.08);
-      color: #ffc107;
-      border-color: rgba(255,193,7,0.2);
+      background: color-mix(in oklab, var(--warn) 8%, transparent);
+      color: var(--warn);
+      border-color: color-mix(in oklab, var(--warn) 20%, transparent);
     }
 
     /* ── Topic Detail View ── */
@@ -161,9 +161,9 @@
       align-items: center;
       margin-bottom: 20px;
       font-size: 12px;
-      color: #595959;
+      color: var(--muted);
     }
-    body.dark .topic-meta { color: #9a9a9a; }
+    body.dark .topic-meta { color: var(--muted); }
 
     .topic-section {
       margin-bottom: 18px;
@@ -173,10 +173,10 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #0066cc;
+      color: var(--accent);
       margin-bottom: 4px;
     }
-    body.dark .topic-section-label { color: #87ceeb; }
+    body.dark .topic-section-label { color: var(--accent); }
 
     .topic-section-body {
       font-size: 14px;
@@ -185,8 +185,8 @@
 
     /* ── Key Insight Box ── */
     .insight-box {
-      border-left: 3px solid #0066cc;
-      background: rgba(0,102,204,0.04);
+      border-left: 3px solid var(--accent);
+      background: color-mix(in oklab, var(--accent) 4%, transparent);
       padding: 10px 14px;
       border-radius: 0 6px 6px 0;
       font-size: 14px;
@@ -194,8 +194,8 @@
       margin-bottom: 18px;
     }
     body.dark .insight-box {
-      border-left-color: #87ceeb;
-      background: rgba(135,206,235,0.05);
+      border-left-color: var(--accent);
+      background: color-mix(in oklab, var(--accent) 5%, transparent);
     }
 
     /* ── Tradeoffs Table ── */
@@ -208,22 +208,22 @@
     }
     .tradeoff-key {
       font-weight: 600;
-      color: #555555;
+      color: var(--muted);
       white-space: nowrap;
     }
-    body.dark .tradeoff-key { color: #aaaaaa; }
+    body.dark .tradeoff-key { color: var(--muted); }
     .tradeoff-val {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 12px;
     }
     .tradeoff-best {
       font-style: italic;
-      color: #595959;
+      color: var(--muted);
       grid-column: 1 / -1;
       margin-top: 4px;
       font-size: 12px;
     }
-    body.dark .tradeoff-best { color: #9a9a9a; }
+    body.dark .tradeoff-best { color: var(--muted); }
 
     /* ── Action Buttons ── */
     .action-row {
@@ -236,7 +236,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: #0066cc;
+      background: var(--accent);
       color: white;
       border: none;
       border-radius: 6px;
@@ -248,39 +248,39 @@
       text-decoration: none;
       transition: background 0.2s;
     }
-    .action-btn:hover { background: #0052a3; text-decoration: none; }
+    .action-btn:hover { background: var(--accent-hi); text-decoration: none; }
     .action-btn:visited { color: white; }
-    body.dark .action-btn { background: #87ceeb; color: #1a1a1a; }
-    body.dark .action-btn:hover { background: #6bb8d9; }
-    body.dark .action-btn:visited { color: #1a1a1a; }
+    body.dark .action-btn { background: var(--accent); color: var(--paper); }
+    body.dark .action-btn:hover { background: var(--accent-hi); }
+    body.dark .action-btn:visited { color: var(--paper); }
 
     .action-btn-secondary {
       background: transparent;
-      border: 1px solid #cccccc;
-      color: #595959;
+      border: 1px solid var(--rule);
+      color: var(--muted);
     }
-    .action-btn-secondary:hover { border-color: #999999; color: #333333; background: transparent; }
-    .action-btn-secondary:visited { color: #595959; }
-    body.dark .action-btn-secondary { border-color: #444444; color: #9a9a9a; background: transparent; }
-    body.dark .action-btn-secondary:hover { border-color: #666666; color: #cccccc; background: transparent; }
-    body.dark .action-btn-secondary:visited { color: #9a9a9a; }
+    .action-btn-secondary:hover { border-color: var(--muted); color: var(--ink); background: transparent; }
+    .action-btn-secondary:visited { color: var(--muted); }
+    body.dark .action-btn-secondary { border-color: var(--rule); color: var(--muted); background: transparent; }
+    body.dark .action-btn-secondary:hover { border-color: var(--muted); color: var(--rule); background: transparent; }
+    body.dark .action-btn-secondary:visited { color: var(--muted); }
 
     /* ── Related Topics ── */
     .related-section {
-      border-top: 1px solid #e0e0e0;
+      border-top: 1px solid var(--rule);
       padding-top: 16px;
       margin-top: 24px;
     }
-    body.dark .related-section { border-top-color: #333333; }
+    body.dark .related-section { border-top-color: var(--ink); }
     .related-label {
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #595959;
+      color: var(--muted);
       margin-bottom: 8px;
     }
-    body.dark .related-label { color: #9a9a9a; }
+    body.dark .related-label { color: var(--muted); }
     .related-list {
       display: flex;
       gap: 8px;
@@ -289,33 +289,33 @@
     .related-link {
       font-size: 13px;
       padding: 4px 12px;
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--rule);
       border-radius: 6px;
       text-decoration: none;
       transition: border-color 0.15s;
     }
-    .related-link:hover { border-color: #0066cc; text-decoration: none; }
-    body.dark .related-link { border-color: #333333; }
-    body.dark .related-link:hover { border-color: #87ceeb; }
+    .related-link:hover { border-color: var(--accent); text-decoration: none; }
+    body.dark .related-link { border-color: var(--ink); }
+    body.dark .related-link:hover { border-color: var(--accent); }
 
     /* ── Interactive Widget Container ── */
     .widget-container {
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--rule);
       border-radius: 8px;
       padding: 14px;
       margin-bottom: 18px;
     }
-    body.dark .widget-container { border-color: #333333; }
+    body.dark .widget-container { border-color: var(--ink); }
 
     .widget-label {
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: #0066cc;
+      color: var(--accent);
       margin-bottom: 10px;
     }
-    body.dark .widget-label { color: #87ceeb; }
+    body.dark .widget-label { color: var(--accent); }
 
     /* Booth widget */
     .booth-input-row {
@@ -327,21 +327,21 @@
     }
     .booth-input {
       width: 100px;
-      background: #f9f9f9;
-      border: 1px solid #cccccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 5px;
       padding: 5px 8px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
-      color: #000000;
+      color: var(--ink);
       outline: none;
     }
-    .booth-input:focus { border-color: #0066cc; }
-    body.dark .booth-input { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
-    body.dark .booth-input:focus { border-color: #87ceeb; }
+    .booth-input:focus { border-color: var(--accent); }
+    body.dark .booth-input { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
+    body.dark .booth-input:focus { border-color: var(--accent); }
 
     .booth-bits {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
       display: flex;
       gap: 1px;
@@ -357,7 +357,7 @@
     }
     .booth-bit-label {
       font-size: 9px;
-      color: #595959;
+      color: var(--muted);
       text-align: center;
       width: 22px;
     }
@@ -366,11 +366,11 @@
       font-size: 12px;
       line-height: 1.6;
     }
-    .booth-pos { color: #28a745; }
-    .booth-neg { color: #dc3545; }
-    .booth-zero { color: #595959; }
-    body.dark .booth-pos { color: #4caf50; }
-    body.dark .booth-neg { color: #ff6b6b; }
+    .booth-pos { color: var(--success); }
+    .booth-neg { color: var(--error); }
+    .booth-zero { color: var(--muted); }
+    body.dark .booth-pos { color: var(--success); }
+    body.dark .booth-neg { color: var(--error); }
 
     /* ── Overflow widget ── */
     .overflow-row {
@@ -382,20 +382,20 @@
     }
     .overflow-input {
       width: 80px;
-      background: #f9f9f9;
-      border: 1px solid #cccccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 5px;
       padding: 5px 8px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
-      color: #000000;
+      color: var(--ink);
       outline: none;
     }
-    .overflow-input:focus { border-color: #0066cc; }
-    body.dark .overflow-input { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
-    body.dark .overflow-input:focus { border-color: #87ceeb; }
+    .overflow-input:focus { border-color: var(--accent); }
+    body.dark .overflow-input { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
+    body.dark .overflow-input:focus { border-color: var(--accent); }
     .overflow-bits {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
       display: flex;
       gap: 1px;
@@ -410,16 +410,16 @@
       border-radius: 3px;
       font-weight: 600;
       background: rgba(0,0,0,0.04);
-      border: 1px solid #ddd;
+      border: 1px solid var(--rule);
     }
-    body.dark .overflow-bit { background: rgba(255,255,255,0.04); border-color: #444; }
-    .overflow-bit.sign { background: rgba(0,102,204,0.1); border-color: rgba(0,102,204,0.3); }
-    body.dark .overflow-bit.sign { background: rgba(135,206,235,0.1); border-color: rgba(135,206,235,0.3); }
+    body.dark .overflow-bit { background: rgba(255,255,255,0.04); border-color: var(--rule); }
+    .overflow-bit.sign { background: color-mix(in oklab, var(--accent) 10%, transparent); border-color: color-mix(in oklab, var(--accent) 30%, transparent); }
+    body.dark .overflow-bit.sign { background: color-mix(in oklab, var(--accent) 10%, transparent); border-color: color-mix(in oklab, var(--accent) 30%, transparent); }
     .overflow-result { font-size: 13px; margin-top: 8px; line-height: 1.6; }
-    .overflow-ok { color: #28a745; font-weight: 600; }
-    .overflow-bad { color: #dc3545; font-weight: 600; }
-    body.dark .overflow-ok { color: #4caf50; }
-    body.dark .overflow-bad { color: #ff6b6b; }
+    .overflow-ok { color: var(--success); font-weight: 600; }
+    .overflow-bad { color: var(--error); font-weight: 600; }
+    body.dark .overflow-ok { color: var(--success); }
+    body.dark .overflow-bad { color: var(--error); }
 
     /* ── Fixed-point widget ── */
     .fp-row {
@@ -431,31 +431,31 @@
     }
     .fp-input {
       width: 120px;
-      background: #f9f9f9;
-      border: 1px solid #cccccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 5px;
       padding: 5px 8px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
-      color: #000000;
+      color: var(--ink);
       outline: none;
     }
-    .fp-input:focus { border-color: #0066cc; }
-    body.dark .fp-input { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
-    body.dark .fp-input:focus { border-color: #87ceeb; }
+    .fp-input:focus { border-color: var(--accent); }
+    body.dark .fp-input { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
+    body.dark .fp-input:focus { border-color: var(--accent); }
     .fp-select {
-      background: #f9f9f9;
-      border: 1px solid #cccccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 5px;
       padding: 5px 8px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
-      color: #000000;
+      color: var(--ink);
       outline: none;
     }
-    body.dark .fp-select { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
+    body.dark .fp-select { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
     .fp-bits {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
       display: flex;
       gap: 1px;
@@ -470,23 +470,23 @@
       border-radius: 3px;
       font-weight: 600;
       background: rgba(0,0,0,0.04);
-      border: 1px solid #ddd;
+      border: 1px solid var(--rule);
     }
-    body.dark .fp-bit { background: rgba(255,255,255,0.04); border-color: #444; }
-    .fp-bit.int-part { background: rgba(0,102,204,0.08); border-color: rgba(0,102,204,0.2); }
-    .fp-bit.frac-part { background: rgba(40,167,69,0.08); border-color: rgba(40,167,69,0.2); }
-    body.dark .fp-bit.int-part { background: rgba(135,206,235,0.08); border-color: rgba(135,206,235,0.2); }
-    body.dark .fp-bit.frac-part { background: rgba(76,175,80,0.08); border-color: rgba(76,175,80,0.2); }
-    .fp-radix { font-size: 18px; font-weight: 700; margin: 0 2px; color: #dc3545; }
-    .fp-info { font-size: 12px; margin-top: 6px; line-height: 1.6; color: #595959; }
-    body.dark .fp-info { color: #9a9a9a; }
+    body.dark .fp-bit { background: rgba(255,255,255,0.04); border-color: var(--rule); }
+    .fp-bit.int-part { background: color-mix(in oklab, var(--accent) 8%, transparent); border-color: color-mix(in oklab, var(--accent) 20%, transparent); }
+    .fp-bit.frac-part { background: color-mix(in oklab, var(--success) 8%, transparent); border-color: color-mix(in oklab, var(--success) 20%, transparent); }
+    body.dark .fp-bit.int-part { background: color-mix(in oklab, var(--accent) 8%, transparent); border-color: color-mix(in oklab, var(--accent) 20%, transparent); }
+    body.dark .fp-bit.frac-part { background: color-mix(in oklab, var(--success) 8%, transparent); border-color: color-mix(in oklab, var(--success) 20%, transparent); }
+    .fp-radix { font-size: 18px; font-weight: 700; margin: 0 2px; color: var(--error); }
+    .fp-info { font-size: 12px; margin-top: 6px; line-height: 1.6; color: var(--muted); }
+    body.dark .fp-info { color: var(--muted); }
 
     /* ── Barrel shifter diagram ── */
     .barrel-diagram {
       display: flex;
       flex-direction: column;
       gap: 12px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 12px;
       overflow-x: auto;
     }
@@ -499,11 +499,11 @@
       width: 80px;
       font-weight: 600;
       font-size: 11px;
-      color: #0066cc;
+      color: var(--accent);
       text-align: right;
       flex-shrink: 0;
     }
-    body.dark .barrel-label { color: #87ceeb; }
+    body.dark .barrel-label { color: var(--accent); }
     .barrel-muxes {
       display: flex;
       gap: 2px;
@@ -517,20 +517,20 @@
       border-radius: 3px;
       font-size: 10px;
       font-weight: 600;
-      background: rgba(0,102,204,0.08);
-      border: 1px solid rgba(0,102,204,0.2);
-      color: #0066cc;
+      background: color-mix(in oklab, var(--accent) 8%, transparent);
+      border: 1px solid color-mix(in oklab, var(--accent) 20%, transparent);
+      color: var(--accent);
     }
-    body.dark .barrel-mux { background: rgba(135,206,235,0.08); border-color: rgba(135,206,235,0.2); color: #87ceeb; }
-    .barrel-mux.pass { background: rgba(0,0,0,0.03); border-color: #ddd; color: #595959; }
-    body.dark .barrel-mux.pass { background: rgba(255,255,255,0.03); border-color: #444; color: #9a9a9a; }
+    body.dark .barrel-mux { background: color-mix(in oklab, var(--accent) 8%, transparent); border-color: color-mix(in oklab, var(--accent) 20%, transparent); color: var(--accent); }
+    .barrel-mux.pass { background: rgba(0,0,0,0.03); border-color: var(--rule); color: var(--muted); }
+    body.dark .barrel-mux.pass { background: rgba(255,255,255,0.03); border-color: var(--rule); color: var(--muted); }
     .barrel-note {
       font-size: 11px;
-      color: #595959;
+      color: var(--muted);
       margin-top: 4px;
       line-height: 1.5;
     }
-    body.dark .barrel-note { color: #9a9a9a; }
+    body.dark .barrel-note { color: var(--muted); }
 
     /* ── Comparator widget ── */
     .cmp-input-row {
@@ -542,22 +542,22 @@
     }
     .cmp-input {
       width: 80px;
-      background: #f9f9f9;
-      border: 1px solid #cccccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 5px;
       padding: 5px 8px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
-      color: #000;
+      color: var(--ink);
       outline: none;
     }
-    .cmp-input:focus { border-color: #0066cc; }
-    body.dark .cmp-input { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
-    body.dark .cmp-input:focus { border-color: #87ceeb; }
+    .cmp-input:focus { border-color: var(--accent); }
+    body.dark .cmp-input { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
+    body.dark .cmp-input:focus { border-color: var(--accent); }
     .cmp-bits-row {
       display: flex;
       gap: 1px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
       margin-bottom: 2px;
     }
@@ -570,23 +570,23 @@
       border-radius: 3px;
       font-weight: 600;
       background: rgba(0,0,0,0.04);
-      border: 1px solid #ddd;
+      border: 1px solid var(--rule);
     }
-    body.dark .cmp-bit { background: rgba(255,255,255,0.04); border-color: #444; }
-    .cmp-bit.deciding { background: rgba(230,126,34,0.15); border-color: rgba(230,126,34,0.4); color: #e67e22; }
-    body.dark .cmp-bit.deciding { background: rgba(243,156,18,0.15); border-color: rgba(243,156,18,0.4); color: #f39c12; }
-    .cmp-bit.equal { background: rgba(40,167,69,0.08); border-color: rgba(40,167,69,0.2); }
-    body.dark .cmp-bit.equal { background: rgba(76,175,80,0.08); border-color: rgba(76,175,80,0.2); }
+    body.dark .cmp-bit { background: rgba(255,255,255,0.04); border-color: var(--rule); }
+    .cmp-bit.deciding { background: rgba(230,126,34,0.15); border-color: rgba(230,126,34,0.4); color: var(--mant); }
+    body.dark .cmp-bit.deciding { background: color-mix(in oklab, var(--warn) 15%, transparent); border-color: color-mix(in oklab, var(--warn) 40%, transparent); color: var(--warn); }
+    .cmp-bit.equal { background: color-mix(in oklab, var(--success) 8%, transparent); border-color: color-mix(in oklab, var(--success) 20%, transparent); }
+    body.dark .cmp-bit.equal { background: color-mix(in oklab, var(--success) 8%, transparent); border-color: color-mix(in oklab, var(--success) 20%, transparent); }
     .cmp-bit.skipped { opacity: 0.35; }
     .cmp-result { font-size: 12px; margin-top: 8px; line-height: 1.6; }
-    .cmp-gt { color: #0066cc; font-weight: 600; }
-    .cmp-lt { color: #c0392b; font-weight: 600; }
-    .cmp-eq { color: #28a745; font-weight: 600; }
-    body.dark .cmp-gt { color: #87ceeb; }
-    body.dark .cmp-lt { color: #e74c3c; }
-    body.dark .cmp-eq { color: #4caf50; }
-    .cmp-step { font-size: 11px; line-height: 1.5; color: #595959; margin-top: 6px; }
-    body.dark .cmp-step { color: #9a9a9a; }
+    .cmp-gt { color: var(--accent); font-weight: 600; }
+    .cmp-lt { color: var(--error); font-weight: 600; }
+    .cmp-eq { color: var(--success); font-weight: 600; }
+    body.dark .cmp-gt { color: var(--accent); }
+    body.dark .cmp-lt { color: var(--error); }
+    body.dark .cmp-eq { color: var(--success); }
+    .cmp-step { font-size: 11px; line-height: 1.5; color: var(--muted); margin-top: 6px; }
+    body.dark .cmp-step { color: var(--muted); }
 
     /* ── FIFO widget ── */
     .fifo-controls {
@@ -598,20 +598,20 @@
     }
     .fifo-input {
       width: 50px;
-      background: #f9f9f9;
-      border: 1px solid #ccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 5px;
       padding: 5px 8px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
-      color: #000;
+      color: var(--ink);
       outline: none;
     }
-    .fifo-input:focus { border-color: #0066cc; }
-    body.dark .fifo-input { background: #2a2a2a; border-color: #444; color: #e0e0e0; }
+    .fifo-input:focus { border-color: var(--accent); }
+    body.dark .fifo-input { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
     .fifo-btn {
       padding: 5px 12px;
-      border: 1px solid #ccc;
+      border: 1px solid var(--rule);
       border-radius: 5px;
       background: transparent;
       font-family: inherit;
@@ -620,14 +620,14 @@
       color: inherit;
       transition: border-color 0.15s;
     }
-    .fifo-btn:hover { border-color: #0066cc; }
-    body.dark .fifo-btn { border-color: #444; }
-    body.dark .fifo-btn:hover { border-color: #87ceeb; }
+    .fifo-btn:hover { border-color: var(--accent); }
+    body.dark .fifo-btn { border-color: var(--rule); }
+    body.dark .fifo-btn:hover { border-color: var(--accent); }
     .fifo-btn:disabled { opacity: 0.3; cursor: not-allowed; }
     .fifo-ring {
       display: flex;
       gap: 2px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
       margin-bottom: 6px;
     }
@@ -640,37 +640,37 @@
       border-radius: 4px;
       font-weight: 600;
       background: rgba(0,0,0,0.03);
-      border: 1px solid #ddd;
+      border: 1px solid var(--rule);
       position: relative;
       transition: all 0.2s;
     }
-    body.dark .fifo-slot { background: rgba(255,255,255,0.03); border-color: #444; }
-    .fifo-slot.occupied { background: rgba(0,102,204,0.08); border-color: rgba(0,102,204,0.25); }
-    body.dark .fifo-slot.occupied { background: rgba(135,206,235,0.08); border-color: rgba(135,206,235,0.25); }
-    .fifo-slot.head-slot { border-bottom: 3px solid #0a7c42; }
-    body.dark .fifo-slot.head-slot { border-bottom-color: #2ecc71; }
-    .fifo-slot.tail-slot { border-top: 3px solid #0066cc; }
-    body.dark .fifo-slot.tail-slot { border-top-color: #87ceeb; }
+    body.dark .fifo-slot { background: rgba(255,255,255,0.03); border-color: var(--rule); }
+    .fifo-slot.occupied { background: color-mix(in oklab, var(--accent) 8%, transparent); border-color: color-mix(in oklab, var(--accent) 25%, transparent); }
+    body.dark .fifo-slot.occupied { background: color-mix(in oklab, var(--accent) 8%, transparent); border-color: color-mix(in oklab, var(--accent) 25%, transparent); }
+    .fifo-slot.head-slot { border-bottom: 3px solid var(--success); }
+    body.dark .fifo-slot.head-slot { border-bottom-color: var(--success); }
+    .fifo-slot.tail-slot { border-top: 3px solid var(--accent); }
+    body.dark .fifo-slot.tail-slot { border-top-color: var(--accent); }
     .fifo-labels {
       display: flex;
       gap: 2px;
       font-size: 9px;
-      color: #595959;
+      color: var(--muted);
       margin-bottom: 8px;
     }
     .fifo-label-cell { width: 36px; text-align: center; }
     .fifo-ptr-label { font-size: 10px; font-weight: 600; }
-    .fifo-ptr-rd { color: #0a7c42; }
-    .fifo-ptr-wr { color: #0066cc; }
-    body.dark .fifo-ptr-rd { color: #2ecc71; }
-    body.dark .fifo-ptr-wr { color: #87ceeb; }
+    .fifo-ptr-rd { color: var(--success); }
+    .fifo-ptr-wr { color: var(--accent); }
+    body.dark .fifo-ptr-rd { color: var(--success); }
+    body.dark .fifo-ptr-wr { color: var(--accent); }
     .fifo-status { font-size: 12px; margin-top: 6px; line-height: 1.6; }
-    .fifo-status-full { color: #c0392b; font-weight: 600; }
-    .fifo-status-empty { color: #e67e22; font-weight: 600; }
-    body.dark .fifo-status-full { color: #e74c3c; }
-    body.dark .fifo-status-empty { color: #f39c12; }
-    .fifo-log { font-size: 11px; color: #595959; margin-top: 6px; max-height: 60px; overflow-y: auto; line-height: 1.4; font-family: monospace; }
-    body.dark .fifo-log { color: #9a9a9a; }
+    .fifo-status-full { color: var(--error); font-weight: 600; }
+    .fifo-status-empty { color: var(--mant); font-weight: 600; }
+    body.dark .fifo-status-full { color: var(--error); }
+    body.dark .fifo-status-empty { color: var(--warn); }
+    .fifo-log { font-size: 11px; color: var(--muted); margin-top: 6px; max-height: 60px; overflow-y: auto; line-height: 1.4; font-family: var(--f-mono); }
+    body.dark .fifo-log { color: var(--muted); }
 
     /* ── IEEE 754 widget ── */
     .ieee-row {
@@ -682,20 +682,20 @@
     }
     .ieee-input {
       width: 160px;
-      background: #f9f9f9;
-      border: 1px solid #cccccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 5px;
       padding: 5px 8px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
-      color: #000000;
+      color: var(--ink);
       outline: none;
     }
-    .ieee-input:focus { border-color: #0066cc; }
-    body.dark .ieee-input { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
-    body.dark .ieee-input:focus { border-color: #87ceeb; }
+    .ieee-input:focus { border-color: var(--accent); }
+    body.dark .ieee-input { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
+    body.dark .ieee-input:focus { border-color: var(--accent); }
     .ieee-bits {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 13px;
       display: flex;
       gap: 1px;
@@ -711,12 +711,12 @@
       border-radius: 3px;
       font-weight: 600;
     }
-    .ieee-sign { background: rgba(220,53,69,0.1); border: 1px solid rgba(220,53,69,0.3); color: #dc3545; }
-    .ieee-exp { background: rgba(0,102,204,0.08); border: 1px solid rgba(0,102,204,0.2); color: #0066cc; }
-    .ieee-mant { background: rgba(40,167,69,0.08); border: 1px solid rgba(40,167,69,0.2); color: #28a745; }
-    body.dark .ieee-sign { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.3); color: #ff6b6b; }
-    body.dark .ieee-exp { background: rgba(135,206,235,0.08); border-color: rgba(135,206,235,0.2); color: #87ceeb; }
-    body.dark .ieee-mant { background: rgba(76,175,80,0.08); border-color: rgba(76,175,80,0.2); color: #4caf50; }
+    .ieee-sign { background: color-mix(in oklab, var(--error) 10%, transparent); border: 1px solid color-mix(in oklab, var(--error) 30%, transparent); color: var(--error); }
+    .ieee-exp { background: color-mix(in oklab, var(--accent) 8%, transparent); border: 1px solid color-mix(in oklab, var(--accent) 20%, transparent); color: var(--accent); }
+    .ieee-mant { background: color-mix(in oklab, var(--success) 8%, transparent); border: 1px solid color-mix(in oklab, var(--success) 20%, transparent); color: var(--success); }
+    body.dark .ieee-sign { background: color-mix(in oklab, var(--error) 10%, transparent); border-color: color-mix(in oklab, var(--error) 30%, transparent); color: var(--error); }
+    body.dark .ieee-exp { background: color-mix(in oklab, var(--accent) 8%, transparent); border-color: color-mix(in oklab, var(--accent) 20%, transparent); color: var(--accent); }
+    body.dark .ieee-mant { background: color-mix(in oklab, var(--success) 8%, transparent); border-color: color-mix(in oklab, var(--success) 20%, transparent); color: var(--success); }
     .ieee-field-labels {
       display: flex;
       gap: 1px;
@@ -729,24 +729,24 @@
       padding: 2px 0;
       border-radius: 3px;
     }
-    .ieee-field-label.sign { width: 22px; color: #dc3545; }
-    .ieee-field-label.exp { width: calc(8 * 23px); color: #0066cc; }
-    .ieee-field-label.mant { width: calc(23 * 23px); color: #28a745; }
-    body.dark .ieee-field-label.sign { color: #ff6b6b; }
-    body.dark .ieee-field-label.exp { color: #87ceeb; }
-    body.dark .ieee-field-label.mant { color: #4caf50; }
+    .ieee-field-label.sign { width: 22px; color: var(--error); }
+    .ieee-field-label.exp { width: calc(8 * 23px); color: var(--accent); }
+    .ieee-field-label.mant { width: calc(23 * 23px); color: var(--success); }
+    body.dark .ieee-field-label.sign { color: var(--error); }
+    body.dark .ieee-field-label.exp { color: var(--accent); }
+    body.dark .ieee-field-label.mant { color: var(--success); }
     .ieee-info { font-size: 12px; margin-top: 8px; line-height: 1.7; }
-    .ieee-special { font-weight: 600; color: #856404; }
-    body.dark .ieee-special { color: #ffc107; }
+    .ieee-special { font-weight: 600; color: var(--warn); }
+    body.dark .ieee-special { color: var(--warn); }
 
     /* ── Feedback widget ── */
     .feedback-box {
-      border-top: 1px solid #e0e0e0;
+      border-top: 1px solid var(--rule);
       padding-top: 16px;
       margin-top: 24px;
       text-align: center;
     }
-    body.dark .feedback-box { border-top-color: #333333; }
+    body.dark .feedback-box { border-top-color: var(--ink); }
     .feedback-btns {
       display: flex;
       gap: 10px;
@@ -757,40 +757,40 @@
       align-items: center;
       gap: 5px;
       background: transparent;
-      border: 1px solid #cccccc;
+      border: 1px solid var(--rule);
       border-radius: 20px;
       padding: 6px 18px;
       font-family: inherit;
       font-size: 13px;
       cursor: pointer;
       transition: all 0.15s;
-      color: #595959;
+      color: var(--muted);
     }
-    .feedback-btn:hover { border-color: #0066cc; color: #0066cc; }
-    body.dark .feedback-btn { border-color: #444444; color: #9a9a9a; }
-    body.dark .feedback-btn:hover { border-color: #87ceeb; color: #87ceeb; }
+    .feedback-btn:hover { border-color: var(--accent); color: var(--accent); }
+    body.dark .feedback-btn { border-color: var(--rule); color: var(--muted); }
+    body.dark .feedback-btn:hover { border-color: var(--accent); color: var(--accent); }
     .feedback-btn.voted {
-      border-color: #0066cc;
-      background: rgba(0,102,204,0.08);
-      color: #0066cc;
+      border-color: var(--accent);
+      background: color-mix(in oklab, var(--accent) 8%, transparent);
+      color: var(--accent);
       cursor: default;
     }
     body.dark .feedback-btn.voted {
-      border-color: #87ceeb;
-      background: rgba(135,206,235,0.1);
-      color: #87ceeb;
+      border-color: var(--accent);
+      background: color-mix(in oklab, var(--accent) 10%, transparent);
+      color: var(--accent);
     }
     .feedback-count {
       font-size: 11px;
-      color: #595959;
+      color: var(--muted);
       font-weight: 600;
     }
     .feedback-thanks {
       font-size: 12px;
-      color: #28a745;
+      color: var(--success);
       margin-top: 8px;
     }
-    body.dark .feedback-thanks { color: #4caf50; }
+    body.dark .feedback-thanks { color: var(--success); }
 
     /* ── Responsive ── */
     @media (max-width: 600px) {
@@ -817,21 +817,21 @@
     <div class="nav-row">
       <div class="nav-links">
         <a href="/" class="back-link">&larr; p14m.com</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/adders/">Adders</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/bits/">Bits</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/cache/">Cache</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/circuitgen/">CircuitGen</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
+        <a href="/float/">Float</a>
+        <span>|</span>
         <a href="/kmap/">K-Map</a>
-        <span style="color:#cccccc;">|</span>
-        <a href="/latency/">Latency</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/multipliers/">Multipliers</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/orderbook/">OrderBook</a>
       </div>
       <button class="theme-toggle" onclick="toggleTheme()">
@@ -1683,6 +1683,7 @@ const TOPICS = [
       keyInsight: 'The exponent gives huge dynamic range (~10<sup>\u00B138</sup> for single, ~10<sup>\u00B1308</sup> for double) while the mantissa gives ~7 or ~16 decimal digits of precision. The tradeoff vs fixed-point: much more complex hardware (FPU) for much more flexible range.',
     },
     interactive: ieeeWidget,
+    tryItLink: '/float/',
     relatedTopics: ['fixed-point', 'sign-extension', 'twos-complement'],
     order: 1,
   },
@@ -1789,7 +1790,7 @@ const TOPICS = [
     content: {
       problem: 'A modern CPU can execute an instruction every ~0.3ns, but reading from main memory (DRAM) takes ~50\u2013100ns \u2014 a 200\u00d7 gap. Without a fast intermediary, the processor stalls waiting for data on almost every load. How does hardware bridge this speed gap?',
       howItWorks: '<strong>The cache</strong> is a small, fast SRAM buffer between the CPU and main memory. When the processor reads address A, it checks the cache first. If the data is there (a <strong>hit</strong>), it returns in 1\u20134 cycles. If not (a <strong>miss</strong>), it fetches a whole <strong>block</strong> of data from memory and stores it in the cache for next time.<br><br>'
-        + '<strong>Address breakdown:</strong> Every memory address is split into three fields: <strong style="color:#3498db">tag</strong> | <strong style="color:#27ae60">index</strong> | <strong style="color:#e67e22">offset</strong>. The <strong>index</strong> bits select which <strong>set</strong> (row) in the cache to check. The <strong>tag</strong> bits identify which memory block is stored there. The <strong>offset</strong> bits select the byte within the block. This is the core of cache lookup \u2014 it\'s just bit slicing.<br><br>'
+        + '<strong>Address breakdown:</strong> Every memory address is split into three fields: <strong style="color:var(--accent)">tag</strong> | <strong style="color:var(--success)">index</strong> | <strong style="color:var(--mant)">offset</strong>. The <strong>index</strong> bits select which <strong>set</strong> (row) in the cache to check. The <strong>tag</strong> bits identify which memory block is stored there. The <strong>offset</strong> bits select the byte within the block. This is the core of cache lookup \u2014 it\'s just bit slicing.<br><br>'
         + '<strong>Direct-mapped:</strong> Each address maps to exactly one cache line (1 way per set). Simple and fast, but two addresses that map to the same set evict each other \u2014 this is a <strong>conflict miss</strong>.<br><br>'
         + '<strong>Set-associative:</strong> Each set has multiple <strong>ways</strong> (slots). A 2-way cache checks 2 tags per lookup. More ways = fewer conflict misses, but more comparators and slower lookup. <strong>Fully associative</strong> (1 set, N ways) eliminates all conflict misses but requires checking every tag in parallel.<br><br>'
         + '<strong>Replacement:</strong> When all ways in a set are occupied, the cache must evict one. <strong>LRU (Least Recently Used)</strong> evicts the way that hasn\'t been accessed the longest \u2014 betting that recently used data will be used again soon.<br><br>'
@@ -1891,10 +1892,10 @@ function boothWidget(container) {
     const clamped = val & ((1 << bits) - 1);
     const digits = encode(clamped, bits);
 
-    let h = '<div style="margin-bottom:6px;font-size:12px;color:#595959;">Binary:</div>';
+    let h = '<div style="margin-bottom:6px;font-size:12px;color:var(--muted);">Binary:</div>';
     h += '<div class="booth-bits" style="overflow-x:auto;">';
     for (let i = bits - 1; i >= 0; i--) {
-      h += `<div class="booth-bit" style="background:rgba(0,0,0,0.04);border:1px solid #ddd;">${(clamped >>> i) & 1}</div>`;
+      h += `<div class="booth-bit" style="background:rgba(0,0,0,0.04);border:1px solid var(--rule);">${(clamped >>> i) & 1}</div>`;
     }
     h += '</div>';
     h += '<div class="booth-bits" style="margin-bottom:8px;">';
@@ -1904,7 +1905,7 @@ function boothWidget(container) {
     h += '</div>';
 
     // Booth encoding
-    h += '<div style="margin-bottom:6px;font-size:12px;color:#595959;">Booth encoding (d[i] = b[i\u22121] \u2212 b[i]):</div>';
+    h += '<div style="margin-bottom:6px;font-size:12px;color:var(--muted);">Booth encoding (d[i] = b[i\u22121] \u2212 b[i]):</div>';
     h += '<div class="booth-bits" style="overflow-x:auto;">';
     for (let i = bits - 1; i >= 0; i--) {
       const d = digits[i];
@@ -1933,7 +1934,7 @@ function boothWidget(container) {
     // Booth efficiency note
     const nonZero = digits.filter(d => d !== 0).length;
     const onesInBinary = clamped.toString(2).split('').filter(c => c === '1').length;
-    h += '<div class="booth-result-row" style="color:#595959;font-size:11px;margin-top:4px;">';
+    h += '<div class="booth-result-row" style="color:var(--muted);font-size:11px;margin-top:4px;">';
     if (nonZero < onesInBinary) {
       h += `Booth wins: ${nonZero} op${nonZero !== 1 ? 's' : ''} vs ${onesInBinary} with standard binary. Ideal when bits have long runs of 1s (e.g. 0b0111110), since Booth collapses each run into just a subtract and an add.`;
     } else if (nonZero > onesInBinary) {
@@ -1986,7 +1987,7 @@ function overflowWidget(container) {
   const ovOutput = container.querySelector('#ovOutput');
 
   function renderBits(val, label) {
-    let h = `<div style="font-size:12px;color:#595959;margin-bottom:2px;">${label} (signed: ${toSigned(val, bits)}):</div>`;
+    let h = `<div style="font-size:12px;color:var(--muted);margin-bottom:2px;">${label} (signed: ${toSigned(val, bits)}):</div>`;
     h += '<div class="overflow-bits" style="overflow-x:auto;">';
     for (let i = bits - 1; i >= 0; i--) {
       const cls = i === bits - 1 ? ' sign' : '';
@@ -2016,7 +2017,7 @@ function overflowWidget(container) {
 
     let h = renderBits(a, 'A');
     h += renderBits(b, 'B');
-    h += '<div style="border-top:1px solid #ddd;margin:6px 0;"></div>';
+    h += '<div style="border-top:1px solid var(--rule);margin:6px 0;"></div>';
     h += renderBits(sum, 'A + B');
 
     h += '<div class="overflow-result">';
@@ -2233,9 +2234,9 @@ function ieeeWidget(container) {
 
     // Interpretation
     h += '<div class="ieee-info">';
-    h += `<span style="color:#dc3545;">Sign:</span> ${sign} (${sign ? 'negative' : 'positive'})<br>`;
-    h += `<span style="color:#0066cc;">Exponent:</span> ${exp} (biased) = ${exp - 127} (actual)<br>`;
-    h += `<span style="color:#28a745;">Mantissa:</span> 0x${mant.toString(16).toUpperCase().padStart(6, '0')} = ${mant} / 2<sup>23</sup><br>`;
+    h += `<span style="color:var(--error);">Sign:</span> ${sign} (${sign ? 'negative' : 'positive'})<br>`;
+    h += `<span style="color:var(--accent);">Exponent:</span> ${exp} (biased) = ${exp - 127} (actual)<br>`;
+    h += `<span style="color:var(--success);">Mantissa:</span> 0x${mant.toString(16).toUpperCase().padStart(6, '0')} = ${mant} / 2<sup>23</sup><br>`;
 
     if (exp === 0 && mant === 0) {
       h += `<span class="ieee-special">${sign ? '\u2212' : '+'}0 (zero)</span>`;
@@ -2295,7 +2296,7 @@ function comparatorWidget(container) {
     let h = '';
 
     // Render A bits
-    h += '<div style="font-size:12px;color:#595959;margin-bottom:2px;">A = ' + a + ':</div>';
+    h += '<div style="font-size:12px;color:var(--muted);margin-bottom:2px;">A = ' + a + ':</div>';
     h += '<div class="cmp-bits-row">';
     for (let i = bits - 1; i >= 0; i--) {
       const bit = (a >>> i) & 1;
@@ -2308,7 +2309,7 @@ function comparatorWidget(container) {
     h += '</div>';
 
     // Render B bits
-    h += '<div style="font-size:12px;color:#595959;margin-bottom:2px;margin-top:4px;">B = ' + b + ':</div>';
+    h += '<div style="font-size:12px;color:var(--muted);margin-bottom:2px;margin-top:4px;">B = ' + b + ':</div>';
     h += '<div class="cmp-bits-row">';
     for (let i = bits - 1; i >= 0; i--) {
       const bit = (b >>> i) & 1;
@@ -2499,10 +2500,10 @@ function writePolicyWidget(container) {
       if (policy === 'write-through') {
         mem[addr].val = val;
         memWrites++;
-        log.push(`<span style="color:#27ae60">HIT</span> Write addr ${addr} = ${val}. Cache + memory updated. <span style="color:#888">(mem write #${memWrites})</span>`);
+        log.push(`<span style="color:var(--success)">HIT</span> Write addr ${addr} = ${val}. Cache + memory updated. <span style="color:var(--muted)">(mem write #${memWrites})</span>`);
       } else {
         line.dirty = true;
-        log.push(`<span style="color:#27ae60">HIT</span> Write addr ${addr} = ${val}. Cache updated, marked <strong style="color:#e67e22">dirty</strong>.`);
+        log.push(`<span style="color:var(--success)">HIT</span> Write addr ${addr} = ${val}. Cache updated, marked <strong style="color:var(--mant)">dirty</strong>.`);
       }
     } else {
       // Write miss — write-allocate: fetch then write
@@ -2511,17 +2512,17 @@ function writePolicyWidget(container) {
         mem[line.addr].val = line.val;
         memWrites++;
         wbCount++;
-        log.push(`<span style="color:#e67e22">EVICT</span> Dirty line addr ${line.addr} written back to memory. <span style="color:#888">(mem write #${memWrites})</span>`);
+        log.push(`<span style="color:var(--mant)">EVICT</span> Dirty line addr ${line.addr} written back to memory. <span style="color:var(--muted)">(mem write #${memWrites})</span>`);
       }
       // Allocate
       cache[set] = { addr, val, dirty: false };
       if (policy === 'write-through') {
         mem[addr].val = val;
         memWrites++;
-        log.push(`<span style="color:#e74c3c">MISS</span> Write addr ${addr} = ${val}. Allocated + memory updated. <span style="color:#888">(mem write #${memWrites})</span>`);
+        log.push(`<span style="color:var(--error)">MISS</span> Write addr ${addr} = ${val}. Allocated + memory updated. <span style="color:var(--muted)">(mem write #${memWrites})</span>`);
       } else {
         cache[set].dirty = true;
-        log.push(`<span style="color:#e74c3c">MISS</span> Write addr ${addr} = ${val}. Allocated, marked <strong style="color:#e67e22">dirty</strong>.`);
+        log.push(`<span style="color:var(--error)">MISS</span> Write addr ${addr} = ${val}. Allocated, marked <strong style="color:var(--mant)">dirty</strong>.`);
       }
     }
     render();
@@ -2534,15 +2535,15 @@ function writePolicyWidget(container) {
     h += '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">';
     h += `<button class="wp-pol btn-t ${policy === 'write-through' ? 'on' : ''}" data-p="write-through">Write-Through</button>`;
     h += `<button class="wp-pol btn-t ${policy === 'write-back' ? 'on' : ''}" data-p="write-back">Write-Back</button>`;
-    h += '<span style="margin-left:auto;font-size:12px;color:#888">Memory writes: <strong>' + memWrites + '</strong></span>';
+    h += '<span style="margin-left:auto;font-size:12px;color:var(--muted)">Memory writes: <strong>' + memWrites + '</strong></span>';
     h += '</div>';
 
     // Input row
     h += '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">';
-    h += '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Addr <select id="wpAddr" style="font-family:monospace;font-size:13px;padding:3px 6px;border-radius:4px;border:1px solid #ccc;background:inherit;color:inherit">';
+    h += '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Addr <select id="wpAddr" style="font-family:monospace;font-size:13px;padding:3px 6px;border-radius:4px;border:1px solid var(--rule);background:inherit;color:inherit">';
     for (let i = 0; i < MEM_SIZE; i++) h += `<option value="${i}">${i}</option>`;
     h += '</select></label>';
-    h += '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Value <input id="wpVal" type="number" min="0" max="99" value="1" style="width:50px;font-family:monospace;font-size:13px;padding:3px 6px;border-radius:4px;border:1px solid #ccc;background:inherit;color:inherit"></label>';
+    h += '<label style="font-size:12px;display:flex;align-items:center;gap:4px">Value <input id="wpVal" type="number" min="0" max="99" value="1" style="width:50px;font-family:monospace;font-size:13px;padding:3px 6px;border-radius:4px;border:1px solid var(--rule);background:inherit;color:inherit"></label>';
     h += '<button class="btn-t" id="wpWrite">Write</button>';
     h += '<button class="btn-t" id="wpReset" style="margin-left:auto">Reset</button>';
     h += '</div>';
@@ -2551,23 +2552,23 @@ function writePolicyWidget(container) {
     h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;font-family:monospace">';
 
     // Cache
-    h += '<div><div style="font-weight:600;margin-bottom:4px;font-family:sans-serif;font-size:12px">Cache <span style="color:#888">(4 lines, direct-mapped)</span></div>';
+    h += '<div><div style="font-weight:600;margin-bottom:4px;font-family:sans-serif;font-size:12px">Cache <span style="color:var(--muted)">(4 lines, direct-mapped)</span></div>';
     h += '<table style="width:100%;border-collapse:collapse">';
-    h += '<tr style="font-size:11px;color:#888"><th style="text-align:left;padding:2px 6px">Set</th><th style="text-align:left;padding:2px 6px">Addr</th><th style="text-align:left;padding:2px 6px">Val</th>';
+    h += '<tr style="font-size:11px;color:var(--muted)"><th style="text-align:left;padding:2px 6px">Set</th><th style="text-align:left;padding:2px 6px">Addr</th><th style="text-align:left;padding:2px 6px">Val</th>';
     if (policy === 'write-back') h += '<th style="text-align:left;padding:2px 6px">Dirty</th>';
     h += '</tr>';
     for (let i = 0; i < CACHE_LINES; i++) {
       const line = cache[i];
       const bg = line ? (line.dirty ? 'rgba(230,126,34,0.1)' : 'rgba(39,174,96,0.06)') : 'transparent';
       h += `<tr style="background:${bg};border-bottom:1px solid rgba(128,128,128,0.15)">`;
-      h += `<td style="padding:3px 6px;color:#888">${i}</td>`;
+      h += `<td style="padding:3px 6px;color:var(--muted)">${i}</td>`;
       if (line) {
         h += `<td style="padding:3px 6px">${line.addr}</td>`;
         h += `<td style="padding:3px 6px;font-weight:600">${line.val}</td>`;
-        if (policy === 'write-back') h += `<td style="padding:3px 6px">${line.dirty ? '<span style="color:#e67e22">1</span>' : '0'}</td>`;
+        if (policy === 'write-back') h += `<td style="padding:3px 6px">${line.dirty ? '<span style="color:var(--mant)">1</span>' : '0'}</td>`;
       } else {
-        h += '<td style="padding:3px 6px;color:#888">\u2014</td><td style="padding:3px 6px;color:#888">\u2014</td>';
-        if (policy === 'write-back') h += '<td style="padding:3px 6px;color:#888">\u2014</td>';
+        h += '<td style="padding:3px 6px;color:var(--muted)">\u2014</td><td style="padding:3px 6px;color:var(--muted)">\u2014</td>';
+        if (policy === 'write-back') h += '<td style="padding:3px 6px;color:var(--muted)">\u2014</td>';
       }
       h += '</tr>';
     }
@@ -2576,7 +2577,7 @@ function writePolicyWidget(container) {
     // Memory
     h += '<div><div style="font-weight:600;margin-bottom:4px;font-family:sans-serif;font-size:12px">Main Memory</div>';
     h += '<table style="width:100%;border-collapse:collapse">';
-    h += '<tr style="font-size:11px;color:#888"><th style="text-align:left;padding:2px 6px">Addr</th><th style="text-align:left;padding:2px 6px">Val</th></tr>';
+    h += '<tr style="font-size:11px;color:var(--muted)"><th style="text-align:left;padding:2px 6px">Addr</th><th style="text-align:left;padding:2px 6px">Val</th></tr>';
     for (let i = 0; i < MEM_SIZE; i++) {
       // Highlight if cache has a different (dirty) value for this addr
       const set = mapSet(i);
@@ -2584,8 +2585,8 @@ function writePolicyWidget(container) {
       const stale = line && line.addr === i && line.dirty && line.val !== mem[i].val;
       const bg = stale ? 'rgba(231,76,60,0.08)' : 'transparent';
       h += `<tr style="background:${bg};border-bottom:1px solid rgba(128,128,128,0.15)">`;
-      h += `<td style="padding:3px 6px;color:#888">${i}</td>`;
-      h += `<td style="padding:3px 6px">${mem[i].val}${stale ? ' <span style="color:#e74c3c;font-size:10px">(stale)</span>' : ''}</td>`;
+      h += `<td style="padding:3px 6px;color:var(--muted)">${i}</td>`;
+      h += `<td style="padding:3px 6px">${mem[i].val}${stale ? ' <span style="color:var(--error);font-size:10px">(stale)</span>' : ''}</td>`;
       h += '</tr>';
     }
     h += '</table></div>';
@@ -2741,7 +2742,7 @@ function kmapWidget(container) {
 
     // Variable count selector
     h += '<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">';
-    h += '<span style="font-size:12px;color:#888">Variables:</span>';
+    h += '<span style="font-size:12px;color:var(--muted)">Variables:</span>';
     for (const v of [2, 3]) {
       h += `<button class="btn-t km-vars ${vars === v ? 'on' : ''}" data-v="${v}">${v}</button>`;
     }
@@ -2761,9 +2762,9 @@ function kmapWidget(container) {
     if (vars === 2) {
       // 2x2 grid: rows = A (0,1), cols = B (0,1)
       h += '<table style="border-collapse:collapse;margin:0 auto;font-family:monospace;font-size:14px">';
-      h += `<tr><td style="padding:4px 10px;font-size:11px;color:#888"></td><td style="padding:4px 10px;font-size:11px;color:#888;text-align:center">${varLabel(1)}=0</td><td style="padding:4px 10px;font-size:11px;color:#888;text-align:center">${varLabel(1)}=1</td></tr>`;
+      h += `<tr><td style="padding:4px 10px;font-size:11px;color:var(--muted)"></td><td style="padding:4px 10px;font-size:11px;color:var(--muted);text-align:center">${varLabel(1)}=0</td><td style="padding:4px 10px;font-size:11px;color:var(--muted);text-align:center">${varLabel(1)}=1</td></tr>`;
       for (let a = 0; a < 2; a++) {
-        h += `<tr><td style="padding:4px 10px;font-size:11px;color:#888">${varLabel(0)}=${a}</td>`;
+        h += `<tr><td style="padding:4px 10px;font-size:11px;color:var(--muted)">${varLabel(0)}=${a}</td>`;
         for (let b = 0; b < 2; b++) {
           const idx = a * 2 + b;
           const val = cells[idx];
@@ -2779,11 +2780,11 @@ function kmapWidget(container) {
       const colOrder = [0, 1, 3, 2];
       const colLabels = ['00', '01', '11', '10'];
       h += '<table style="border-collapse:collapse;margin:0 auto;font-family:monospace;font-size:14px">';
-      h += `<tr><td style="padding:4px 8px;font-size:11px;color:#888">${varLabel(0)}\\${varLabel(1)}${varLabel(2)}</td>`;
-      colLabels.forEach(l => { h += `<td style="padding:4px 10px;font-size:11px;color:#888;text-align:center">${l}</td>`; });
+      h += `<tr><td style="padding:4px 8px;font-size:11px;color:var(--muted)">${varLabel(0)}\\${varLabel(1)}${varLabel(2)}</td>`;
+      colLabels.forEach(l => { h += `<td style="padding:4px 10px;font-size:11px;color:var(--muted);text-align:center">${l}</td>`; });
       h += '</tr>';
       for (let a = 0; a < 2; a++) {
-        h += `<tr><td style="padding:4px 10px;font-size:11px;color:#888">${a}</td>`;
+        h += `<tr><td style="padding:4px 10px;font-size:11px;color:var(--muted)">${a}</td>`;
         for (let ci = 0; ci < 4; ci++) {
           const idx = a * 4 + colOrder[ci];
           const val = cells[idx];
@@ -2796,7 +2797,7 @@ function kmapWidget(container) {
       h += '</table>';
     }
 
-    h += '<div style="margin-top:10px;font-size:12px;color:#888;text-align:center">Click cells to cycle: 0 \u2192 1 \u2192 X \u2192 0</div>';
+    h += '<div style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center">Click cells to cycle: 0 \u2192 1 \u2192 X \u2192 0</div>';
 
     // Result
     h += `<div style="margin-top:10px;font-size:14px;font-family:monospace;text-align:center;padding:8px;border-radius:6px;background:rgba(128,128,128,0.06)"><strong>SOP:</strong> ${expr}</div>`;
@@ -2878,7 +2879,7 @@ function flipFlopWidget(container) {
 
       const labels = ['CLK', 'D', 'Q'];
       const keys = ['clk', 'd', 'q'];
-      const colors = ['#888', '#3498db', '#e67e22'];
+      const colors = ['var(--muted)', 'var(--accent)', 'var(--mant)'];
 
       labels.forEach((label, ri) => {
         const y = topPad + ri * (rowH + 6);
@@ -2905,7 +2906,7 @@ function flipFlopWidget(container) {
 
           // Rising edge indicator for CLK
           if (ri === 0 && history[i].clk === 1 && (i === 0 || history[i - 1].clk === 0)) {
-            h += `<line x1="${x}" y1="${y - 1}" x2="${x}" y2="${y + rowH + 1}" stroke="#e74c3c" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>`;
+            h += `<line x1="${x}" y1="${y - 1}" x2="${x}" y2="${y + rowH + 1}" stroke="var(--error)" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>`;
           }
         }
       });
@@ -2914,7 +2915,7 @@ function flipFlopWidget(container) {
       h += '</div>';
     }
 
-    h += '<div style="font-size:11px;color:#888;margin-top:6px">Toggle D freely, then click Rising Edge. Q only updates at the clock edge.</div>';
+    h += '<div style="font-size:11px;color:var(--muted);margin-top:6px">Toggle D freely, then click Rising Edge. Q only updates at the clock edge.</div>';
 
     container.innerHTML = h;
 
@@ -2985,48 +2986,48 @@ function fsmWidget(container) {
     const S10 = { x: 350, y: cy };
 
     h += `<div style="overflow-x:auto"><svg width="${svgW}" height="${svgH}" style="display:block;margin-bottom:10px;font-family:sans-serif">`;
-    h += '<defs><marker id="fsmArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#888"/></marker></defs>';
+    h += '<defs><marker id="fsmArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--muted)"/></marker></defs>';
 
     // ── S0 self-loop (input 0) — loops above-left ──
-    h += `<path d="M${S0.x - 12},${S0.y - R} C${S0.x - 36},${S0.y - R - 40} ${S0.x + 14},${S0.y - R - 40} ${S0.x + 10},${S0.y - R}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-    h += `<text x="${S0.x}" y="${S0.y - R - 34}" text-anchor="middle" font-size="11" fill="#888">0</text>`;
+    h += `<path d="M${S0.x - 12},${S0.y - R} C${S0.x - 36},${S0.y - R - 40} ${S0.x + 14},${S0.y - R - 40} ${S0.x + 10},${S0.y - R}" fill="none" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${S0.x}" y="${S0.y - R - 34}" text-anchor="middle" font-size="11" fill="var(--muted)">0</text>`;
 
     // ── S0 → S1 (input 1) — straight line, label above ──
-    h += `<line x1="${S0.x + R}" y1="${S0.y}" x2="${S1.x - R}" y2="${S1.y}" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-    h += `<text x="${(S0.x + S1.x) / 2}" y="${S0.y - 12}" text-anchor="middle" font-size="11" fill="#888">1</text>`;
+    h += `<line x1="${S0.x + R}" y1="${S0.y}" x2="${S1.x - R}" y2="${S1.y}" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${(S0.x + S1.x) / 2}" y="${S0.y - 12}" text-anchor="middle" font-size="11" fill="var(--muted)">1</text>`;
 
     // ── S1 self-loop (input 1) — loops above-right ──
-    h += `<path d="M${S1.x - 10},${S1.y - R} C${S1.x - 14},${S1.y - R - 40} ${S1.x + 36},${S1.y - R - 40} ${S1.x + 12},${S1.y - R}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-    h += `<text x="${S1.x + 2}" y="${S1.y - R - 34}" text-anchor="middle" font-size="11" fill="#888">1</text>`;
+    h += `<path d="M${S1.x - 10},${S1.y - R} C${S1.x - 14},${S1.y - R - 40} ${S1.x + 36},${S1.y - R - 40} ${S1.x + 12},${S1.y - R}" fill="none" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${S1.x + 2}" y="${S1.y - R - 34}" text-anchor="middle" font-size="11" fill="var(--muted)">1</text>`;
 
     // ── S1 → S10 (input 0) — straight line, label above ──
-    h += `<line x1="${S1.x + R}" y1="${S1.y}" x2="${S10.x - R}" y2="${S10.y}" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-    h += `<text x="${(S1.x + S10.x) / 2}" y="${S1.y - 12}" text-anchor="middle" font-size="11" fill="#888">0</text>`;
+    h += `<line x1="${S1.x + R}" y1="${S1.y}" x2="${S10.x - R}" y2="${S10.y}" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${(S1.x + S10.x) / 2}" y="${S1.y - 12}" text-anchor="middle" font-size="11" fill="var(--muted)">0</text>`;
 
     // ── S10 → S1 (input 1, detect!) — curved above ──
-    h += `<path d="M${S10.x - R + 4},${S10.y - 10} Q${(S1.x + S10.x) / 2},${S10.y - 70} ${S1.x + R - 4},${S1.y - 10}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-    h += `<text x="${(S1.x + S10.x) / 2}" y="${S10.y - 56}" text-anchor="middle" font-size="11" fill="#27ae60" font-weight="600">1 / detect</text>`;
+    h += `<path d="M${S10.x - R + 4},${S10.y - 10} Q${(S1.x + S10.x) / 2},${S10.y - 70} ${S1.x + R - 4},${S1.y - 10}" fill="none" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${(S1.x + S10.x) / 2}" y="${S10.y - 56}" text-anchor="middle" font-size="11" fill="var(--success)" font-weight="600">1 / detect</text>`;
 
     // ── S10 → S0 (input 0) — curved well below to clear state labels ──
-    h += `<path d="M${S10.x - R + 4},${S10.y + 14} Q${(S0.x + S10.x) / 2},${S10.y + 90} ${S0.x + R - 4},${S0.y + 14}" fill="none" stroke="#888" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
-    h += `<text x="${(S0.x + S10.x) / 2}" y="${S10.y + 76}" text-anchor="middle" font-size="11" fill="#888">0</text>`;
+    h += `<path d="M${S10.x - R + 4},${S10.y + 14} Q${(S0.x + S10.x) / 2},${S10.y + 90} ${S0.x + R - 4},${S0.y + 14}" fill="none" stroke="var(--muted)" stroke-width="1.5" marker-end="url(#fsmArrow)"/>`;
+    h += `<text x="${(S0.x + S10.x) / 2}" y="${S10.y + 76}" text-anchor="middle" font-size="11" fill="var(--muted)">0</text>`;
 
     // ── Draw states (circles on top of arrows) ──
     [[S0, 'S0'], [S1, 'S1'], [S10, 'S10']].forEach(([p, s]) => {
       const isActive = currentState === s;
       const fill = isActive ? 'rgba(52,152,219,0.2)' : 'rgba(128,128,128,0.05)';
-      const stroke = isActive ? '#3498db' : '#888';
+      const stroke = isActive ? 'var(--accent)' : 'var(--muted)';
       const strokeW = isActive ? 2.5 : 1.5;
       h += `<circle cx="${p.x}" cy="${p.y}" r="${R}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"/>`;
-      h += `<text x="${p.x}" y="${p.y + 1}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="${isActive ? 700 : 400}" fill="${isActive ? '#3498db' : '#666'}">${s}</text>`;
-      h += `<text x="${p.x}" y="${p.y + R + 16}" text-anchor="middle" font-size="10" fill="#888">${stateLabels[s]}</text>`;
+      h += `<text x="${p.x}" y="${p.y + 1}" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="${isActive ? 700 : 400}" fill="${isActive ? 'var(--accent)' : 'var(--muted)'}">${s}</text>`;
+      h += `<text x="${p.x}" y="${p.y + R + 16}" text-anchor="middle" font-size="10" fill="var(--muted)">${stateLabels[s]}</text>`;
     });
 
     h += '</svg></div>';
 
     // Input buttons
     h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">';
-    h += '<span style="font-size:12px;color:#888">Feed input:</span>';
+    h += '<span style="font-size:12px;color:var(--muted)">Feed input:</span>';
     h += '<button class="btn-t" id="fsmIn0" style="font-family:monospace;font-weight:600">0</button>';
     h += '<button class="btn-t" id="fsmIn1" style="font-family:monospace;font-weight:600">1</button>';
     h += '<button class="btn-t" id="fsmReset" style="margin-left:auto">Reset</button>';
@@ -3036,23 +3037,23 @@ function fsmWidget(container) {
     if (inputHistory.length > 0) {
       h += '<div style="font-size:13px;font-family:monospace;line-height:1.8">';
       h += '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">';
-      h += '<span style="color:#888;font-size:11px;min-width:50px">Input:</span>';
+      h += '<span style="color:var(--muted);font-size:11px;min-width:50px">Input:</span>';
       inputHistory.forEach((b, i) => {
         const detected = outputHistory[i] === 1;
-        h += `<span style="display:inline-block;width:22px;text-align:center;${detected ? 'color:#27ae60;font-weight:700' : ''}">${b}</span>`;
+        h += `<span style="display:inline-block;width:22px;text-align:center;${detected ? 'color:var(--success);font-weight:700' : ''}">${b}</span>`;
       });
       h += '</div>';
       h += '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">';
-      h += '<span style="color:#888;font-size:11px;min-width:50px">Output:</span>';
+      h += '<span style="color:var(--muted);font-size:11px;min-width:50px">Output:</span>';
       outputHistory.forEach(o => {
-        h += `<span style="display:inline-block;width:22px;text-align:center;${o ? 'color:#27ae60;font-weight:700' : 'color:#888'}">${o}</span>`;
+        h += `<span style="display:inline-block;width:22px;text-align:center;${o ? 'color:var(--success);font-weight:700' : 'color:var(--muted)'}">${o}</span>`;
       });
       h += '</div>';
       h += '</div>';
 
       const detections = outputHistory.filter(o => o === 1).length;
       if (detections > 0) {
-        h += `<div style="margin-top:6px;font-size:12px;color:#27ae60;font-weight:600">"101" detected ${detections} time${detections > 1 ? 's' : ''}</div>`;
+        h += `<div style="margin-top:6px;font-size:12px;color:var(--success);font-weight:600">"101" detected ${detections} time${detections > 1 ? 's' : ''}</div>`;
       }
     }
 
@@ -3188,19 +3189,19 @@ function pipelineHazardWidget(container) {
 
     // Cycle headers
     for (let c = 0; c < totalCycles; c++) {
-      h += `<text x="${labelW + c * cellW + cellW / 2}" y="12" text-anchor="middle" fill="#888" font-size="10">C${c + 1}</text>`;
+      h += `<text x="${labelW + c * cellW + cellW / 2}" y="12" text-anchor="middle" fill="var(--muted)" font-size="10">C${c + 1}</text>`;
     }
 
     const stageColors = {
       IF: 'rgba(52,152,219,0.18)', ID: 'rgba(46,204,113,0.18)',
-      EX: 'rgba(231,76,60,0.18)', MEM: 'rgba(243,156,18,0.18)',
+      EX: 'color-mix(in oklab, var(--error) 18%, transparent)', MEM: 'color-mix(in oklab, var(--warn) 18%, transparent)',
       WB: 'rgba(155,89,182,0.18)',
     };
 
     schedule.forEach((stages, i) => {
       const y = 20 + i * (cellH + 4);
       // Instruction label
-      h += `<text x="2" y="${y + cellH / 2 + 4}" fill="#ccc" font-size="11">${insts[i].text}</text>`;
+      h += `<text x="2" y="${y + cellH / 2 + 4}" fill="var(--rule)" font-size="11">${insts[i].text}</text>`;
 
       // Stall bubbles
       if (i > 0) {
@@ -3209,16 +3210,16 @@ function pipelineHazardWidget(container) {
         for (let c = prevEnd + 1; c < curStart; c++) {
           const x = labelW + c * cellW;
           h += `<rect x="${x + 1}" y="${y}" width="${cellW - 2}" height="${cellH}" rx="4" fill="rgba(231,76,60,0.1)" stroke="rgba(231,76,60,0.3)" stroke-width="1"/>`;
-          h += `<text x="${x + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" fill="#e74c3c" font-size="10">stall</text>`;
+          h += `<text x="${x + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" fill="var(--error)" font-size="10">stall</text>`;
         }
       }
 
       stages.forEach(({ stage, cycle }) => {
         const x = labelW + cycle * cellW;
         const isHazardStage = forwards.some(f => f.toInst === i && stage === 'EX');
-        const strokeColor = isHazardStage ? '#27ae60' : 'transparent';
+        const strokeColor = isHazardStage ? 'var(--success)' : 'transparent';
         h += `<rect x="${x + 1}" y="${y}" width="${cellW - 2}" height="${cellH}" rx="4" fill="${stageColors[stage]}" stroke="${strokeColor}" stroke-width="${isHazardStage ? 2 : 0}"/>`;
-        h += `<text x="${x + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" fill="#ccc" font-size="11" font-weight="600">${stage}</text>`;
+        h += `<text x="${x + cellW / 2}" y="${y + cellH / 2 + 4}" text-anchor="middle" fill="var(--rule)" font-size="11" font-weight="600">${stage}</text>`;
       });
     });
 
@@ -3227,11 +3228,11 @@ function pipelineHazardWidget(container) {
       const fromY = 20 + f.fromInst * (cellH + 4) + cellH;
       const toY = 20 + f.toInst * (cellH + 4);
       const x = labelW + f.cycle * cellW + cellW / 2;
-      h += `<line x1="${x}" y1="${fromY}" x2="${x}" y2="${toY}" stroke="#27ae60" stroke-width="2" marker-end="url(#phArrow)"/>`;
-      h += `<text x="${x + 6}" y="${(fromY + toY) / 2 + 3}" fill="#27ae60" font-size="9">FWD</text>`;
+      h += `<line x1="${x}" y1="${fromY}" x2="${x}" y2="${toY}" stroke="var(--success)" stroke-width="2" marker-end="url(#phArrow)"/>`;
+      h += `<text x="${x + 6}" y="${(fromY + toY) / 2 + 3}" fill="var(--success)" font-size="9">FWD</text>`;
     });
 
-    h += '<defs><marker id="phArrow" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><path d="M0,0 L6,2.5 L0,5 Z" fill="#27ae60"/></marker></defs>';
+    h += '<defs><marker id="phArrow" markerWidth="6" markerHeight="5" refX="6" refY="2.5" orient="auto"><path d="M0,0 L6,2.5 L0,5 Z" fill="var(--success)"/></marker></defs>';
 
     h += '</svg></div>';
 
@@ -3239,9 +3240,9 @@ function pipelineHazardWidget(container) {
     const totalClocks = schedule[schedule.length - 1][STAGES.length - 1].cycle + 1;
     const idealClocks = insts.length + STAGES.length - 1;
     const stallCount = totalClocks - idealClocks;
-    h += '<div style="font-size:12px;color:#888;margin-top:6px">';
-    h += `Total: ${totalClocks} cycles (ideal: ${idealClocks}${stallCount > 0 ? `, <span style="color:#e74c3c">${stallCount} stall${stallCount > 1 ? 's' : ''}</span>` : ', no stalls'})`;
-    if (forwards.length > 0) h += ` \u2014 <span style="color:#27ae60">${forwards.length} forward${forwards.length > 1 ? 's' : ''}</span>`;
+    h += '<div style="font-size:12px;color:var(--muted);margin-top:6px">';
+    h += `Total: ${totalClocks} cycles (ideal: ${idealClocks}${stallCount > 0 ? `, <span style="color:var(--error)">${stallCount} stall${stallCount > 1 ? 's' : ''}</span>` : ', no stalls'})`;
+    if (forwards.length > 0) h += ` \u2014 <span style="color:var(--success)">${forwards.length} forward${forwards.length > 1 ? 's' : ''}</span>`;
     h += '</div>';
 
     container.innerHTML = h;
@@ -3281,7 +3282,7 @@ function endiannessWidget(container) {
       const isLSB = i === bytes.length - 1;
       const bg = isMSB ? 'rgba(52,152,219,0.15)' : isLSB ? 'rgba(231,126,34,0.15)' : 'rgba(128,128,128,0.06)';
       beH += `<div style="text-align:center;flex:1;border:1px solid rgba(128,128,128,0.2);border-radius:4px;padding:6px 4px;background:${bg};font-family:monospace">`;
-      beH += `<div style="font-size:10px;color:#888">0x${i.toString(16).padStart(2, '0')}</div>`;
+      beH += `<div style="font-size:10px;color:var(--muted)">0x${i.toString(16).padStart(2, '0')}</div>`;
       beH += `<div style="font-size:14px;font-weight:600">0x${b.toString(16).toUpperCase().padStart(2, '0')}</div>`;
       beH += '</div>';
     });
@@ -3294,7 +3295,7 @@ function endiannessWidget(container) {
       const isLSB = b === bytes[bytes.length - 1];
       const bg = isLSB ? 'rgba(231,126,34,0.15)' : isMSB ? 'rgba(52,152,219,0.15)' : 'rgba(128,128,128,0.06)';
       leH += `<div style="text-align:center;flex:1;border:1px solid rgba(128,128,128,0.2);border-radius:4px;padding:6px 4px;background:${bg};font-family:monospace">`;
-      leH += `<div style="font-size:10px;color:#888">0x${i.toString(16).padStart(2, '0')}</div>`;
+      leH += `<div style="font-size:10px;color:var(--muted)">0x${i.toString(16).padStart(2, '0')}</div>`;
       leH += `<div style="font-size:14px;font-weight:600">0x${b.toString(16).toUpperCase().padStart(2, '0')}</div>`;
       leH += '</div>';
     });
@@ -3306,22 +3307,22 @@ function endiannessWidget(container) {
 
     // Input
     h += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">';
-    h += '<span style="font-size:12px;color:#888">Width:</span>';
+    h += '<span style="font-size:12px;color:var(--muted)">Width:</span>';
     for (const b of [16, 32]) {
       h += `<button class="btn-t en-bits ${bits === b ? 'on' : ''}" data-b="${b}">${b}-bit</button>`;
     }
-    h += `<label style="font-size:12px;display:flex;align-items:center;gap:4px">0x<input id="enHex" type="text" value="${hexVal}" maxlength="${bits / 4}" style="width:${bits / 4 + 1}ch;font-family:monospace;font-size:14px;padding:3px 6px;border-radius:4px;border:1px solid #ccc;background:inherit;color:inherit"></label>`;
+    h += `<label style="font-size:12px;display:flex;align-items:center;gap:4px">0x<input id="enHex" type="text" value="${hexVal}" maxlength="${bits / 4}" style="width:${bits / 4 + 1}ch;font-family:monospace;font-size:14px;padding:3px 6px;border-radius:4px;border:1px solid var(--rule);background:inherit;color:inherit"></label>`;
     h += '</div>';
 
     // Big-endian
-    h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">Big-Endian <span style="font-weight:400;color:#888">(MSB first)</span></div>';
+    h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">Big-Endian <span style="font-weight:400;color:var(--muted)">(MSB first)</span></div>';
     h += '<div id="enBE" style="display:flex;gap:2px;margin-bottom:12px"></div>';
 
     // Little-endian
-    h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">Little-Endian <span style="font-weight:400;color:#888">(LSB first)</span></div>';
+    h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">Little-Endian <span style="font-weight:400;color:var(--muted)">(LSB first)</span></div>';
     h += '<div id="enLE" style="display:flex;gap:2px;margin-bottom:8px"></div>';
 
-    h += '<div style="font-size:11px;color:#888"><span style="color:#3498db">\u25a0</span> MSB &nbsp; <span style="color:#e67e22">\u25a0</span> LSB &nbsp; Address increases left to right</div>';
+    h += '<div style="font-size:11px;color:var(--muted)"><span style="color:var(--accent)">\u25a0</span> MSB &nbsp; <span style="color:var(--mant)">\u25a0</span> LSB &nbsp; Address increases left to right</div>';
 
     container.innerHTML = h;
     renderBytes();
@@ -3409,24 +3410,24 @@ function replacementPolicyWidget(container) {
     for (const [key, label] of [['lru', 'LRU'], ['fifo', 'FIFO'], ['random', 'Random']]) {
       h += `<button class="btn-t rp-pol ${policy === key ? 'on' : ''}" data-p="${key}">${label}</button>`;
     }
-    h += `<span style="margin-left:auto;font-size:12px;color:#888">Hits: <strong style="color:#27ae60">${result.hits}</strong> Misses: <strong style="color:#e74c3c">${result.misses}</strong></span>`;
+    h += `<span style="margin-left:auto;font-size:12px;color:var(--muted)">Hits: <strong style="color:var(--success)">${result.hits}</strong> Misses: <strong style="color:var(--error)">${result.misses}</strong></span>`;
     h += '</div>';
 
     // Access sequence with current position
-    h += '<div style="font-size:12px;color:#888;margin-bottom:4px">Access sequence:</div>';
+    h += '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Access sequence:</div>';
     h += '<div style="display:flex;gap:3px;margin-bottom:10px;flex-wrap:wrap">';
     ADDRESSES.forEach((addr, i) => {
       let bg = 'rgba(128,128,128,0.06)';
-      let color = '#888';
+      let color = 'var(--muted)';
       let fw = '400';
       if (i < maxStep) {
         bg = result.log[i].hit ? 'rgba(39,174,96,0.15)' : 'rgba(231,76,60,0.15)';
-        color = result.log[i].hit ? '#27ae60' : '#e74c3c';
+        color = result.log[i].hit ? 'var(--success)' : 'var(--error)';
         fw = '600';
       }
       if (i === maxStep) {
         bg = 'rgba(52,152,219,0.2)';
-        color = '#3498db';
+        color = 'var(--accent)';
         fw = '700';
       }
       h += `<span style="display:inline-block;width:28px;height:28px;line-height:28px;text-align:center;border-radius:4px;background:${bg};color:${color};font-weight:${fw};font-family:monospace;font-size:13px">${addr}</span>`;
@@ -3440,7 +3441,7 @@ function replacementPolicyWidget(container) {
       const line = result.cache[i];
       const bg = line ? 'rgba(128,128,128,0.08)' : 'transparent';
       h += `<div style="flex:1;text-align:center;padding:8px 4px;border:1px solid rgba(128,128,128,0.2);border-radius:4px;font-family:monospace;background:${bg}">`;
-      h += line ? `<span style="font-weight:600">${line.addr}</span>` : '<span style="color:#888">\u2014</span>';
+      h += line ? `<span style="font-weight:600">${line.addr}</span>` : '<span style="color:var(--muted)">\u2014</span>';
       h += '</div>';
     }
     h += '</div>';
@@ -3450,7 +3451,7 @@ function replacementPolicyWidget(container) {
     h += `<button class="btn-t" id="rpPrev" ${step <= 0 ? 'disabled' : ''}>\u2190 Prev</button>`;
     h += `<button class="btn-t" id="rpNext" ${step >= ADDRESSES.length ? 'disabled' : ''}>Next \u2192</button>`;
     h += '<button class="btn-t" id="rpReset">Reset</button>';
-    h += `<span style="font-size:12px;color:#888;margin-left:auto">Step ${maxStep}/${ADDRESSES.length}</span>`;
+    h += `<span style="font-size:12px;color:var(--muted);margin-left:auto">Step ${maxStep}/${ADDRESSES.length}</span>`;
     h += '</div>';
 
     // Log
@@ -3458,9 +3459,9 @@ function replacementPolicyWidget(container) {
       const last = result.log[result.log.length - 1];
       h += '<div style="margin-top:8px;font-size:12px;line-height:1.6;padding:6px 8px;border:1px solid rgba(128,128,128,0.2);border-radius:6px">';
       if (last.hit) {
-        h += `<span style="color:#27ae60">HIT</span> \u2014 Address ${last.addr} found in cache.`;
+        h += `<span style="color:var(--success)">HIT</span> \u2014 Address ${last.addr} found in cache.`;
       } else {
-        h += `<span style="color:#e74c3c">MISS</span> \u2014 Address ${last.addr} loaded.`;
+        h += `<span style="color:var(--error)">MISS</span> \u2014 Address ${last.addr} loaded.`;
         if (last.evicted !== null) h += ` Evicted address ${last.evicted}.`;
       }
       h += '</div>';

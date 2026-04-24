@@ -21,41 +21,41 @@
     }
     .controls-row .input-group { flex: 1; min-width: 200px; }
     .controls-row label {
-      display: block; font-size: 12px; font-weight: 600; color: #595959; margin-bottom: 4px;
+      display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px;
     }
-    body.dark .controls-row label { color: #9a9a9a; }
+    body.dark .controls-row label { color: var(--muted); }
 
     .expr-input {
-      width: 100%; background: #f9f9f9; border: 1px solid #cccccc; border-radius: 6px;
-      color: #000000; font-family: monospace; font-size: 14px; padding: 8px 10px;
+      width: 100%; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 6px;
+      color: var(--ink); font-family: var(--f-mono); font-size: 14px; padding: 8px 10px;
       outline: none; transition: border-color 0.2s;
     }
-    .expr-input:focus { border-color: #0066cc; }
-    .expr-input::placeholder { color: #595959; }
-    body.dark .expr-input { background: #2a2a2a; border-color: #444444; color: #e0e0e0; }
-    body.dark .expr-input:focus { border-color: #87ceeb; }
+    .expr-input:focus { border-color: var(--accent); }
+    .expr-input::placeholder { color: var(--muted); }
+    body.dark .expr-input { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
+    body.dark .expr-input:focus { border-color: var(--accent); }
 
     .diagram-wrap {
       overflow: auto; -webkit-overflow-scrolling: touch;
-      border: 1px solid #e0e0e0; border-radius: 6px; background: #fafafa;
+      border: 1px solid var(--rule); border-radius: 6px; background: var(--paper-2);
       min-height: 200px; position: relative; touch-action: pan-x pan-y pinch-zoom;
     }
-    body.dark .diagram-wrap { border-color: #444444; background: #1e1e1e; }
+    body.dark .diagram-wrap { border-color: var(--rule); background: var(--paper); }
     .diagram-wrap svg { display: block; min-width: 100%; min-height: 200px; }
     .diagram-empty {
       display: flex; align-items: center; justify-content: center;
-      min-height: 200px; color: #595959; font-size: 13px; font-style: italic;
+      min-height: 200px; color: var(--muted); font-size: 13px; font-style: italic;
     }
-    body.dark .diagram-empty { color: #9a9a9a; }
+    body.dark .diagram-empty { color: var(--muted); }
 
     .tt-panel { max-height: 300px; overflow: auto; margin-top: 10px; }
-    .tt-table { border-collapse: collapse; font-family: monospace; font-size: 12px; width: 100%; }
-    .tt-table th, .tt-table td { padding: 3px 8px; text-align: center; border: 1px solid #e0e0e0; }
-    body.dark .tt-table th, body.dark .tt-table td { border-color: #444444; }
-    .tt-table th { background: #f0f0f0; font-weight: 600; position: sticky; top: 0; }
-    body.dark .tt-table th { background: #333333; }
-    .tt-one { color: #0066cc; }
-    body.dark .tt-one { color: #87ceeb; }
+    .tt-table { border-collapse: collapse; font-family: var(--f-mono); font-size: 12px; width: 100%; }
+    .tt-table th, .tt-table td { padding: 3px 8px; text-align: center; border: 1px solid var(--rule); }
+    body.dark .tt-table th, body.dark .tt-table td { border-color: var(--rule); }
+    .tt-table th { background: var(--rule-soft); font-weight: 600; position: sticky; top: 0; }
+    body.dark .tt-table th { background: var(--ink); }
+    .tt-one { color: var(--accent); }
+    body.dark .tt-one { color: var(--accent); }
 
     .export-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 
@@ -78,21 +78,21 @@
     <div class="nav-row">
       <div class="nav-links">
         <a href="/" class="back-link">&larr; p14m.com</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/adders/">Adders</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/bits/">Bits</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/cache/">Cache</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
+        <a href="/float/">Float</a>
+        <span>|</span>
         <a href="/kmap/">K-Map</a>
-        <span style="color:#cccccc;">|</span>
-        <a href="/latency/">Latency</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/multipliers/">Multipliers</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/orderbook/">OrderBook</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/learn/">Learn</a>
       </div>
       <button class="theme-toggle" onclick="toggleTheme()">
@@ -388,14 +388,14 @@ function getExportStyles() {
     + '.cg-gate-not .cg-gate-body,.cg-gate-not .cg-bubble{stroke:' + (dark ? '#e08050' : '#b85c2f') + '}'
     + '.cg-gate-xor .cg-gate-body,.cg-gate-xor .cg-bubble{stroke:' + (dark ? '#50d0d0' : '#2fa5a5') + '}'
     + '.cg-gate-xnor .cg-gate-body,.cg-gate-xnor .cg-bubble{stroke:' + (dark ? '#9070e0' : '#6b4fbf') + '}'
-    + '.cg-bubble{fill:' + (dark ? '#1e1e1e' : '#fff') + ';stroke-width:2}'
-    + '.cg-wire{fill:none;stroke:' + (dark ? '#999' : '#666') + ';stroke-width:2;stroke-linecap:round}'
-    + '.cg-junction{fill:' + (dark ? '#999' : '#666') + '}'
-    + '.cg-label{font-family:system-ui,sans-serif;fill:' + (dark ? '#ccc' : '#333') + '}'
+    + '.cg-bubble{fill:' + (dark ? 'var(--paper)' : 'var(--paper)') + ';stroke-width:2}'
+    + '.cg-wire{fill:none;stroke:' + (dark ? 'var(--muted)' : 'var(--muted)') + ';stroke-width:2;stroke-linecap:round}'
+    + '.cg-junction{fill:' + (dark ? 'var(--muted)' : 'var(--muted)') + '}'
+    + '.cg-label{font-family:system-ui,sans-serif;fill:' + (dark ? 'var(--rule)' : 'var(--ink)') + '}'
     + '.cg-input-label{font-size:14px;font-weight:600;font-family:monospace}'
     + '.cg-output-label{font-size:14px;font-weight:600}'
     + '.cg-gate-text{font-size:10px;font-weight:600}'
-    + 'svg{background:' + (dark ? '#1e1e1e' : '#fafafa') + '}'
+    + 'svg{background:' + (dark ? 'var(--paper)' : 'var(--paper-2)') + '}'
     + '</style>';
 }
 

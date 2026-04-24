@@ -28,24 +28,24 @@
 
     .operand-input {
       width: 100%;
-      background: #f9f9f9;
-      border: 1px solid #cccccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 6px;
-      color: #000000;
-      font-family: monospace;
+      color: var(--ink);
+      font-family: var(--f-mono);
       font-size: 14px;
       padding: 8px 10px;
       outline: none;
       transition: border-color 0.2s;
     }
-    .operand-input:focus { border-color: #0066cc; }
-    .operand-input::placeholder { color: #595959; }
+    .operand-input:focus { border-color: var(--accent); }
+    .operand-input::placeholder { color: var(--muted); }
     body.dark .operand-input {
-      background: #2a2a2a;
-      border-color: #444444;
-      color: #e0e0e0;
+      background: var(--paper-2);
+      border-color: var(--rule);
+      color: var(--ink);
     }
-    body.dark .operand-input:focus { border-color: #87ceeb; }
+    body.dark .operand-input:focus { border-color: var(--accent); }
 
     .arch-checks {
       display: flex;
@@ -62,31 +62,31 @@
       user-select: none;
     }
     .arch-checks input[type="checkbox"] {
-      accent-color: #0066cc;
+      accent-color: var(--accent);
     }
     body.dark .arch-checks input[type="checkbox"] {
-      accent-color: #87ceeb;
+      accent-color: var(--accent);
     }
 
     .csa-final {
       font-size: 12px;
-      color: #595959;
+      color: var(--muted);
       margin-left: 4px;
     }
-    body.dark .csa-final { color: #9a9a9a; }
+    body.dark .csa-final { color: var(--muted); }
     .csa-final select {
       font-size: 12px;
       font-family: inherit;
-      background: #f5f5f5;
-      border: 1px solid #cccccc;
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
       border-radius: 4px;
       padding: 2px 4px;
       color: inherit;
     }
     body.dark .csa-final select {
-      background: #333333;
-      border-color: #555555;
-      color: #e0e0e0;
+      background: var(--ink);
+      border-color: var(--muted);
+      color: var(--ink);
     }
 
     /* ── Playback ── */
@@ -98,8 +98,8 @@
     }
     .pb-btn {
       background: transparent;
-      border: 1px solid #cccccc;
-      color: #595959;
+      border: 1px solid var(--rule);
+      color: var(--muted);
       border-radius: 5px;
       padding: 5px 12px;
       font-family: inherit;
@@ -109,23 +109,23 @@
       min-width: 36px;
       text-align: center;
     }
-    .pb-btn:hover { border-color: #595959; color: #333333; }
-    .pb-btn.active { border-color: #0066cc; color: #0066cc; background: rgba(0,102,204,0.05); }
-    body.dark .pb-btn { border-color: #444444; color: #9a9a9a; }
-    body.dark .pb-btn:hover { border-color: #666666; color: #cccccc; }
-    body.dark .pb-btn.active { border-color: #87ceeb; color: #87ceeb; background: rgba(135,206,235,0.1); }
+    .pb-btn:hover { border-color: var(--muted); color: var(--ink); }
+    .pb-btn.active { border-color: var(--accent); color: var(--accent); background: color-mix(in oklab, var(--accent) 5%, transparent); }
+    body.dark .pb-btn { border-color: var(--rule); color: var(--muted); }
+    body.dark .pb-btn:hover { border-color: var(--muted); color: var(--ink); }
+    body.dark .pb-btn.active { border-color: var(--accent); color: var(--accent); background: color-mix(in oklab, var(--accent) 10%, transparent); }
 
     .speed-label {
       font-size: 12px;
-      color: #595959;
+      color: var(--muted);
       margin-left: 8px;
     }
-    body.dark .speed-label { color: #9a9a9a; }
+    body.dark .speed-label { color: var(--muted); }
     .speed-slider {
       width: 80px;
-      accent-color: #0066cc;
+      accent-color: var(--accent);
     }
-    body.dark .speed-slider { accent-color: #87ceeb; }
+    body.dark .speed-slider { accent-color: var(--accent); }
 
     /* ── Race Lanes ── */
     .race-container {
@@ -136,17 +136,17 @@
     }
 
     .race-lane {
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--rule);
       border-radius: 8px;
       padding: 14px;
       position: relative;
     }
-    body.dark .race-lane { border-color: #444444; }
+    body.dark .race-lane { border-color: var(--rule); }
     .race-lane.finished {
-      border-color: #28a745;
+      border-color: var(--success);
     }
     body.dark .race-lane.finished {
-      border-color: #4caf50;
+      border-color: var(--success);
     }
 
     .lane-header {
@@ -161,18 +161,18 @@
     }
     .lane-stats {
       font-size: 12px;
-      font-family: monospace;
-      color: #595959;
+      font-family: var(--f-mono);
+      color: var(--muted);
     }
-    body.dark .lane-stats { color: #9a9a9a; }
+    body.dark .lane-stats { color: var(--muted); }
     .lane-step {
       font-size: 12px;
-      color: #595959;
+      color: var(--muted);
       margin-top: 8px;
       font-style: italic;
       min-height: 18px;
     }
-    body.dark .lane-step { color: #9a9a9a; }
+    body.dark .lane-step { color: var(--muted); }
 
     /* ── SVG Adder Diagram ── */
     .adder-svg {
@@ -187,164 +187,164 @@
     }
 
     .fa-body {
-      fill: #f5f5f5;
-      stroke: #cccccc;
+      fill: var(--paper-2);
+      stroke: var(--rule);
       stroke-width: 1.5;
       transition: fill 0.25s, stroke 0.25s;
     }
     body.dark .fa-body {
-      fill: #2a2a2a;
-      stroke: #555555;
+      fill: var(--paper-2);
+      stroke: var(--muted);
     }
     .fa-body.computing {
-      fill: #fff3cd;
-      stroke: #ffc107;
+      fill: color-mix(in oklab, var(--warn) 18%, var(--paper));
+      stroke: var(--warn);
     }
     body.dark .fa-body.computing {
-      fill: #3d3520;
-      stroke: #ffc107;
+      fill: color-mix(in oklab, var(--warn) 18%, var(--paper));
+      stroke: var(--warn);
     }
     .fa-body.resolved {
-      fill: rgba(0, 102, 204, 0.1);
-      stroke: #0066cc;
+      fill: color-mix(in oklab, var(--accent) 10%, transparent);
+      stroke: var(--accent);
     }
     body.dark .fa-body.resolved {
-      fill: rgba(135, 206, 235, 0.12);
-      stroke: #87ceeb;
+      fill: color-mix(in oklab, var(--accent) 12%, transparent);
+      stroke: var(--accent);
     }
 
     .fa-text {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 11px;
-      fill: #555555;
+      fill: var(--muted);
       text-anchor: middle;
       dominant-baseline: central;
       pointer-events: none;
     }
-    body.dark .fa-text { fill: #aaaaaa; }
+    body.dark .fa-text { fill: var(--muted); }
 
     .fa-bit-label {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 9px;
-      fill: #999999;
+      fill: var(--muted);
       text-anchor: middle;
     }
-    body.dark .fa-bit-label { fill: #777777; }
+    body.dark .fa-bit-label { fill: var(--muted); }
 
     .carry-line {
-      stroke: #cccccc;
+      stroke: var(--rule);
       stroke-width: 2;
       fill: none;
       transition: stroke 0.25s;
     }
-    body.dark .carry-line { stroke: #555555; }
+    body.dark .carry-line { stroke: var(--muted); }
     .carry-line.active {
-      stroke: #dc3545;
+      stroke: var(--error);
     }
     .carry-line.resolved {
-      stroke: #28a745;
+      stroke: var(--success);
     }
 
     .sum-bit {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 12px;
-      fill: #595959;
+      fill: var(--muted);
       text-anchor: middle;
       transition: fill 0.25s;
     }
-    body.dark .sum-bit { fill: #9a9a9a; }
+    body.dark .sum-bit { fill: var(--muted); }
     .sum-bit.resolved {
-      fill: #0066cc;
+      fill: var(--accent);
       font-weight: 600;
     }
-    body.dark .sum-bit.resolved { fill: #87ceeb; }
+    body.dark .sum-bit.resolved { fill: var(--accent); }
 
     .input-bit {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 10px;
-      fill: #999999;
+      fill: var(--muted);
       text-anchor: middle;
     }
-    body.dark .input-bit { fill: #777777; }
+    body.dark .input-bit { fill: var(--muted); }
 
     /* CLA group bracket */
     .clu-body {
-      fill: #eef6ff;
-      stroke: #0066cc;
+      fill: color-mix(in oklab, var(--accent) 10%, var(--paper));
+      stroke: var(--accent);
       stroke-width: 1;
       stroke-dasharray: 4 2;
       rx: 4;
     }
     body.dark .clu-body {
-      fill: rgba(135,206,235,0.08);
-      stroke: #87ceeb;
+      fill: color-mix(in oklab, var(--accent) 8%, transparent);
+      stroke: var(--accent);
     }
     .clu-body.computing {
-      fill: #fff3cd;
-      stroke: #ffc107;
+      fill: color-mix(in oklab, var(--warn) 18%, var(--paper));
+      stroke: var(--warn);
       stroke-dasharray: none;
     }
     body.dark .clu-body.computing {
-      fill: #3d3520;
-      stroke: #ffc107;
+      fill: color-mix(in oklab, var(--warn) 18%, var(--paper));
+      stroke: var(--warn);
     }
     .clu-body.resolved {
-      fill: rgba(0,102,204,0.1);
-      stroke: #0066cc;
+      fill: color-mix(in oklab, var(--accent) 10%, transparent);
+      stroke: var(--accent);
       stroke-dasharray: none;
     }
     body.dark .clu-body.resolved {
-      fill: rgba(135,206,235,0.12);
-      stroke: #87ceeb;
+      fill: color-mix(in oklab, var(--accent) 12%, transparent);
+      stroke: var(--accent);
     }
 
     .clu-text {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 10px;
-      fill: #0066cc;
+      fill: var(--accent);
       text-anchor: middle;
       dominant-baseline: central;
       pointer-events: none;
     }
-    body.dark .clu-text { fill: #87ceeb; }
+    body.dark .clu-text { fill: var(--accent); }
 
     /* CSel mux block */
     .mux-body {
-      fill: #f0fff0;
-      stroke: #28a745;
+      fill: color-mix(in oklab, var(--success) 10%, var(--paper));
+      stroke: var(--success);
       stroke-width: 1;
       rx: 3;
       transition: fill 0.25s, stroke 0.25s;
     }
     body.dark .mux-body {
-      fill: rgba(76,175,80,0.08);
-      stroke: #4caf50;
+      fill: color-mix(in oklab, var(--success) 8%, transparent);
+      stroke: var(--success);
     }
     .mux-body.computing {
-      fill: #fff3cd;
-      stroke: #ffc107;
+      fill: color-mix(in oklab, var(--warn) 18%, var(--paper));
+      stroke: var(--warn);
     }
     body.dark .mux-body.computing {
-      fill: #3d3520;
-      stroke: #ffc107;
+      fill: color-mix(in oklab, var(--warn) 18%, var(--paper));
+      stroke: var(--warn);
     }
     .mux-body.resolved {
-      fill: rgba(40,167,69,0.15);
-      stroke: #28a745;
+      fill: color-mix(in oklab, var(--success) 15%, transparent);
+      stroke: var(--success);
     }
     body.dark .mux-body.resolved {
-      fill: rgba(76,175,80,0.15);
-      stroke: #4caf50;
+      fill: color-mix(in oklab, var(--success) 15%, transparent);
+      stroke: var(--success);
     }
     .mux-text {
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 9px;
-      fill: #28a745;
+      fill: var(--success);
       text-anchor: middle;
       dominant-baseline: central;
       pointer-events: none;
     }
-    body.dark .mux-text { fill: #4caf50; }
+    body.dark .mux-text { fill: var(--success); }
 
     /* ── Result Display ── */
     .result-row {
@@ -352,20 +352,20 @@
       align-items: center;
       gap: 12px;
       margin-top: 12px;
-      font-family: monospace;
+      font-family: var(--f-mono);
       font-size: 14px;
       flex-wrap: wrap;
     }
     .result-val {
       font-weight: 600;
-      color: #0066cc;
+      color: var(--accent);
     }
-    body.dark .result-val { color: #87ceeb; }
+    body.dark .result-val { color: var(--accent); }
     .result-fmt {
       font-size: 12px;
-      color: #595959;
+      color: var(--muted);
     }
-    body.dark .result-fmt { color: #9a9a9a; }
+    body.dark .result-fmt { color: var(--muted); }
 
     /* ── Summary Table ── */
     .summary-tbl {
@@ -377,27 +377,27 @@
     .summary-tbl th {
       text-align: left;
       padding: 8px 10px;
-      border-bottom: 2px solid #cccccc;
+      border-bottom: 2px solid var(--rule);
       font-weight: 600;
       font-size: 12px;
-      color: #555555;
+      color: var(--muted);
     }
     body.dark .summary-tbl th {
-      border-bottom-color: #444444;
-      color: #aaaaaa;
+      border-bottom-color: var(--rule);
+      color: var(--muted);
     }
     .summary-tbl td {
       padding: 6px 10px;
-      border-bottom: 1px solid #eeeeee;
-      font-family: monospace;
+      border-bottom: 1px solid var(--rule-soft);
+      font-family: var(--f-mono);
     }
-    body.dark .summary-tbl td { border-bottom-color: #333333; }
+    body.dark .summary-tbl td { border-bottom-color: var(--ink); }
     .summary-tbl tr:last-child td { border-bottom: none; }
     .summary-tbl .best {
-      color: #28a745;
+      color: var(--success);
       font-weight: 600;
     }
-    body.dark .summary-tbl .best { color: #4caf50; }
+    body.dark .summary-tbl .best { color: var(--success); }
     .summary-tbl .arch-name {
       font-family: inherit;
       font-weight: 500;
@@ -405,54 +405,54 @@
 
     .formula-hint {
       font-size: 11px;
-      color: #595959;
+      color: var(--muted);
       font-family: inherit;
       font-weight: 400;
     }
-    body.dark .formula-hint { color: #9a9a9a; }
+    body.dark .formula-hint { color: var(--muted); }
 
     /* ── Progress bar ── */
     .progress-bar {
       height: 3px;
-      background: #e0e0e0;
+      background: var(--rule);
       border-radius: 2px;
       margin-top: 8px;
       overflow: hidden;
     }
-    body.dark .progress-bar { background: #333333; }
+    body.dark .progress-bar { background: var(--ink); }
     .progress-fill {
       height: 100%;
-      background: #0066cc;
+      background: var(--accent);
       transition: width 0.15s;
       border-radius: 2px;
     }
-    body.dark .progress-fill { background: #87ceeb; }
-    .progress-fill.done { background: #28a745; }
-    body.dark .progress-fill.done { background: #4caf50; }
+    body.dark .progress-fill { background: var(--accent); }
+    .progress-fill.done { background: var(--success); }
+    body.dark .progress-fill.done { background: var(--success); }
 
     /* ── Overflow flag ── */
     .overflow-flag {
       display: inline-block;
-      background: rgba(220, 53, 69, 0.1);
-      border: 1px solid rgba(220, 53, 69, 0.3);
+      background: color-mix(in oklab, var(--error) 10%, transparent);
+      border: 1px solid color-mix(in oklab, var(--error) 30%, transparent);
       border-radius: 4px;
       padding: 2px 8px;
-      color: #dc3545;
+      color: var(--error);
       font-size: 12px;
       font-weight: 600;
       font-family: inherit;
     }
     body.dark .overflow-flag {
-      background: rgba(220, 53, 69, 0.15);
-      color: #ff6b6b;
+      background: color-mix(in oklab, var(--error) 15%, transparent);
+      color: var(--error);
     }
 
     .signed-info {
       font-size: 12px;
-      color: #595959;
+      color: var(--muted);
       margin-top: 6px;
     }
-    body.dark .signed-info { color: #9a9a9a; }
+    body.dark .signed-info { color: var(--muted); }
 
     /* ── CSvA third operand ── */
     #operandCWrap {
@@ -508,21 +508,21 @@
     <div class="nav-row">
       <div class="nav-links">
         <a href="/" class="back-link">&larr; p14m.com</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/bits/">Bits</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/cache/">Cache</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/circuitgen/">CircuitGen</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
+        <a href="/float/">Float</a>
+        <span>|</span>
         <a href="/kmap/">K-Map</a>
-        <span style="color:#cccccc;">|</span>
-        <a href="/latency/">Latency</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/multipliers/">Multipliers</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/orderbook/">OrderBook</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/learn/">Learn</a>
       </div>
       <button class="theme-toggle" onclick="toggleTheme()">
@@ -1592,7 +1592,7 @@ function compute() {
       <span class="result-fmt">= ${toHex(result, n)}</span>
       <span class="result-fmt">= 0b${toBin(result, n)}</span>
       ${overflow ? '<span class="overflow-flag">Overflow</span>' : ''}
-      ${cout ? '<span class="result-fmt" style="color:#dc3545;">(carry out)</span>' : ''}
+      ${cout ? '<span class="result-fmt" style="color:var(--error);">(carry out)</span>' : ''}
     `;
     // Show signed interpretation of inputs
     resultHTML += `<div class="signed-info">A = ${toSigned(a, n)}, B = ${toSigned(b, n)}`;
@@ -1603,7 +1603,7 @@ function compute() {
       <span class="result-val">${result}</span>
       <span class="result-fmt">= ${toHex(result, n)}</span>
       <span class="result-fmt">= 0b${toBin(result, n)}</span>
-      ${cout ? '<span class="result-fmt" style="color:#dc3545;">(carry out)</span>' : ''}
+      ${cout ? '<span class="result-fmt" style="color:var(--error);">(carry out)</span>' : ''}
     `;
   }
   document.getElementById('resultDisplay').innerHTML = resultHTML;

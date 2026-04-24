@@ -22,51 +22,49 @@
       justify-content: center;
       gap: 24px;
       padding: 10px 16px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
+      border: 1px solid var(--rule);
+      border-radius: var(--r-md);
       margin-bottom: 16px;
       font-size: 13px;
       flex-wrap: wrap;
       align-items: center;
+      background: var(--paper);
     }
-    body.dark .ca-config-bar { border-color: #333; }
     .ca-config-item { text-align: center; }
     .ca-config-item label {
-      display: block; color: #595959; font-size: 11px;
-      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;
+      display: block; color: var(--muted); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px;
+      font-weight: 600;
     }
-    body.dark .ca-config-item label { color: #9a9a9a; }
     .ca-config-item select {
-      padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;
-      font-family: monospace; font-size: 13px; background: #fff; color: inherit;
+      padding: 5px 8px; border: 1px solid var(--rule); border-radius: var(--r-sm);
+      font-family: var(--f-mono); font-size: 13px;
+      background: var(--paper-2); color: var(--ink);
     }
-    body.dark .ca-config-item select { background: #1a1a1a; border-color: #444; color: #e0e0e0; }
-    .ca-fixed { font-family: monospace; font-size: 14px; font-weight: 600; }
+    .ca-config-item select:focus { outline: none; border-color: var(--accent); }
+    .ca-fixed { font-family: var(--f-mono); font-size: 14px; font-weight: 600; }
 
     /* ── Address breakdown ── */
     .ca-breakdown {
-      text-align: center; padding: 14px 16px; border: 1px solid #e0e0e0;
-      border-radius: 8px; margin-bottom: 12px; font-family: monospace;
+      text-align: center; padding: 14px 16px; border: 1px solid var(--rule);
+      border-radius: var(--r-md); margin-bottom: 12px; font-family: var(--f-mono);
       font-size: 14px; min-height: 48px; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 6px;
+      background: var(--paper);
     }
-    body.dark .ca-breakdown { border-color: #333; }
-    .ca-bit-tag { background: #3498db; color: #fff; padding: 2px 5px; border-radius: 3px; }
-    .ca-bit-index { background: #27ae60; color: #fff; padding: 2px 5px; border-radius: 3px; }
-    .ca-bit-offset { background: #e67e22; color: #fff; padding: 2px 5px; border-radius: 3px; }
+    .ca-bit-tag    { background: var(--accent);  color: var(--paper); padding: 2px 5px; border-radius: 3px; }
+    .ca-bit-index  { background: var(--success); color: var(--paper); padding: 2px 5px; border-radius: 3px; }
+    .ca-bit-offset { background: var(--mant);    color: var(--paper); padding: 2px 5px; border-radius: 3px; }
 
     /* ── Narration ── */
     .ca-narration {
       text-align: center; padding: 8px 12px; margin-bottom: 12px;
-      font-size: 13px; border-radius: 6px; min-height: 20px;
+      font-size: 13px; border-radius: var(--r-sm); min-height: 20px;
     }
     .ca-narration:empty { display: none; }
-    .ca-narration.ca-hit { background: rgba(46,204,113,0.12); color: #0a7c42; }
-    .ca-narration.ca-miss { background: rgba(231,76,60,0.12); color: #c0392b; }
-    .ca-narration.ca-info { background: rgba(52,152,219,0.12); color: #2471a3; }
-    body.dark .ca-narration.ca-hit { background: rgba(46,204,113,0.1); color: #2ecc71; }
-    body.dark .ca-narration.ca-miss { background: rgba(231,76,60,0.1); color: #e74c3c; }
-    body.dark .ca-narration.ca-info { background: rgba(52,152,219,0.1); color: #87ceeb; }
+    .ca-narration.ca-hit  { background: color-mix(in oklab, var(--success) 14%, transparent); color: var(--success); }
+    .ca-narration.ca-miss { background: color-mix(in oklab, var(--error)   14%, transparent); color: var(--error); }
+    .ca-narration.ca-info { background: color-mix(in oklab, var(--accent)  14%, transparent); color: var(--accent); }
 
     /* ── Main layout ── */
     .ca-layout {
@@ -76,62 +74,67 @@
     @media (max-width: 700px) { .ca-layout { grid-template-columns: 1fr; } }
 
     /* ── Cache table ── */
-    .ca-cache-panel { border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
-    body.dark .ca-cache-panel { border-color: #333; }
+    .ca-cache-panel {
+      border: 1px solid var(--rule); border-radius: var(--r-md);
+      overflow: hidden; background: var(--paper);
+    }
     .ca-cache-header {
       display: grid; grid-template-columns: 40px 40px 30px 1fr 1fr;
       padding: 6px 10px; font-size: 11px; text-transform: uppercase;
-      letter-spacing: 0.5px; color: #595959; border-bottom: 1px solid #e0e0e0;
-      background: #fafafa;
+      letter-spacing: 0.08em; color: var(--muted); font-weight: 600;
+      border-bottom: 1px solid var(--rule);
+      background: var(--paper-2);
     }
-    body.dark .ca-cache-header { background: #222; border-bottom-color: #333; color: #9a9a9a; }
     .ca-cache-row {
       display: grid; grid-template-columns: 40px 40px 30px 1fr 1fr;
-      padding: 4px 10px; font-size: 13px; font-family: monospace;
-      border-bottom: 1px solid #f0f0f0; transition: background 0.3s;
+      padding: 4px 10px; font-size: 13px; font-family: var(--f-mono);
+      border-bottom: 1px solid var(--rule-soft); transition: background 0.3s;
       min-height: 28px; align-items: center;
     }
-    body.dark .ca-cache-row { border-bottom-color: #2a2a2a; }
-    .ca-cache-row.ca-set-alt { background: rgba(0,0,0,0.02); }
-    body.dark .ca-cache-row.ca-set-alt { background: rgba(255,255,255,0.02); }
-    .ca-cache-row.ca-flash-hit { background: rgba(46,204,113,0.22) !important; }
-    .ca-cache-row.ca-flash-miss { background: rgba(231,76,60,0.18) !important; }
-    .ca-cache-row .ca-valid { color: #595959; }
-    .ca-cache-row .ca-tag { color: #3498db; }
-    .ca-cache-row .ca-block { color: #595959; font-size: 12px; }
-    body.dark .ca-cache-row .ca-valid { color: #9a9a9a; }
-    body.dark .ca-cache-row .ca-block { color: #9a9a9a; }
+    .ca-cache-row.ca-set-alt      { background: color-mix(in oklab, var(--ink) 2.5%, transparent); }
+    .ca-cache-row.ca-flash-hit    { background: color-mix(in oklab, var(--success) 26%, transparent) !important; }
+    .ca-cache-row.ca-flash-miss   { background: color-mix(in oklab, var(--error)   22%, transparent) !important; }
+    .ca-cache-row .ca-valid { color: var(--muted); }
+    .ca-cache-row .ca-tag   { color: var(--accent); }
+    .ca-cache-row .ca-block { color: var(--muted); font-size: 12px; }
 
     /* ── Cards ── */
     .ca-card {
-      border: 1px solid #e0e0e0; border-radius: 8px;
+      border: 1px solid var(--rule); border-radius: var(--r-md);
       padding: 12px; margin-bottom: 12px;
+      background: var(--paper);
     }
-    body.dark .ca-card { border-color: #333; }
     .ca-card-title {
-      font-weight: 700; font-size: 13px; text-transform: uppercase;
-      letter-spacing: 0.5px; margin-bottom: 8px; color: #333;
+      font-family: var(--f-ui);
+      font-weight: 600; font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.1em; margin-bottom: 8px; color: var(--muted);
     }
-    body.dark .ca-card-title { color: #ccc; }
 
     /* ── Input ── */
     .ca-input-row { display: flex; gap: 8px; margin-bottom: 4px; }
     .ca-input-row input {
-      flex: 1; padding: 6px 10px; border: 1px solid #ccc;
-      border-radius: 6px; font-family: monospace; font-size: 14px;
-      background: #fff; color: inherit;
+      flex: 1; padding: 6px 10px; border: 1px solid var(--rule);
+      border-radius: var(--r-sm); font-family: var(--f-mono); font-size: 14px;
+      background: var(--paper-2); color: var(--ink);
+      transition: border-color var(--t-quick), box-shadow var(--t-quick);
     }
-    body.dark .ca-input-row input { background: #1a1a1a; border-color: #444; color: #e0e0e0; }
+    .ca-input-row input:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
     .ca-access-btn {
-      padding: 6px 16px; background: #0066cc; color: #fff; border: none;
-      border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;
+      padding: 6px 16px; background: var(--accent); color: var(--paper);
+      border: 1px solid var(--accent);
+      border-radius: var(--r-sm); cursor: pointer; font-size: 13px; font-weight: 600;
+      transition: background var(--t-quick), border-color var(--t-quick);
     }
-    .ca-access-btn:hover { background: #0055aa; }
+    .ca-access-btn:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
     .ca-reset-btn {
-      padding: 6px 12px; background: transparent; border: 1px solid #ccc;
-      border-radius: 6px; cursor: pointer; font-size: 12px; color: inherit;
+      padding: 6px 12px; background: transparent; border: 1px solid var(--rule);
+      border-radius: var(--r-sm); cursor: pointer; font-size: 12px; color: var(--ink-2);
+      transition: border-color var(--t-quick), color var(--t-quick);
     }
-    body.dark .ca-reset-btn { border-color: #444; }
+    .ca-reset-btn:hover { border-color: var(--ink-2); color: var(--ink); }
 
     /* ── Stats ── */
     .ca-stats-grid {
@@ -139,16 +142,13 @@
       gap: 4px 12px; font-size: 13px;
     }
     .ca-stat-item { display: flex; justify-content: space-between; padding: 2px 0; }
-    .ca-stat-label { color: #595959; }
-    body.dark .ca-stat-label { color: #9a9a9a; }
-    .ca-stat-value { font-family: monospace; font-weight: 600; }
-    .ca-color-hit { color: #0a7c42; }
-    .ca-color-miss { color: #c0392b; }
-    body.dark .ca-color-hit { color: #2ecc71; }
-    body.dark .ca-color-miss { color: #e74c3c; }
+    .ca-stat-label { color: var(--muted); }
+    .ca-stat-value { font-family: var(--f-mono); font-weight: 600; }
+    .ca-color-hit  { color: var(--success); }
+    .ca-color-miss { color: var(--error); }
     .ca-hit-rate {
       text-align: center; font-size: 22px; font-weight: 700;
-      font-family: monospace; margin-top: 6px; padding: 4px 0;
+      font-family: var(--f-mono); margin-top: 6px; padding: 4px 0;
     }
 
     /* ── Queue chips ── */
@@ -158,130 +158,135 @@
     }
     .ca-chip {
       padding: 2px 8px; border-radius: 10px; font-size: 12px;
-      font-family: monospace; background: #f0f0f0; border: 1px solid #ddd;
+      font-family: var(--f-mono); background: var(--paper-2);
+      border: 1px solid var(--rule); color: var(--ink-2);
     }
-    body.dark .ca-chip { background: #2a2a2a; border-color: #444; }
-    .ca-chip-current { background: #3498db !important; color: #fff; border-color: #3498db !important; font-weight: 600; }
-    .ca-chip-hit { background: rgba(46,204,113,0.18) !important; border-color: #27ae60 !important; opacity: 0.75; }
-    .ca-chip-miss { background: rgba(231,76,60,0.15) !important; border-color: #c0392b !important; opacity: 0.75; }
+    .ca-chip-current {
+      background: var(--accent) !important; color: var(--paper);
+      border-color: var(--accent) !important; font-weight: 600;
+    }
+    .ca-chip-hit {
+      background: color-mix(in oklab, var(--success) 20%, transparent) !important;
+      border-color: var(--success) !important; opacity: 0.85;
+    }
+    .ca-chip-miss {
+      background: color-mix(in oklab, var(--error) 18%, transparent) !important;
+      border-color: var(--error) !important; opacity: 0.85;
+    }
     .ca-next-btn {
-      width: 100%; padding: 8px; background: #0066cc; color: #fff;
-      border: none; border-radius: 6px; cursor: pointer;
+      width: 100%; padding: 8px; background: var(--accent); color: var(--paper);
+      border: 1px solid var(--accent); border-radius: var(--r-sm); cursor: pointer;
       font-size: 13px; font-weight: 600; display: none;
+      transition: background var(--t-quick), border-color var(--t-quick);
     }
     .ca-next-btn.visible { display: block; }
-    .ca-next-btn:hover { background: #0055aa; }
+    .ca-next-btn:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
 
     /* ── Presets ── */
     .ca-preset-grid { display: flex; flex-direction: column; gap: 6px; }
     .ca-preset-btn {
-      padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 6px;
+      padding: 8px 10px; border: 1px solid var(--rule); border-radius: var(--r-sm);
       background: transparent; text-align: left; cursor: pointer;
-      font-family: inherit; font-size: 12px; color: inherit;
-      transition: border-color 0.15s; line-height: 1.4;
+      font-family: inherit; font-size: 12px; color: var(--ink-2);
+      transition: border-color var(--t-quick), color var(--t-quick);
+      line-height: 1.4;
     }
-    .ca-preset-btn:hover { border-color: #0066cc; }
-    body.dark .ca-preset-btn { border-color: #333; }
-    body.dark .ca-preset-btn:hover { border-color: #87ceeb; }
-    .ca-preset-btn strong { display: block; font-size: 13px; margin-bottom: 2px; }
-    .ca-preset-btn em { font-style: normal; color: #0066cc; font-size: 11px; }
-    body.dark .ca-preset-btn em { color: #87ceeb; }
+    .ca-preset-btn:hover { border-color: var(--accent); color: var(--ink); }
+    .ca-preset-btn strong { display: block; font-size: 13px; margin-bottom: 2px; color: var(--ink); }
+    .ca-preset-btn em {
+      font-style: normal; color: var(--accent); font-size: 11px;
+      display: block; margin-top: 2px;
+    }
+    .ca-preset-btn[data-applicable="false"] { opacity: 0.55; }
+    .ca-preset-btn[data-applicable="false"] em { color: var(--error); }
 
     /* ── History ── */
     .ca-history-panel {
-      border: 1px solid #e0e0e0; border-radius: 8px;
+      border: 1px solid var(--rule); border-radius: var(--r-md);
       padding: 12px; margin-bottom: 16px; overflow-x: auto;
+      background: var(--paper);
     }
-    body.dark .ca-history-panel { border-color: #333; }
     .ca-history-header {
       display: grid; grid-template-columns: 30px 50px 1fr 50px 35px 38px 50px;
       padding: 4px 0; font-size: 11px; text-transform: uppercase;
-      letter-spacing: 0.5px; color: #595959; border-bottom: 1px solid #e0e0e0;
-      min-width: 340px;
+      letter-spacing: 0.08em; color: var(--muted); font-weight: 600;
+      border-bottom: 1px solid var(--rule); min-width: 340px;
     }
-    body.dark .ca-history-header { color: #9a9a9a; border-bottom-color: #333; }
     .ca-history-list { max-height: 200px; overflow-y: auto; min-width: 340px; }
     .ca-history-row {
       display: grid; grid-template-columns: 30px 50px 1fr 50px 35px 38px 50px;
-      padding: 3px 0; font-size: 12px; font-family: monospace;
-      border-bottom: 1px solid #f0f0f0;
+      padding: 3px 0; font-size: 12px; font-family: var(--f-mono);
+      border-bottom: 1px solid var(--rule-soft);
     }
-    body.dark .ca-history-row { border-bottom-color: #2a2a2a; }
-    .ca-history-hit { color: #0a7c42; font-weight: 600; }
-    .ca-history-miss { color: #c0392b; font-weight: 600; }
-    body.dark .ca-history-hit { color: #2ecc71; }
-    body.dark .ca-history-miss { color: #e74c3c; }
+    .ca-history-hit  { color: var(--success); font-weight: 600; }
+    .ca-history-miss { color: var(--error);   font-weight: 600; }
 
     /* ── Nested details (formulas) ── */
     .ca-inner-details {
       margin-top: 10px;
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
+      border: 1px solid var(--rule);
+      border-radius: var(--r-sm);
       overflow: hidden;
     }
-    body.dark .ca-inner-details { border-color: #444; }
     .ca-inner-details summary {
       padding: 8px 12px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 13px;
-      background: #fafafa;
+      font-size: 12.5px;
+      letter-spacing: 0.04em;
+      background: var(--paper-2);
+      color: var(--muted);
       list-style: none;
     }
+    .ca-inner-details summary:hover { color: var(--ink); }
     .ca-inner-details summary::-webkit-details-marker { display: none; }
-    .ca-inner-details summary::before { content: "\25B6\00a0"; font-size: 10px; }
+    .ca-inner-details summary::before { content: "\25B6\00a0"; font-size: 10px; color: var(--faint); }
     .ca-inner-details[open] summary::before { content: "\25BC\00a0"; }
-    body.dark .ca-inner-details summary { background: #222; color: #aaa; }
     .ca-inner-details .ca-formula-table { margin: 0; }
 
     /* ── Comparison table ── */
     .ca-compare-panel {
-      border: 1px solid #e0e0e0; border-radius: 8px;
+      border: 1px solid var(--rule); border-radius: var(--r-md);
       padding: 12px; margin-bottom: 16px; overflow-x: auto;
+      background: var(--paper);
     }
-    body.dark .ca-compare-panel { border-color: #333; }
     .ca-compare-header {
       display: grid; grid-template-columns: 1fr 45px 50px 45px 55px 45px 50px 55px;
       padding: 4px 0; font-size: 11px; text-transform: uppercase;
-      letter-spacing: 0.5px; color: #595959; border-bottom: 1px solid #e0e0e0;
-      min-width: 420px;
+      letter-spacing: 0.08em; color: var(--muted); font-weight: 600;
+      border-bottom: 1px solid var(--rule); min-width: 420px;
     }
-    body.dark .ca-compare-header { color: #9a9a9a; border-bottom-color: #333; }
     .ca-compare-row {
       display: grid; grid-template-columns: 1fr 45px 50px 45px 55px 45px 50px 55px;
-      padding: 4px 0; font-size: 12px; font-family: monospace;
-      border-bottom: 1px solid #f0f0f0; min-width: 420px;
+      padding: 4px 0; font-size: 12px; font-family: var(--f-mono);
+      border-bottom: 1px solid var(--rule-soft); min-width: 420px;
     }
-    body.dark .ca-compare-row { border-bottom-color: #2a2a2a; }
     .ca-compare-row .ca-rate-cell { font-weight: 600; }
 
     /* ── Formulas table ── */
     .ca-formula-table {
       width: 100%; margin-top: 8px; border-collapse: collapse;
-      font-size: 13px; font-family: monospace;
+      font-size: 13px; font-family: var(--f-mono);
     }
     .ca-formula-table th {
-      padding: 4px 8px; text-align: left;
-      border-bottom: 1px solid #e0e0e0;
+      padding: 4px 8px; text-align: left; color: var(--muted);
+      border-bottom: 1px solid var(--rule);
     }
     .ca-formula-table td {
       padding: 4px 8px;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--rule-soft);
     }
     .ca-formula-table tr:last-child td { border-bottom: none; }
-    body.dark .ca-formula-table th { border-bottom-color: #444; }
-    body.dark .ca-formula-table td { border-bottom-color: #2a2a2a; }
 
     /* ── Placeholder text ── */
-    .ca-placeholder { color: #595959; font-size: 12px; }
-    body.dark .ca-placeholder { color: #9a9a9a; }
+    .ca-placeholder { color: var(--muted); font-size: 12px; }
 
     /* ── Toast ── */
     .ca-toast {
       position: fixed; bottom: 24px; left: 50%;
       transform: translateX(-50%) translateY(80px);
-      background: #333; color: #fff; padding: 10px 24px;
-      border-radius: 8px; font-size: 13px; opacity: 0;
+      background: var(--ink); color: var(--paper); padding: 10px 24px;
+      border-radius: var(--r-md); font-size: 13px; opacity: 0;
       transition: transform 0.3s, opacity 0.3s;
       z-index: 1000; pointer-events: none;
     }
@@ -310,21 +315,21 @@
     <div class="nav-row">
       <div class="nav-links">
         <a href="/" class="back-link">&larr; p14m.com</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/adders/">Adders</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/bits/">Bits</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/circuitgen/">CircuitGen</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
+        <a href="/float/">Float</a>
+        <span>|</span>
         <a href="/kmap/">K-Map</a>
-        <span style="color:#cccccc;">|</span>
-        <a href="/latency/">Latency</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/multipliers/">Multipliers</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/orderbook/">OrderBook</a>
-        <span style="color:#cccccc;">|</span>
+        <span>|</span>
         <a href="/learn/">Learn</a>
       </div>
       <button class="theme-toggle" onclick="toggleTheme()">
@@ -342,7 +347,7 @@
         <p>This cache simulator lets you access memory addresses and watch how a CPU cache maps, stores, and evicts data in real time. Step through preset access patterns to see spatial locality, temporal locality, thrashing, and conflict misses in action across direct-mapped, set-associative, and fully associative cache configurations with LRU, FIFO, and random replacement policies.</p>
         <p><strong>Configure</strong> the cache using the dropdowns above. Block size determines how many consecutive bytes are fetched together (spatial locality). Cache lines sets the total capacity. Associativity controls how many ways per set. More ways means fewer conflict misses but more hardware cost. Replacement policy (LRU, FIFO, Random) determines which line gets evicted when a set is full.</p>
         <p><strong>Access addresses</strong> by typing a number (0&ndash;255) and clicking Access, or load a preset pattern and step through with the Next button or <strong>Spacebar</strong>.</p>
-        <p><strong>Watch the breakdown</strong> above the cache table. It shows how each address splits into <span style="color:#3498db;font-weight:600">tag</span>, <span style="color:#27ae60;font-weight:600">index</span>, and <span style="color:#e67e22;font-weight:600">offset</span> bits, which determines where data maps in the cache.</p>
+        <p><strong>Watch the breakdown</strong> above the cache table. It shows how each address splits into <span style="color:var(--accent);font-weight:600">tag</span>, <span style="color:var(--success);font-weight:600">index</span>, and <span style="color:var(--mant);font-weight:600">offset</span> bits, which determines where data maps in the cache.</p>
         <p><strong>Try different configs</strong> with the same pattern. Load Thrashing in direct-mapped mode, then switch to 2-way and reload to see how associativity eliminates conflict misses.</p>
         <details class="ca-inner-details">
           <summary>Bit Split Formulas</summary>
@@ -352,17 +357,17 @@
               <th>Field</th><th>Formula</th><th>Example (default)</th>
             </tr>
             <tr>
-              <td style="color:#e67e22;font-weight:600">Offset bits</td>
+              <td style="color:var(--mant);font-weight:600">Offset bits</td>
               <td>log<sub>2</sub>(block size)</td>
               <td>log<sub>2</sub>(4) = 2</td>
             </tr>
             <tr>
-              <td style="color:#27ae60;font-weight:600">Index bits</td>
+              <td style="color:var(--success);font-weight:600">Index bits</td>
               <td>log<sub>2</sub>(cache lines / associativity)</td>
               <td>log<sub>2</sub>(8 / 1) = 3</td>
             </tr>
             <tr>
-              <td style="color:#3498db;font-weight:600">Tag bits</td>
+              <td style="color:var(--accent);font-weight:600">Tag bits</td>
               <td>address bits &minus; index bits &minus; offset bits</td>
               <td>8 &minus; 3 &minus; 2 = 3</td>
             </tr>
@@ -459,33 +464,33 @@
         <div class="ca-card">
           <div class="ca-card-title">Patterns</div>
           <div class="ca-preset-grid">
-            <button class="ca-preset-btn" onclick="loadPreset('sequential')" aria-label="Pattern: Sequential Access">
+            <button class="ca-preset-btn" data-preset="sequential" onclick="loadPreset('sequential')" aria-label="Pattern: Sequential Access">
               <strong>Sequential</strong>
-              Iterate through consecutive addresses. Spatial locality means most accesses hit after the first block fetch. <em>Best with block size &ge; 2.</em>
+              Iterate through consecutive addresses. Spatial locality means most accesses hit after the first block fetch. <em data-hint></em>
             </button>
-            <button class="ca-preset-btn" onclick="loadPreset('temporal')" aria-label="Pattern: Temporal Loop">
+            <button class="ca-preset-btn" data-preset="temporal" onclick="loadPreset('temporal')" aria-label="Pattern: Temporal Loop">
               <strong>Temporal Loop</strong>
-              Same blocks accessed twice. Like a loop body re-reading its variables. Second pass hits from temporal locality. <em>Works with any config.</em>
+              Same blocks accessed twice. Like a loop body re-reading its variables. Second pass hits from temporal locality. <em data-hint></em>
             </button>
-            <button class="ca-preset-btn" onclick="loadPreset('thrashing')" aria-label="Pattern: Thrashing">
+            <button class="ca-preset-btn" data-preset="thrashing" onclick="loadPreset('thrashing')" aria-label="Pattern: Thrashing">
               <strong>Thrashing</strong>
-              Two addresses fight for the same set. <em>Use direct-mapped, then switch to 2-way and reload to fix it.</em>
+              Two addresses fight for the same set. <em data-hint></em>
             </button>
-            <button class="ca-preset-btn" onclick="loadPreset('stride')" aria-label="Pattern: Power-of-2 Stride">
+            <button class="ca-preset-btn" data-preset="stride" onclick="loadPreset('stride')" aria-label="Pattern: Power-of-2 Stride">
               <strong>Power-of-2 Stride</strong>
-              Strided access pattern that creates worst-case conflict misses. <em>Use direct-mapped to see conflicts; increase associativity to reduce them.</em>
+              Strided access pattern that creates worst-case conflict misses. <em data-hint></em>
             </button>
-            <button class="ca-preset-btn" onclick="loadPreset('lru-vs-fifo')" aria-label="Pattern: LRU vs FIFO">
+            <button class="ca-preset-btn" data-preset="lru-vs-fifo" onclick="loadPreset('lru-vs-fifo')" aria-label="Pattern: LRU vs FIFO">
               <strong>LRU vs FIFO</strong>
-              Overfill a set, then re-access early entries to see different eviction choices. <em>Requires &ge; 2-way. Run with LRU, then switch to FIFO and reload.</em>
+              Overfill a set, then re-access early entries to see different eviction choices. <em data-hint></em>
             </button>
-            <button class="ca-preset-btn" onclick="loadPreset('column')" aria-label="Pattern: Column Traversal">
+            <button class="ca-preset-btn" data-preset="column" onclick="loadPreset('column')" aria-label="Pattern: Column Traversal">
               <strong>Column Traversal</strong>
-              Access column 0 of a row-major matrix. Every row maps to the same set, causing repeated conflict misses. <em>Use direct-mapped to see thrashing; increase associativity to fit more rows.</em>
+              Access column 0 of a row-major matrix. Every row maps to the same set, causing repeated conflict misses. <em data-hint></em>
             </button>
-            <button class="ca-preset-btn" onclick="loadPreset('random')" aria-label="Pattern: Random">
+            <button class="ca-preset-btn" data-preset="random" onclick="loadPreset('random')" aria-label="Pattern: Random">
               <strong>Random</strong>
-              20 random addresses with no locality. The baseline for comparing against structured patterns. <em>Works with any config.</em>
+              20 random addresses with no locality. The baseline for comparing against structured patterns. <em data-hint></em>
             </button>
           </div>
           <button class="btn-t" onclick="copyLearnPrompt()" style="margin-top:10px;">Ask AI about this</button>
@@ -553,6 +558,7 @@ let flashTimeout = null;
 let completionTimeout = null;
 let comparisonRows = [];
 let lastPresetName = '';
+let lastPresetKey = '';
 
 // ── Derived values ──
 function recalc() {
@@ -608,6 +614,8 @@ function resetCache() {
   queueResults = [];
   briefing = [];
   briefingIndex = 0;
+  lastPresetKey = '';
+  lastPresetName = '';
   document.getElementById('ca-narration').textContent = '';
   document.getElementById('ca-narration').className = 'ca-narration';
   document.getElementById('ca-breakdown').innerHTML =
@@ -631,8 +639,15 @@ function updateConfig() {
   totalLines = parseInt(document.getElementById('ca-lines').value);
   associativity = parseInt(document.getElementById('ca-assoc').value);
   replacePolicy = document.getElementById('ca-replace').value;
+  var activePreset = lastPresetKey;
   recalc();
-  resetCache();
+  renderPresetHints();
+  if (activePreset) {
+    // Regenerate the active pattern so addresses stay faithful to the new config.
+    loadPreset(activePreset);
+  } else {
+    resetCache();
+  }
 }
 
 // ── Address decomposition ──
@@ -901,6 +916,63 @@ function stepQueue() {
   }
 }
 
+// ── Hints (per-preset, reflect current config) ──
+function presetHint(name) {
+  var bs = blockSize;
+  var ns = numSets;
+  var stride = ns * bs;
+  var assocLabel = associativity === 1 ? 'direct-mapped' : associativity + '-way';
+
+  switch (name) {
+    case 'sequential': {
+      var count = Math.min(bs * 4, 256);
+      if (bs === 1) return { applicable: true, text: 'With 1-byte blocks, every access is a miss — no spatial locality. Raise block size to ≥2 to see hits.' };
+      return { applicable: true, text: 'Addresses 0–' + (count - 1) + '. Each ' + bs + '-byte block fetch gives ' + (bs - 1) + ' hit' + (bs > 2 ? 's' : '') + ' after the first miss.' };
+    }
+    case 'temporal': {
+      var n = Math.min(Math.floor(totalLines / 2), 4);
+      return { applicable: true, text: n + ' blocks accessed twice. Works with any config; second pass is all hits.' };
+    }
+    case 'thrashing': {
+      var a = 0, b = stride;
+      if (b > 255) b = stride % 256 || bs;
+      if (associativity >= 2) {
+        return { applicable: true, text: 'Addresses ' + a + ' and ' + b + ' both map to Set 0. With ' + assocLabel + ', both fit — no thrashing here. Switch to direct-mapped to see it.' };
+      }
+      return { applicable: true, text: 'Addresses ' + a + ' and ' + b + ' both map to Set 0 and evict each other every access.' };
+    }
+    case 'stride': {
+      var s = 2 * bs;
+      return { applicable: true, text: 'Stride-' + s + ' pattern, ' + assocLabel + '. ' + (associativity === 1 ? 'Expect worst-case conflicts.' : 'Higher associativity absorbs more conflicts.') };
+    }
+    case 'lru-vs-fifo': {
+      if (associativity < 2) {
+        return { applicable: false, text: 'Needs ≥ 2-way associativity. Switch Associativity first, then reload.' };
+      }
+      return { applicable: true, text: 'Currently ' + associativity + '-way / ' + replacePolicy.toUpperCase() + '. Run, switch replacement policy, and reload to compare.' };
+    }
+    case 'column': {
+      var rowWidth = ns * bs;
+      return { applicable: true, text: 'Row width ' + rowWidth + ' bytes. ' + (associativity === 1 ? 'Every row conflicts at Set 0 — worst case.' : 'Up to ' + associativity + ' rows fit per set before eviction.') };
+    }
+    case 'random': {
+      return { applicable: true, text: 'No locality — baseline for comparison. Works with any config.' };
+    }
+  }
+  return { applicable: true, text: '' };
+}
+
+function renderPresetHints() {
+  var btns = document.querySelectorAll('.ca-preset-btn[data-preset]');
+  for (var i = 0; i < btns.length; i++) {
+    var key = btns[i].getAttribute('data-preset');
+    var h = presetHint(key);
+    var em = btns[i].querySelector('[data-hint]');
+    if (em) em.textContent = h.text;
+    btns[i].setAttribute('data-applicable', h.applicable ? 'true' : 'false');
+  }
+}
+
 // ── Presets (generated dynamically from current config) ──
 function generatePreset(name) {
   var bs = blockSize;
@@ -971,9 +1043,10 @@ function generatePreset(name) {
       };
     }
     case 'lru-vs-fifo': {
-      // Needs >= 2-way to be meaningful
+      if (associativity < 2) {
+        return { blocked: true, blockedReason: 'LRU vs FIFO needs at least 2-way associativity — set Associativity to 2-Way or higher, then reload.' };
+      }
       var ways = associativity;
-      if (ways < 2) ways = 2;
       // Collect all block-aligned addresses that map to set 0
       var set0 = [];
       for (var a = 0; a < 256; a += stride) set0.push(a);
@@ -1044,6 +1117,14 @@ function generatePreset(name) {
 function loadPreset(name) {
   var preset = generatePreset(name);
   if (!preset) return;
+  if (preset.blocked) {
+    resetCache();
+    var el = document.getElementById('ca-narration');
+    el.className = 'ca-narration ca-info';
+    el.textContent = preset.blockedReason;
+    showToast(preset.blockedReason);
+    return;
+  }
 
   initCache();
   accessHistory = [];
@@ -1062,6 +1143,7 @@ function loadPreset(name) {
   briefingIndex = 1;
 
   lastPresetName = preset.name;
+  lastPresetKey = name;
   document.getElementById('ca-next-btn').classList.add('visible');
   document.getElementById('ca-breakdown').innerHTML =
     'Step through to see each access';
@@ -1176,6 +1258,7 @@ function copyLearnPrompt() {
 // ── Boot ──
 rebuildAssocOptions();
 recalc();
+renderPresetHints();
 initCache();
 renderCache();
 renderHistory();

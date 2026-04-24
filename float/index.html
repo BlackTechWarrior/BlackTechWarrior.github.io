@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive IEEE-754 floating-point converter. Encode decimal or binary values to half, single, and double precision; decode hex bit patterns. Click bits to flip them and watch the value change.">
+  <meta property="og:title" content="IEEE-754 Floating Point | p14m.com">
+  <meta property="og:description" content="Interactive IEEE-754 converter with clickable bit tiles. Explore sign, exponent, mantissa, and bias across half, single, and double precision.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://p14m.com/float/">
+  <title>IEEE-754 Floating Point | p14m.com</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="stylesheet" href="/shared.css">
+  <style>
+    /* ── page-local tokens ─────────────────────────────── */
+    .fp-page { --tile-gap: 3px; }
+
+    /* ── input panel ───────────────────────────────────── */
+    .fp-controls {
+      display: grid;
+      gap: 16px;
+    }
+    .fp-control-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+    }
+    .fp-control-row .lbl { margin-bottom: 0; min-width: 74px; }
+
+    .fp-chip-group {
+      display: inline-flex;
+      border: 1px solid var(--rule);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+      background: var(--paper-2);
+    }
+    .fp-chip {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 7px 15px;
+      font-family: var(--f-ui);
+      font-size: 12.5px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: background var(--t-quick), color var(--t-quick);
+      border-right: 1px solid var(--rule);
+    }
+    .fp-chip:last-child { border-right: none; }
+    .fp-chip:hover { background: var(--paper-3); color: var(--ink); }
+    .fp-chip.on {
+      background: var(--accent);
+      color: var(--paper);
+    }
+    body.dark .fp-chip.on { color: var(--paper); }
+
+    .fp-value-input {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .fp-go-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .fp-preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .fp-preset {
+      background: transparent;
+      border: 1px dashed var(--rule);
+      color: var(--muted);
+      padding: 4px 10px;
+      font-family: var(--f-mono);
+      font-size: 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: border-color var(--t-quick), color var(--t-quick), background var(--t-quick);
+    }
+    .fp-preset:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-style: solid;
+    }
+    .fp-preset .fp-preset-sym { font-family: var(--f-display); font-weight: 600; color: var(--mant); padding-right: 2px; }
+
+    /* ── mode selector ─────────────────────────────────── */
+    .fp-mode-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .fp-mode-row .mode-selector { margin-bottom: 0; }
+
+    /* ── result cards ──────────────────────────────────── */
+    .fp-cards {
+      display: grid;
+      gap: 18px;
+    }
+    .fp-card {
+      border: 1px solid var(--rule);
+      border-radius: var(--r-lg);
+      background: var(--paper);
+      overflow: hidden;
+      box-shadow: var(--shadow-1);
+      animation: cardIn var(--t-in) both;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fp-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 12px 18px 10px;
+      border-bottom: 1px solid var(--rule-soft);
+      flex-wrap: wrap;
+    }
+    .fp-card-title {
+      font-family: var(--f-display);
+      font-weight: 500;
+      font-size: 1.15rem;
+      letter-spacing: -0.005em;
+      color: var(--ink);
+    }
+    .fp-card-title .fp-card-w {
+      font-family: var(--f-mono);
+      font-size: 0.72em;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-right: 8px;
+    }
+    .fp-card-meta {
+      font-family: var(--f-mono);
+      font-size: 11.5px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .fp-card-meta .fp-bias-num {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .fp-card-body { padding: 14px 18px 18px; }
+
+    /* ── bit tiles ─────────────────────────────────────── */
+    .fp-bits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--tile-gap);
+      margin: 6px 0 8px;
+      align-items: flex-start;
+    }
+    .fp-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .fp-tiles {
+      display: flex;
+      gap: var(--tile-gap);
+      flex-wrap: wrap;
+    }
+    .fp-field-label {
+      font-family: var(--f-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 1px;
+    }
+    .fp-field-label .fp-field-bits { color: var(--faint); font-weight: 400; }
+
+    .fp-bit {
+      width: 22px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--f-mono);
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 3px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform var(--t-quick), background var(--t-quick), color var(--t-quick), box-shadow var(--t-quick);
+      position: relative;
+      border: 1px solid transparent;
+    }
+    .fp-bit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 0 0 rgba(26,26,26,0.06);
+    }
+    .fp-bit:active { transform: translateY(0); }
+    /* field-specific colors — fallback to paper-2 then enhance with color-mix */
+    .fp-bit[data-on="0"]         { background: var(--paper-2); color: var(--ink-2); border-color: var(--rule-soft); }
+    .fp-bit.fp-sign[data-on="0"] { background: color-mix(in oklab, var(--sign) 8%, var(--paper-2)); }
+    .fp-bit.fp-sign[data-on="1"] { background: var(--sign); color: #fff; }
+    .fp-bit.fp-exp[data-on="0"]  { background: color-mix(in oklab, var(--exp) 8%, var(--paper-2)); }
+    .fp-bit.fp-exp[data-on="1"]  { background: var(--exp); color: #fff; }
+    .fp-bit.fp-mant[data-on="0"] { background: color-mix(in oklab, var(--mant) 8%, var(--paper-2)); }
+    .fp-bit.fp-mant[data-on="1"] { background: var(--mant); color: #fff; }
+
+    body.dark .fp-bit.fp-sign[data-on="1"],
+    body.dark .fp-bit.fp-exp[data-on="1"],
+    body.dark .fp-bit.fp-mant[data-on="1"] { color: var(--paper); }
+
+    /* 64-bit needs smaller tiles to fit */
+    .fp-card[data-w="64"] .fp-bit {
+      width: 15px;
+      height: 22px;
+      font-size: 11px;
+      border-radius: 2px;
+    }
+    .fp-card[data-w="64"] .fp-bit::after { top: -12px; font-size: 8px; }
+    .fp-card[data-w="32"] .fp-bit {
+      width: 19px;
+      height: 26px;
+      font-size: 13px;
+    }
+
+    /* inline colored spans — echo bit-field palette */
+    .s-sign { color: var(--sign); font-weight: 600; }
+    .s-exp  { color: var(--exp);  font-weight: 600; }
+    .s-mant { color: var(--mant); font-weight: 600; }
+
+    /* ── row metadata ──────────────────────────────────── */
+    .fp-rows { margin-top: 14px; display: grid; gap: 6px; }
+    .fp-row {
+      display: grid;
+      grid-template-columns: 88px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 6px 10px;
+      background: var(--paper-2);
+      border: 1px solid var(--rule-soft);
+      border-radius: var(--r-sm);
+      font-family: var(--f-mono);
+      font-size: 13px;
+    }
+    .fp-row-k {
+      font-size: 10.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .fp-row input.fp-hex-input {
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: var(--f-mono);
+      font-size: 13.5px;
+      width: 100%;
+      outline: none;
+      padding: 2px 0;
+    }
+    .fp-row input.fp-hex-input:focus {
+      color: var(--accent);
+    }
+    .fp-row .btn-copy { padding: 2px 8px; font-size: 10.5px; }
+    .fp-row-v { word-break: break-all; }
+
+    /* ── formula ───────────────────────────────────────── */
+    .fp-formula {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border: 1px dashed var(--rule);
+      border-radius: var(--r-md);
+      background: transparent;
+      font-family: var(--f-mono);
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--ink-2);
+      overflow-x: auto;
+    }
+    .fp-formula .fp-formula-line { display: block; }
+    .fp-formula .fp-formula-line + .fp-formula-line { margin-top: 4px; }
+
+    /* ── bias note ─────────────────────────────────────── */
+    .fp-note {
+      margin-top: 14px;
+      padding-left: 12px;
+      border-left: 2px solid var(--mant);
+      font-family: var(--f-display);
+      font-weight: 400;
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.65;
+      letter-spacing: 0.003em;
+    }
+
+    /* ── category pill (Normal / Subnormal / Inf / NaN / Zero) */
+    .fp-pill {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-family: var(--f-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+      border: 1px solid var(--rule);
+      color: var(--muted);
+      margin-left: 6px;
+    }
+    .fp-pill[data-cat="normal"]    { border-color: var(--exp);  color: var(--exp); }
+    .fp-pill[data-cat="subnormal"] { border-color: var(--warn); color: var(--warn); }
+    .fp-pill[data-cat="zero"]      { border-color: var(--muted); color: var(--muted); }
+    .fp-pill[data-cat="inf"]       { border-color: var(--accent); color: var(--accent); }
+    .fp-pill[data-cat="nan"]       { border-color: var(--error); color: var(--error); }
+
+    /* ── omitted-width banner ──────────────────────────── */
+    .fp-omit {
+      border: 1px dashed var(--rule);
+      border-radius: var(--r-md);
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--muted);
+      font-family: var(--f-ui);
+      background: transparent;
+    }
+    .fp-omit strong { color: var(--ink); font-family: var(--f-ui); }
+    .fp-omit .fp-omit-w {
+      font-family: var(--f-mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-right: 8px;
+    }
+
+    /* ── empty state ───────────────────────────────────── */
+    .fp-empty {
+      text-align: center;
+      padding: 44px 20px;
+      color: var(--muted);
+      border: 1px dashed var(--rule);
+      border-radius: var(--r-md);
+      font-family: var(--f-display);
+      font-weight: 400;
+      font-size: 15px;
+      letter-spacing: 0.005em;
+    }
+    .fp-empty .fp-ascii {
+      display: block;
+      font-family: var(--f-mono);
+      color: var(--faint);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      margin-top: 8px;
+    }
+
+    /* ── reveal pulse on bit change ────────────────────── */
+    @keyframes bitPulse {
+      0%   { box-shadow: 0 0 0 0 var(--accent-soft); }
+      100% { box-shadow: 0 0 0 6px transparent; }
+    }
+    .fp-bit.fp-pulse { animation: bitPulse 420ms ease-out; }
+
+    /* ── responsive ────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .fp-bit { width: 20px; height: 26px; font-size: 13px; }
+      .fp-card[data-w="32"] .fp-bit { width: 17px; height: 24px; font-size: 12px; }
+      .fp-card[data-w="64"] .fp-bit { width: 13px; height: 20px; font-size: 10px; }
+      .fp-row { grid-template-columns: 70px 1fr auto; font-size: 12px; }
+      .fp-card-head { padding: 10px 14px 8px; }
+      .fp-card-body { padding: 12px 14px 16px; }
+    }
+  </style>
+</head>
+<body class="fp-page">
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+
+<main class="container">
+  <div class="nav-row reveal reveal-1">
+    <div class="nav-links">
+      <a href="/" class="back-link">&larr; p14m.com</a>
+      <span>|</span>
+      <a href="/adders/">Adders</a>
+      <span>|</span>
+      <a href="/bits/">Bits</a>
+      <span>|</span>
+      <a href="/cache/">Cache</a>
+      <span>|</span>
+      <a href="/circuitgen/">CircuitGen</a>
+      <span>|</span>
+      <a href="/kmap/">K-Map</a>
+      <span>|</span>
+      <a href="/multipliers/">Multipliers</a>
+      <span>|</span>
+      <a href="/orderbook/">OrderBook</a>
+      <span>|</span>
+      <a href="/learn/">Learn</a>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+      <span id="theme-text">&#9790;</span>
+    </button>
+  </div>
+
+  <h1 class="reveal reveal-2">IEEE&#8209;754 <span style="color:var(--faint); font-size:.58em; font-weight:400; letter-spacing:0.12em; text-transform:uppercase; margin-left:6px;">floating point</span></h1>
+  <p class="subtitle reveal reveal-3">The anatomy of a floating&#8209;point number &mdash; click a bit to flip it.</p>
+  <div class="metadata reveal reveal-3">
+    <span>Spec</span><span class="dot">·</span>
+    <span>Half</span><span class="dot">·</span>
+    <span>Single</span><span class="dot">·</span>
+    <span>Double</span><span class="dot">·</span>
+    <span>bias offset = 2<sup>k&minus;1</sup>&minus;1</span>
+  </div>
+
+  <details class="how-to reveal reveal-4">
+    <summary>How to use</summary>
+    <div class="how-to-body">
+      <p><strong>Encode</strong> a value into IEEE&#8209;754 bits: pick <code>Decimal</code> or <code>Binary</code> as the input format, type a number (scientific notation works: <code>1.5e-10</code> or, in binary, <code>1.101e+4</code>), and choose a width. <code>Auto</code> shows every format that can represent the value; explicit widths show just that one, or suggest the next width up if it doesn&rsquo;t fit.</p>
+      <p><strong>Decode</strong> a hex bit pattern: switch to the <code>Decode</code> tab, choose a width, and paste the bits (<code>0x40490FDB</code>, spaces and underscores are ok).</p>
+      <p><strong>Click a bit</strong> in any result card to flip it. The formula and decoded value update live. The hex field in each card is editable, too &mdash; a third way to drive the same view.</p>
+      <p><strong>Why bias?</strong> The exponent is stored biased so the bit pattern can be compared as an unsigned integer for ordering. For width <code>k</code>, bias = <code>2<sup>k&minus;1</sup> &minus; 1</code>: <code>15</code> for half (5 exp bits), <code>127</code> for single (8), <code>1023</code> for double (11).</p>
+      <p><strong>Categories:</strong> <em>Normal</em> numbers have an implicit leading <code>1</code>. When the exponent field is all zeros, you get <em>subnormals</em> (implicit leading <code>0</code>, smallest non-zero magnitudes) or <em>&plusmn;0</em>. When the exponent field is all ones, you get <em>&plusmn;&infin;</em> (mantissa zero) or <em>NaN</em> (mantissa non-zero).</p>
+    </div>
+  </details>
+
+  <!-- ── Mode tabs ──────────────────────────────────────────── -->
+  <div class="fp-mode-row reveal reveal-4">
+    <div class="mode-selector" role="tablist">
+      <button class="mode-btn on" data-mode="encode" onclick="setMode('encode')" role="tab">Encode &mdash; value to bits</button>
+      <button class="mode-btn" data-mode="decode" onclick="setMode('decode')" role="tab">Decode &mdash; bits to value</button>
+    </div>
+  </div>
+
+  <!-- ── Encode panel ──────────────────────────────────────── -->
+  <div class="section reveal reveal-5" data-num="01 · Input" id="fp-encode-panel">
+    <div class="fp-controls">
+
+      <div class="fp-control-row">
+        <label class="lbl">Format</label>
+        <div class="fp-chip-group" role="radiogroup" aria-label="Input format">
+          <button class="fp-chip on" data-in-fmt="decimal" onclick="setInputFormat('decimal')">Decimal</button>
+          <button class="fp-chip"    data-in-fmt="binary"  onclick="setInputFormat('binary')">Binary</button>
+        </div>
+      </div>
+
+      <div class="fp-control-row">
+        <label class="lbl" for="fp-value">Value</label>
+        <input id="fp-value" class="inp fp-value-input" autocomplete="off" spellcheck="false"
+               placeholder="3.14159, -1.5e-10, or -1.101e+4 for binary" />
+      </div>
+
+      <div class="fp-control-row">
+        <label class="lbl">Width</label>
+        <div class="fp-chip-group" role="radiogroup" aria-label="Target width">
+          <button class="fp-chip on" data-w="auto" onclick="setTargetWidth('auto')">Auto</button>
+          <button class="fp-chip"    data-w="16"   onclick="setTargetWidth('16')">16</button>
+          <button class="fp-chip"    data-w="32"   onclick="setTargetWidth('32')">32</button>
+          <button class="fp-chip"    data-w="64"   onclick="setTargetWidth('64')">64</button>
+        </div>
+      </div>
+
+      <div class="fp-go-row">
+        <div class="fp-preset-row" aria-label="Preset values">
+          <button class="fp-preset" onclick="loadPreset('pi')"><span class="fp-preset-sym">π</span>3.14159&hellip;</button>
+          <button class="fp-preset" onclick="loadPreset('e')"><span class="fp-preset-sym">e</span>2.71828&hellip;</button>
+          <button class="fp-preset" onclick="loadPreset('phi')"><span class="fp-preset-sym">φ</span>1.61803&hellip;</button>
+          <button class="fp-preset" onclick="loadPreset('third')">1 / 3</button>
+          <button class="fp-preset" onclick="loadPreset('pointone')">0.1</button>
+          <button class="fp-preset" onclick="loadPreset('maxhalf')">half max</button>
+          <button class="fp-preset" onclick="loadPreset('inf')">+&infin;</button>
+          <button class="fp-preset" onclick="loadPreset('negzero')">&minus;0</button>
+          <button class="fp-preset" onclick="loadPreset('nan')">NaN</button>
+        </div>
+        <button class="btn-go" onclick="doEncode()">Convert &rarr;</button>
+      </div>
+
+      <div id="fp-encode-err"></div>
+    </div>
+  </div>
+
+  <!-- ── Decode panel ──────────────────────────────────────── -->
+  <div class="section reveal reveal-5" data-num="01 · Input" id="fp-decode-panel" style="display:none">
+    <div class="fp-controls">
+      <div class="fp-control-row">
+        <label class="lbl">Width</label>
+        <div class="fp-chip-group" role="radiogroup" aria-label="Decode width">
+          <button class="fp-chip"    data-dw="16" onclick="setDecodeWidth(16)">16</button>
+          <button class="fp-chip on" data-dw="32" onclick="setDecodeWidth(32)">32</button>
+          <button class="fp-chip"    data-dw="64" onclick="setDecodeWidth(64)">64</button>
+        </div>
+      </div>
+      <div class="fp-control-row">
+        <label class="lbl" for="fp-hex">Hex</label>
+        <input id="fp-hex" class="inp fp-value-input" autocomplete="off" spellcheck="false"
+               placeholder="0x40490FDB   (0x optional, spaces/underscores ok)" />
+      </div>
+      <div class="fp-go-row">
+        <div class="fp-preset-row">
+          <button class="fp-preset" onclick="loadHexPreset(16, '0x3C00')">half 1.0</button>
+          <button class="fp-preset" onclick="loadHexPreset(32, '0x40490FDB')">single π</button>
+          <button class="fp-preset" onclick="loadHexPreset(32, '0x7F800000')">single +∞</button>
+          <button class="fp-preset" onclick="loadHexPreset(32, '0x00000001')">single min subnormal</button>
+          <button class="fp-preset" onclick="loadHexPreset(64, '0x400921FB54442D18')">double π</button>
+          <button class="fp-preset" onclick="loadHexPreset(64, '0x7FF8000000000000')">double NaN</button>
+        </div>
+        <button class="btn-go" onclick="doDecode()">Decode &rarr;</button>
+      </div>
+      <div id="fp-decode-err"></div>
+    </div>
+  </div>
+
+  <!-- ── Results ──────────────────────────────────────────── -->
+  <h3 style="margin-top: 28px;">02 · Representations</h3>
+  <div id="fp-results" class="fp-cards">
+    <div class="fp-empty">
+      Enter a value above and press <strong>Convert</strong>.
+      <span class="fp-ascii">&middot; &minus; &middot; &minus; &middot; &minus; &middot;</span>
+    </div>
+  </div>
+
+  <div class="rule" data-asterism="· · ·"></div>
+
+  <p class="marginalia">
+    A floating-point number is a product: sign × significand × 2<sup>exponent</sup>.
+    The genius of IEEE&#8209;754 is choosing offsets and implicit bits so that almost every
+    bit pattern corresponds to exactly one real number, and comparing them is as cheap as
+    comparing integers.
+  </p>
+
+  <div class="footer">&copy; 2026 <a href="/">p14m.com</a></div>
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// IEEE-754 converter
+// Formats: half (16), single (32), double (64)
+// Storage: all bits held as BigInt for uniform manipulation.
+// ═══════════════════════════════════════════════════════════════
+
+const FMT = {
+  16: { name: 'Half',   w: 16, expBits: 5,  mantBits: 10, bias: 15,   emax: 15,   emin: -14  },
+  32: { name: 'Single', w: 32, expBits: 8,  mantBits: 23, bias: 127,  emax: 127,  emin: -126 },
+  64: { name: 'Double', w: 64, expBits: 11, mantBits: 52, bias: 1023, emax: 1023, emin: -1022 },
+};
+
+// ── Bit helpers ────────────────────────────────────────────────
+function maskN(n)      { return (1n << BigInt(n)) - 1n; }
+function getField(bits, lo, width) { return (bits >> BigInt(lo)) & maskN(width); }
+function getBitN(bits, i) { return Number((bits >> BigInt(i)) & 1n); }
+function flipBitN(bits, i) { return bits ^ (1n << BigInt(i)); }
+
+// ── Bit layout ─────────────────────────────────────────────────
+// From LSB: [mantissa (mantBits)] [exponent (expBits)] [sign (1)]
+function splitBits(bits, fmt) {
+  const mant = getField(bits, 0, fmt.mantBits);
+  const exp  = getField(bits, fmt.mantBits, fmt.expBits);
+  const sign = getField(bits, fmt.mantBits + fmt.expBits, 1);
+  return { sign, exp, mant };
+}
+
+// ── Category ───────────────────────────────────────────────────
+function classifyBits(bits, fmt) {
+  const { sign, exp, mant } = splitBits(bits, fmt);
+  const expAllOnes = exp === maskN(fmt.expBits);
+  const expZero    = exp === 0n;
+  if (expAllOnes) return mant === 0n ? 'inf' : 'nan';
+  if (expZero)    return mant === 0n ? 'zero' : 'subnormal';
+  return 'normal';
+}
+
+// ── Decode bits -> JS number (double-precision approximation) ─
+function decodeValue(bits, fmt) {
+  const { sign, exp, mant } = splitBits(bits, fmt);
+  const cat = classifyBits(bits, fmt);
+  const s = sign === 1n ? -1 : 1;
+
+  if (cat === 'nan')  return NaN;
+  if (cat === 'inf')  return s * Infinity;
+  if (cat === 'zero') return sign === 1n ? -0 : 0;
+
+  // Significand as a Number: safe for half/single; for double we go through DataView.
+  if (fmt.w === 64) {
+    // reconstruct exactly via DataView
+    const buf = new ArrayBuffer(8);
+    const dv = new DataView(buf);
+    const hi = Number((bits >> 32n) & 0xFFFFFFFFn);
+    const lo = Number(bits & 0xFFFFFFFFn);
+    dv.setUint32(0, hi, false); // big-endian
+    dv.setUint32(4, lo, false);
+    return dv.getFloat64(0, false);
+  }
+
+  const mantNum = Number(mant);
+  const expNum  = Number(exp);
+  const mantScale = Math.pow(2, fmt.mantBits);
+
+  if (cat === 'subnormal') {
+    return s * (mantNum / mantScale) * Math.pow(2, fmt.emin);
+  }
+  // normal
+  return s * (1 + mantNum / mantScale) * Math.pow(2, expNum - fmt.bias);
+}
+
+// ── Encode a JS number -> bits (BigInt) for width ─────────────
+// Uses the native Float32/Float64 buffers for 32 and 64;
+// half is derived from the 32-bit pattern with round-to-nearest-even.
+function encodeBits(value, width) {
+  if (width === 32) {
+    const f = new Float32Array(1);
+    const u = new Uint32Array(f.buffer);
+    f[0] = value;
+    return BigInt(u[0] >>> 0);
+  }
+  if (width === 64) {
+    const f = new Float64Array(1);
+    const u = new Uint32Array(f.buffer);
+    f[0] = value;
+    // endianness-agnostic: read via DataView as BE
+    const buf = new ArrayBuffer(8);
+    const dv  = new DataView(buf);
+    dv.setFloat64(0, value, false);
+    const hi = BigInt(dv.getUint32(0, false));
+    const lo = BigInt(dv.getUint32(4, false));
+    return (hi << 32n) | lo;
+  }
+  if (width === 16) return encodeHalfBits(value);
+  throw new Error('unknown width');
+}
+
+// ── Half-precision encode with round-to-nearest-even ──────────
+// Based on a well-known compact algorithm (e.g., Fabien Giesen's).
+function encodeHalfBits(val) {
+  // NaN special-case: preserve NaN-ness
+  if (Number.isNaN(val)) return 0x7E00n; // quiet NaN
+  const f = new Float32Array(1);
+  const u = new Uint32Array(f.buffer);
+  f[0] = val;
+  const x = u[0] >>> 0;
+
+  const sign = (x >>> 16) & 0x8000;
+  let e = (x >>> 23) & 0xFF;
+  let m = x & 0x7FFFFF;
+
+  if (e === 0xFF) {
+    // ±Inf or NaN (shouldn't reach NaN here)
+    return BigInt(sign | (m !== 0 ? 0x7E00 : 0x7C00));
+  }
+  if (e === 0) return BigInt(sign); // 32-bit zero or 32-bit subnormal → half zero
+
+  // Rebias
+  e = e - 127 + 15;
+
+  if (e >= 0x1F) {
+    // Overflow → Inf in half
+    return BigInt(sign | 0x7C00);
+  }
+  if (e <= 0) {
+    // Subnormal or true underflow
+    if (e < -10) return BigInt(sign); // smaller than min subnormal → +/- 0
+
+    // Build 24-bit significand (implicit leading 1 + 23 mantissa bits)
+    m = m | 0x800000;
+    const shift = 14 - e; // bits to shift out (13 + (1-e))
+    const halfPointMask = 1 << (shift - 1);
+    const lowerMask = (1 << shift) - 1;
+    const rem = m & lowerMask;
+    let shifted = m >>> shift;
+    // Round-to-nearest-even
+    if (rem > halfPointMask || (rem === halfPointMask && (shifted & 1) === 1)) {
+      shifted += 1;
+    }
+    return BigInt(sign | shifted);
+  }
+
+  // Normal half
+  const halfPointMask = 1 << 12;
+  const lowerMask = 0x1FFF;
+  const rem = m & lowerMask;
+  let shiftedM = m >>> 13;
+  if (rem > halfPointMask || (rem === halfPointMask && (shiftedM & 1) === 1)) {
+    shiftedM += 1;
+    if (shiftedM & 0x400) {
+      // Mantissa overflowed — increment exponent, zero mantissa
+      shiftedM = 0;
+      e += 1;
+      if (e >= 0x1F) return BigInt(sign | 0x7C00);
+    }
+  }
+  return BigInt(sign | (e << 10) | shiftedM);
+}
+
+// ── "Representable?" test ────────────────────────────────────
+// For a given finite non-zero input, representable means the
+// encoded value is neither Inf (overflow) nor zero (underflow-to-0).
+// NaN is always representable. ±Inf and 0 are always representable.
+function isRepresentable(value, width) {
+  if (Number.isNaN(value)) return true;
+  if (value === 0) return true;
+  if (!Number.isFinite(value)) return true;
+  const bits = encodeBits(value, width);
+  const decoded = decodeValue(bits, FMT[width]);
+  if (!Number.isFinite(decoded)) return false;
+  if (decoded === 0) return false;
+  return true;
+}
+
+// ── Parsers ───────────────────────────────────────────────────
+function parseDecimalInput(s) {
+  const t = s.trim().toLowerCase().replace(/_/g, '');
+  if (t === '') throw new Error('empty input');
+  if (t === 'nan')             return NaN;
+  if (t === 'inf' || t === '+inf' || t === 'infinity' || t === '+infinity') return Infinity;
+  if (t === '-inf' || t === '-infinity') return -Infinity;
+  // parseFloat handles scientific notation
+  const v = Number(t);
+  if (Number.isNaN(v)) throw new Error('invalid decimal: "' + s + '"');
+  return v;
+}
+
+function parseBinaryInput(s) {
+  const t = s.trim().toLowerCase().replace(/_/g, '');
+  if (t === '') throw new Error('empty input');
+  if (t === 'nan') return NaN;
+  if (t === 'inf' || t === '+inf') return Infinity;
+  if (t === '-inf') return -Infinity;
+  const m = /^([+-]?)(0b)?([01]+)(?:\.([01]+))?(?:[eE]([+-]?\d+))?$/.exec(t);
+  if (!m) throw new Error('invalid binary: expected e.g. 1.101 or -1.01e+4');
+  const sgn = m[1] === '-' ? -1 : 1;
+  const intStr  = m[3];
+  const fracStr = m[4] || '';
+  const exp     = m[5] ? parseInt(m[5], 10) : 0;
+
+  // Route via a string of bits for precision: build integer part and fractional part.
+  const intVal  = parseInt(intStr, 2);
+  let fracVal = 0;
+  for (let i = 0; i < fracStr.length; i++) {
+    if (fracStr[i] === '1') fracVal += Math.pow(2, -(i + 1));
+  }
+  return sgn * (intVal + fracVal) * Math.pow(2, exp);
+}
+
+function parseHexInput(s, width) {
+  const t = s.trim().toLowerCase().replace(/[_\s]/g, '').replace(/^0x/, '');
+  if (t === '') throw new Error('empty hex input');
+  if (!/^[0-9a-f]+$/.test(t)) throw new Error('invalid hex: "' + s + '"');
+  const expectedNibbles = width / 4;
+  if (t.length > expectedNibbles) {
+    throw new Error(width + '-bit width expects at most ' + expectedNibbles + ' hex digits; got ' + t.length);
+  }
+  return BigInt('0x' + t);
+}
+
+// ── Formatting ───────────────────────────────────────────────
+function hexString(bits, width) {
+  const n = width / 4;
+  let s = bits.toString(16).toUpperCase();
+  while (s.length < n) s = '0' + s;
+  return '0x' + s;
+}
+function binString(bits, width) {
+  let s = bits.toString(2);
+  while (s.length < width) s = '0' + s;
+  return s;
+}
+
+// Display a JS number with full available precision.
+function formatValue(v, width) {
+  if (Number.isNaN(v)) return 'NaN';
+  if (v === Infinity) return '+∞';
+  if (v === -Infinity) return '−∞';
+  if (Object.is(v, -0)) return '−0';
+  if (v === 0) return '+0';
+
+  // Use toPrecision with format-specific digit targets.
+  const digits = width === 16 ? 5 : width === 32 ? 9 : 17;
+  let s = v.toPrecision(digits);
+  // Trim insignificant trailing zeros past the decimal point (unless scientific)
+  if (!s.includes('e') && s.includes('.')) {
+    s = s.replace(/0+$/, '').replace(/\.$/, '');
+  }
+  // Unicode minus for negatives
+  if (s.startsWith('-')) s = '−' + s.slice(1);
+  else if (v > 0) s = '+' + s;
+  return s;
+}
+
+// ── State ──────────────────────────────────────────────────────
+let state = {
+  mode: 'encode',
+  inputFormat: 'decimal',
+  targetWidth: 'auto',
+  decodeWidth: 32,
+  // cards: map width -> bits (BigInt)
+  cards: {},
+};
+
+// ── UI: mode, format, width selection ─────────────────────────
+function setMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.toggle('on', btn.dataset.mode === mode);
+  });
+  document.getElementById('fp-encode-panel').style.display = mode === 'encode' ? '' : 'none';
+  document.getElementById('fp-decode-panel').style.display = mode === 'decode' ? '' : 'none';
+  // clear results on mode switch so the user isn't confused by stale cards
+  state.cards = {};
+  renderResults();
+}
+function setInputFormat(f) {
+  state.inputFormat = f;
+  document.querySelectorAll('.fp-chip[data-in-fmt]').forEach(btn => {
+    btn.classList.toggle('on', btn.dataset.inFmt === f);
+  });
+  const placeholder = f === 'decimal'
+    ? '3.14159, -1.5e-10, inf, -inf, nan'
+    : '1.101, -1.01e+4, 0.0001 (binary scientific)';
+  document.getElementById('fp-value').placeholder = placeholder;
+}
+function setTargetWidth(w) {
+  state.targetWidth = w;
+  document.querySelectorAll('.fp-chip[data-w]').forEach(btn => {
+    btn.classList.toggle('on', btn.dataset.w === w);
+  });
+}
+function setDecodeWidth(w) {
+  state.decodeWidth = w;
+  document.querySelectorAll('.fp-chip[data-dw]').forEach(btn => {
+    btn.classList.toggle('on', +btn.dataset.dw === w);
+  });
+}
+
+// ── Presets ───────────────────────────────────────────────────
+const PRESETS = {
+  pi:        { fmt: 'decimal', value: '3.141592653589793' },
+  e:         { fmt: 'decimal', value: '2.718281828459045' },
+  phi:       { fmt: 'decimal', value: '1.618033988749895' },
+  third:     { fmt: 'decimal', value: '0.3333333333333333' },
+  pointone:  { fmt: 'decimal', value: '0.1' },
+  maxhalf:   { fmt: 'decimal', value: '65504' },
+  inf:       { fmt: 'decimal', value: 'inf' },
+  negzero:   { fmt: 'decimal', value: '-0' },
+  nan:       { fmt: 'decimal', value: 'nan' },
+};
+function loadPreset(key) {
+  const p = PRESETS[key]; if (!p) return;
+  setInputFormat(p.fmt);
+  document.getElementById('fp-value').value = p.value;
+  doEncode();
+}
+function loadHexPreset(width, hex) {
+  setDecodeWidth(width);
+  document.getElementById('fp-hex').value = hex;
+  doDecode();
+}
+
+// ── Encode action ─────────────────────────────────────────────
+function clearError(id) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+}
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.innerHTML = '<div class="err">' + msg + '</div>';
+}
+
+function doEncode() {
+  clearError('fp-encode-err');
+  const raw = document.getElementById('fp-value').value;
+  let value;
+  try {
+    value = state.inputFormat === 'decimal'
+      ? parseDecimalInput(raw)
+      : parseBinaryInput(raw);
+  } catch (e) {
+    showError('fp-encode-err', e.message);
+    return;
+  }
+
+  // Pick widths to show
+  let widths;
+  if (state.targetWidth === 'auto') {
+    widths = [16, 32, 64].filter(w => isRepresentable(value, w));
+    if (widths.length === 0) widths = [64];
+  } else {
+    const requested = parseInt(state.targetWidth, 10);
+    if (isRepresentable(value, requested)) {
+      widths = [requested];
+    } else {
+      // Escalate to the next width that fits, and show a note about why the requested one didn't.
+      const next = [16, 32, 64].find(w => w > requested && isRepresentable(value, w));
+      if (!next) {
+        showError('fp-encode-err', 'Value cannot be represented in any IEEE-754 width.');
+        return;
+      }
+      showError('fp-encode-err',
+        requested + '-bit cannot represent this value (overflows or underflows to zero). Showing ' + next + '-bit instead.');
+      widths = [next];
+    }
+  }
+
+  state.cards = {};
+  widths.forEach(w => { state.cards[w] = encodeBits(value, w); });
+  renderResults();
+}
+
+// ── Decode action ─────────────────────────────────────────────
+function doDecode() {
+  clearError('fp-decode-err');
+  const raw = document.getElementById('fp-hex').value;
+  const w = state.decodeWidth;
+  let bits;
+  try {
+    bits = parseHexInput(raw, w);
+  } catch (e) {
+    showError('fp-decode-err', e.message);
+    return;
+  }
+  state.cards = { [w]: bits };
+  renderResults();
+}
+
+// ── Render ────────────────────────────────────────────────────
+function renderResults() {
+  const host = document.getElementById('fp-results');
+  const widths = Object.keys(state.cards).map(n => parseInt(n, 10)).sort((a, b) => a - b);
+
+  if (widths.length === 0) {
+    host.innerHTML = '<div class="fp-empty">' +
+      (state.mode === 'encode'
+        ? 'Enter a value above and press <strong>Convert</strong>.'
+        : 'Paste a hex bit pattern above and press <strong>Decode</strong>.') +
+      '<span class="fp-ascii">·  −  ·  −  ·  −  ·</span></div>';
+    return;
+  }
+
+  host.innerHTML = '';
+
+  // In encode mode with auto width, show omitted widths as dashed banners
+  if (state.mode === 'encode' && state.targetWidth === 'auto') {
+    [16, 32, 64].filter(w => !widths.includes(w)).forEach(w => {
+      host.appendChild(makeOmitBanner(w));
+    });
+  }
+
+  widths.forEach(w => {
+    host.appendChild(makeCard(w, state.cards[w]));
+  });
+}
+
+function makeOmitBanner(w) {
+  const fmt = FMT[w];
+  const div = document.createElement('div');
+  div.className = 'fp-omit';
+  div.innerHTML = '<span class="fp-omit-w">' + w + '-bit ' + fmt.name + '</span>' +
+                  '<strong>Not representable</strong> &mdash; the value overflows to ±∞ or underflows to 0 in this width.';
+  return div;
+}
+
+function makeCard(w, bits) {
+  const fmt = FMT[w];
+  const card = document.createElement('div');
+  card.className = 'fp-card';
+  card.dataset.w = String(w);
+
+  // Head
+  const head = document.createElement('div');
+  head.className = 'fp-card-head';
+  head.innerHTML =
+    '<div class="fp-card-title">' +
+      '<span class="fp-card-w">' + w + '-bit</span>' +
+      fmt.name + ' precision' +
+    '</div>' +
+    '<div class="fp-card-meta">bias <span class="fp-bias-num">+' + fmt.bias + '</span> · ' +
+      '1·<span style="color:var(--exp)">' + fmt.expBits + '</span>·<span style="color:var(--mant)">' + fmt.mantBits + '</span>' +
+    '</div>';
+  card.appendChild(head);
+
+  // Body
+  const body = document.createElement('div');
+  body.className = 'fp-card-body';
+  card.appendChild(body);
+
+  // Bit tiles
+  body.appendChild(makeBitGrid(w));
+
+  // Row metadata
+  const rows = document.createElement('div');
+  rows.className = 'fp-rows';
+  rows.innerHTML =
+    '<div class="fp-row"><span class="fp-row-k">Hex</span>' +
+      '<input class="fp-hex-input" data-card-hex="' + w + '" autocomplete="off" spellcheck="false">' +
+      '<button class="btn-copy" data-copy-target="hex-' + w + '">copy</button></div>' +
+    '<div class="fp-row"><span class="fp-row-k">Binary</span><span class="fp-row-v" data-card-bin="' + w + '"></span>' +
+      '<button class="btn-copy" data-copy-target="bin-' + w + '">copy</button></div>' +
+    '<div class="fp-row"><span class="fp-row-k">Value</span><span class="fp-row-v" data-card-val="' + w + '"></span>' +
+      '<span data-card-pill="' + w + '"></span></div>';
+  body.appendChild(rows);
+
+  // Formula
+  const formula = document.createElement('div');
+  formula.className = 'fp-formula';
+  formula.dataset.cardFormula = String(w);
+  body.appendChild(formula);
+
+  // Bias note
+  const note = document.createElement('div');
+  note.className = 'fp-note';
+  note.innerHTML = biasNoteFor(fmt);
+  body.appendChild(note);
+
+  updateCardContent(card, bits);
+  wireCard(card);
+  return card;
+}
+
+function makeBitGrid(w) {
+  const fmt = FMT[w];
+  const wrap = document.createElement('div');
+  wrap.className = 'fp-bits';
+
+  // sign field (1 bit)
+  wrap.appendChild(makeField('sign', [fmt.w - 1], 'Sign', '1 bit'));
+  // exponent (expBits)
+  const expIdx = [];
+  for (let i = fmt.w - 2; i >= fmt.mantBits; i--) expIdx.push(i);
+  wrap.appendChild(makeField('exp', expIdx, 'Exponent', fmt.expBits + ' bits'));
+  // mantissa (mantBits)
+  const mIdx = [];
+  for (let i = fmt.mantBits - 1; i >= 0; i--) mIdx.push(i);
+  wrap.appendChild(makeField('mant', mIdx, 'Mantissa', fmt.mantBits + ' bits'));
+  return wrap;
+}
+
+function makeField(cls, indices, label, sub) {
+  const field = document.createElement('div');
+  field.className = 'fp-field';
+  const tiles = document.createElement('div');
+  tiles.className = 'fp-tiles';
+  indices.forEach(i => {
+    const tile = document.createElement('span');
+    tile.className = 'fp-bit fp-' + cls;
+    tile.dataset.idx = String(i);
+    tile.dataset.on  = '0';
+    tile.textContent = '0';
+    tile.title = 'bit ' + i + ' (weight 2^' + i + ')';
+    tiles.appendChild(tile);
+  });
+  field.appendChild(tiles);
+  const lbl = document.createElement('div');
+  lbl.className = 'fp-field-label';
+  lbl.innerHTML = '<span>' + label + '</span><span class="fp-field-bits">' + sub + '</span>';
+  field.appendChild(lbl);
+  return field;
+}
+
+function biasNoteFor(fmt) {
+  return 'bias = 2<sup>' + fmt.expBits + '&minus;1</sup> &minus; 1 = ' + fmt.bias +
+    '. Stored exponent is the true exponent plus ' + fmt.bias +
+    ', so the exponent field represents powers of two from 2<sup>' + fmt.emin + '</sup> (subnormal boundary)' +
+    ' up to 2<sup>' + fmt.emax + '</sup>.';
+}
+
+function wireCard(card) {
+  const w = parseInt(card.dataset.w, 10);
+  // bit click to flip
+  card.querySelectorAll('.fp-bit').forEach(tile => {
+    tile.addEventListener('click', () => {
+      const i = parseInt(tile.dataset.idx, 10);
+      const cur = state.cards[w] || 0n;
+      const next = flipBitN(cur, i);
+      state.cards[w] = next;
+      updateCardContent(card, next);
+      tile.classList.remove('fp-pulse');
+      // force reflow to replay animation
+      void tile.offsetWidth;
+      tile.classList.add('fp-pulse');
+    });
+  });
+  // hex input → bits
+  const hexIn = card.querySelector('input.fp-hex-input');
+  if (hexIn) {
+    hexIn.addEventListener('input', () => {
+      try {
+        const bits = parseHexInput(hexIn.value, w);
+        state.cards[w] = bits;
+        updateCardContent(card, bits, /*skipHexField*/ true);
+      } catch (_e) {
+        // invalid hex while typing — leave state until user finishes
+      }
+    });
+    hexIn.addEventListener('blur', () => {
+      // On blur, normalize the value back to canonical hex
+      updateCardContent(card, state.cards[w] || 0n);
+    });
+  }
+  // copy buttons
+  card.querySelectorAll('.btn-copy').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.copyTarget;
+      const [kind, ww] = target.split('-');
+      const bits = state.cards[parseInt(ww, 10)] || 0n;
+      const text = kind === 'hex'
+        ? hexString(bits, parseInt(ww, 10))
+        : binString(bits, parseInt(ww, 10));
+      navigator.clipboard.writeText(text).then(() => showToast('Copied'));
+    });
+  });
+}
+
+function updateCardContent(card, bits, skipHexField) {
+  const w = parseInt(card.dataset.w, 10);
+  const fmt = FMT[w];
+  const { sign, exp, mant } = splitBits(bits, fmt);
+  const cat = classifyBits(bits, fmt);
+  const value = decodeValue(bits, fmt);
+
+  // Update bit tiles
+  card.querySelectorAll('.fp-bit').forEach(tile => {
+    const i = parseInt(tile.dataset.idx, 10);
+    const b = getBitN(bits, i);
+    tile.dataset.on = String(b);
+    tile.textContent = String(b);
+  });
+
+  // Hex & binary fields
+  const hexField = card.querySelector('[data-card-hex="' + w + '"]');
+  if (hexField && !skipHexField) hexField.value = hexString(bits, w);
+
+  const binField = card.querySelector('[data-card-bin="' + w + '"]');
+  if (binField) binField.innerHTML = buildColoredBinary(bits, fmt);
+
+  const valField = card.querySelector('[data-card-val="' + w + '"]');
+  if (valField) valField.textContent = formatValue(value, w);
+
+  // Category pill
+  const pill = card.querySelector('[data-card-pill="' + w + '"]');
+  if (pill) {
+    pill.innerHTML = '<span class="fp-pill" data-cat="' + cat + '">' + cat + '</span>';
+  }
+
+  // Formula
+  const fld = card.querySelector('[data-card-formula="' + w + '"]');
+  if (fld) fld.innerHTML = buildFormula(bits, fmt);
+}
+
+function buildColoredBinary(bits, fmt) {
+  const s = binString(bits, fmt.w);
+  const signPart = s.slice(0, 1);
+  const expPart  = s.slice(1, 1 + fmt.expBits);
+  const mantPart = s.slice(1 + fmt.expBits);
+  return '<span class="s-sign">' + signPart + '</span> ' +
+         '<span class="s-exp">'  + expPart  + '</span> ' +
+         '<span class="s-mant">' + mantPart + '</span>';
+}
+
+function buildFormula(bits, fmt) {
+  const { sign, exp, mant } = splitBits(bits, fmt);
+  const cat = classifyBits(bits, fmt);
+  const signSym = sign === 1n ? '−' : '+';
+  const s = sign === 1n ? 1 : 0;
+
+  if (cat === 'nan') {
+    return '<span class="fp-formula-line">category: <strong>NaN</strong> (exponent all ones, mantissa ≠ 0)</span>';
+  }
+  if (cat === 'inf') {
+    return '<span class="fp-formula-line">value = ' + signSym + '∞  &nbsp; (exponent all ones, mantissa = 0)</span>';
+  }
+  if (cat === 'zero') {
+    return '<span class="fp-formula-line">value = ' + signSym + '0  &nbsp; (exponent and mantissa both zero)</span>';
+  }
+
+  // normal & subnormal
+  const mantNum = fmt.w === 64
+    ? Number(mant) / Math.pow(2, fmt.mantBits)
+    : Number(mant) / Math.pow(2, fmt.mantBits);
+  const expNum = Number(exp);
+  const bias = fmt.bias;
+
+  const mantStr = formatMantissa(mant, fmt);
+
+  if (cat === 'subnormal') {
+    return '' +
+      '<span class="fp-formula-line">value = (−1)<sup><span class="s-sign">' + s + '</span></sup>' +
+      ' × <span class="s-mant">0.' + binString(mant, fmt.mantBits) + '</span><sub>₂</sub>' +
+      ' × 2<sup>1 − <span class="s-exp">' + bias + '</span></sup></span>' +
+      '<span class="fp-formula-line">      = (−1)<sup><span class="s-sign">' + s + '</span></sup>' +
+      ' × <span class="s-mant">' + mantStr + '</span>' +
+      ' × 2<sup><span class="s-exp">' + fmt.emin + '</span></sup></span>' +
+      '<span class="fp-formula-line" style="color:var(--faint);font-size:12.5px">' +
+      '— exponent field is 0 → subnormal (implicit leading 0, not 1)</span>';
+  }
+
+  // normal
+  return '' +
+    '<span class="fp-formula-line">value = (−1)<sup><span class="s-sign">' + s + '</span></sup>' +
+    ' × <span class="s-mant">1.' + binString(mant, fmt.mantBits) + '</span><sub>₂</sub>' +
+    ' × 2<sup><span class="s-exp">' + expNum + '</span> − <span style="color:var(--accent)">' + bias + '</span></sup></span>' +
+    '<span class="fp-formula-line">      = (−1)<sup><span class="s-sign">' + s + '</span></sup>' +
+    ' × <span class="s-mant">' + mantStr + '</span>' +
+    ' × 2<sup><span class="s-exp">' + (expNum - bias) + '</span></sup></span>';
+}
+
+function formatMantissa(mant, fmt) {
+  // Print 1 + mant/2^mantBits at appropriate precision
+  const frac = Number(mant) / Math.pow(2, fmt.mantBits);
+  const digits = fmt.w === 16 ? 5 : fmt.w === 32 ? 9 : 17;
+  return (1 + frac).toPrecision(digits);
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  let el = document.querySelector('.toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.display = '';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.display = 'none'; }, 1600);
+}
+
+// ── Theme toggle ──────────────────────────────────────────────
+function toggleTheme() {
+  const body = document.body;
+  const text = document.getElementById('theme-text');
+  if (body.classList.contains('dark')) {
+    body.classList.remove('dark');
+    text.innerHTML = '&#9790;';
+    localStorage.setItem('theme', 'light');
+  } else {
+    body.classList.add('dark');
+    text.innerHTML = '&#9788;';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.body.classList.contains('dark')) {
+    document.getElementById('theme-text').innerHTML = '&#9788;';
+  }
+  // Prefill π so the playground is immediately alive on load.
+  document.getElementById('fp-value').value = '3.141592653589793';
+  doEncode();
+});
+
+// ── Keybinds ──────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    const t = document.activeElement;
+    if (t && t.id === 'fp-value') { e.preventDefault(); doEncode(); }
+    if (t && t.id === 'fp-hex')   { e.preventDefault(); doDecode(); }
+  }
+});
+</script>
+</body>
+</html>
