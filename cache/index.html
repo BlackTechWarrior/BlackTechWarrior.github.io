@@ -1,305 +1,268 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Cache Simulator: Direct-Mapped, Set-Associative, LRU and FIFO | p14m</title>
+  <meta name="description" content="Interactive CPU cache simulator. Set block size, lines, associativity and replacement policy, then step through access patterns to watch hits, misses, evictions and the tag, index and offset split.">
+  <meta name="author" content="Peter Moses">
+  <link rel="canonical" href="https://p14m.com/cache/">
+  <meta name="theme-color" content="#F4F5F7">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="p14m">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://p14m.com/cache/">
+  <meta property="og:title" content="Cache Simulator: Direct-Mapped, Set-Associative, LRU and FIFO | p14m">
+  <meta property="og:description" content="Interactive CPU cache simulator. Set block size, lines, associativity and replacement policy, then step through access patterns to watch hits, misses, evictions and the tag, index and offset split.">
+  <meta property="og:image" content="https://p14m.com/og/cache.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Cache simulator on p14m.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cache Simulator: Direct-Mapped, Set-Associative, LRU and FIFO | p14m">
+  <meta name="twitter:description" content="Interactive CPU cache simulator. Set block size, lines, associativity and replacement policy, then step through access patterns to watch hits, misses, evictions and the tag, index and offset split.">
+  <meta name="twitter:image" content="https://p14m.com/og/cache.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" href="/favicon-48.png">
+  <link rel="preload" href="/fonts/mona-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/monaspace-neon-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/shared.css">
+  <script src="/lib/site.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Cache simulator","url":"https://p14m.com/cache/","description":"Interactive CPU cache simulator. Set block size, lines, associativity and replacement policy, then step through access patterns to watch hits, misses, evictions and the tag, index and offset split.","applicationCategory":"EducationalApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Peter Moses","url":"https://p14m.com/"},"inLanguage":"en","image":"https://p14m.com/og/cache.png"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"p14m","item":"https://p14m.com/"},{"@type":"ListItem","position":2,"name":"Cache simulator","item":"https://p14m.com/cache/"}]}]}</script>
+  <script src="/lib/feedback.js" defer></script>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Interactive CPU cache simulator with visual address breakdown, hit/miss tracking, and preset access patterns. Learn how direct-mapped and set-associative caches work.">
-  <meta property="og:title" content="Cache Simulator | p14m.com">
-  <meta property="og:description" content="Interactive CPU cache simulator with visual address breakdown and access pattern visualization.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://p14m.com/cache/">
-  <title>Cache Simulator | p14m.com</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
-  <link rel="stylesheet" href="/shared.css">
-  <script src="/lib/feedback.js" defer></script>
   <style>
-    /* ── Config bar ── */
+    /* ── Workbench: configuration + access ── */
     .ca-config-bar {
-      display: flex;
-      justify-content: center;
-      gap: 24px;
-      padding: 10px 16px;
-      border: 1px solid var(--rule);
-      border-radius: var(--r-md);
-      margin-bottom: 16px;
-      font-size: 13px;
-      flex-wrap: wrap;
-      align-items: center;
-      background: var(--paper);
+      display: flex; gap: 16px 24px; flex-wrap: wrap; align-items: flex-end;
+      padding-bottom: 16px; margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-soft);
     }
-    .ca-config-item { text-align: center; }
-    .ca-config-item label {
-      display: block; color: var(--muted); font-size: 11px;
-      text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px;
-      font-weight: 600;
-    }
+    .ca-config-item label, .ca-config-item .lbl { margin-bottom: 6px; }
     .ca-config-item select {
-      padding: 5px 8px; border: 1px solid var(--rule); border-radius: var(--r-sm);
-      font-family: var(--f-mono); font-size: 13px;
-      background: var(--paper-2); color: var(--ink);
+      padding: 7px 30px 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-control);
+      font-family: var(--font-sans); font-size: 0.875rem; background: var(--surface); color: var(--ink);
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+      background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+      background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
     }
-    .ca-config-item select:focus { outline: none; border-color: var(--accent); }
-    .ca-fixed { font-family: var(--f-mono); font-size: 14px; font-weight: 600; }
+    .ca-config-item select:focus { outline: none; border-color: var(--accent-ink); box-shadow: 0 0 0 1px var(--accent-ink); }
+    .ca-fixed { display: inline-block; font-family: var(--font-mono); font-size: 0.875rem; font-weight: 500; padding: 7px 0; font-variant-numeric: tabular-nums; }
 
-    /* ── Address breakdown ── */
+    .ca-access-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
+    .ca-access-row .ca-addr-field { flex: 0 1 180px; }
+    .ca-access-row input {
+      width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-control);
+      font-family: var(--font-mono); font-size: 0.9375rem; background: var(--surface); color: var(--ink);
+      font-variant-numeric: tabular-nums;
+      transition: border-color var(--dur-quick) var(--ease-out), box-shadow var(--dur-quick) var(--ease-out);
+    }
+    .ca-access-row input:focus { outline: none; border-color: var(--accent-ink); box-shadow: 0 0 0 1px var(--accent-ink); }
+    .ca-access-row input::placeholder { color: var(--muted); }
+    .ca-next-btn { display: none; }
+    .ca-next-btn.visible { display: inline-flex; }
+    /* While a pattern is queued, "Next access" is the primary action and "Access address" steps back. */
+    .ca-access-row.has-queue .ca-access-btn {
+      background: transparent; color: var(--ink-2); border-color: var(--border);
+    }
+    .ca-access-row.has-queue .ca-access-btn:hover { border-color: var(--border-strong); color: var(--ink); background: var(--well); }
+    .ca-access-row .ca-kbd { font-size: 0.75rem; color: var(--muted); margin-left: 4px; }
+
     .ca-breakdown {
-      text-align: center; padding: 14px 16px; border: 1px solid var(--rule);
-      border-radius: var(--r-md); margin-bottom: 12px; font-family: var(--f-mono);
-      font-size: 14px; min-height: 48px; display: flex; flex-direction: column;
+      text-align: center; padding: 14px 16px; border-radius: var(--radius-control);
+      font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+      font-size: 0.875rem; min-height: 48px; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 6px;
-      background: var(--paper);
+      background: var(--well); color: var(--ink-2);
     }
-    .ca-bit-tag    { background: var(--accent);  color: var(--paper); padding: 2px 5px; border-radius: 3px; }
-    .ca-bit-index  { background: var(--success); color: var(--paper); padding: 2px 5px; border-radius: 3px; }
-    .ca-bit-offset { background: var(--mant);    color: var(--paper); padding: 2px 5px; border-radius: 3px; }
+    .ca-breakdown strong { color: var(--ink); font-weight: 600; }
+    .ca-bit-tag    { background: var(--d1); color: var(--bg); padding: 2px 6px; border-radius: 4px; }
+    .ca-bit-index  { background: var(--d5); color: var(--bg); padding: 2px 6px; border-radius: 4px; }
+    .ca-bit-offset { background: var(--d6); color: var(--bg); padding: 2px 6px; border-radius: 4px; }
+    .ca-key-tag    { color: var(--d1); font-weight: 600; }
+    .ca-key-index  { color: var(--d5); font-weight: 600; }
+    .ca-key-offset { color: var(--d6); font-weight: 600; }
 
-    /* ── Narration ── */
     .ca-narration {
-      text-align: center; padding: 8px 12px; margin-bottom: 12px;
-      font-size: 13px; border-radius: var(--r-sm); min-height: 20px;
+      text-align: center; padding: 8px 12px; margin-top: 12px;
+      font-size: 0.875rem; border-radius: var(--radius-control); min-height: 20px; line-height: 1.5;
     }
     .ca-narration:empty { display: none; }
-    .ca-narration.ca-hit  { background: color-mix(in oklab, var(--success) 14%, transparent); color: var(--success); }
-    .ca-narration.ca-miss { background: color-mix(in oklab, var(--error)   14%, transparent); color: var(--error); }
-    .ca-narration.ca-info { background: color-mix(in oklab, var(--accent)  14%, transparent); color: var(--accent); }
+    .ca-narration.ca-hit  { background: var(--success-wash); color: var(--success); }
+    .ca-narration.ca-miss { background: var(--error-wash);   color: var(--error); }
+    .ca-narration.ca-info { background: var(--well); color: var(--ink-2); }
 
-    /* ── Main layout ── */
-    .ca-layout {
-      display: grid; grid-template-columns: 1fr 280px;
-      gap: 16px; margin-bottom: 16px;
-    }
-    @media (max-width: 700px) { .ca-layout { grid-template-columns: 1fr; } }
+    /* ── Results layout ── */
 
     /* ── Cache table ── */
-    .ca-cache-panel {
-      border: 1px solid var(--rule); border-radius: var(--r-md);
-      overflow: hidden; background: var(--paper);
-    }
+    .ca-cache-panel { padding: 0; overflow: hidden; }
+    .ca-cache-scroll { overflow-x: auto; }
+    .ca-cache-header, .ca-cache-row { min-width: 360px; }
     .ca-cache-header {
-      display: grid; grid-template-columns: 40px 40px 30px 1fr 1fr;
-      padding: 6px 10px; font-size: 11px; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--muted); font-weight: 600;
-      border-bottom: 1px solid var(--rule);
-      background: var(--paper-2);
+      display: grid; grid-template-columns: 44px 44px 32px 1fr 1fr;
+      padding: 8px 16px; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 500;
+      color: var(--muted); border-bottom: 1px solid var(--border); background: var(--well);
     }
     .ca-cache-row {
-      display: grid; grid-template-columns: 40px 40px 30px 1fr 1fr;
-      padding: 4px 10px; font-size: 13px; font-family: var(--f-mono);
-      border-bottom: 1px solid var(--rule-soft); transition: background 0.3s;
-      min-height: 28px; align-items: center;
+      display: grid; grid-template-columns: 44px 44px 32px 1fr 1fr;
+      padding: 5px 16px; font-size: 0.8125rem; font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+      border-bottom: 1px solid var(--border-soft); transition: background 0.3s;
+      min-height: 30px; align-items: center;
     }
-    .ca-cache-row.ca-set-alt      { background: color-mix(in oklab, var(--ink) 2.5%, transparent); }
+    .ca-cache-row:last-child { border-bottom: 0; }
+    .ca-cache-row.ca-set-alt      { background: color-mix(in oklab, var(--well) 55%, transparent); }
     .ca-cache-row.ca-flash-hit    { background: color-mix(in oklab, var(--success) 26%, transparent) !important; }
     .ca-cache-row.ca-flash-miss   { background: color-mix(in oklab, var(--error)   22%, transparent) !important; }
     .ca-cache-row .ca-valid { color: var(--muted); }
-    .ca-cache-row .ca-tag   { color: var(--accent); }
-    .ca-cache-row .ca-block { color: var(--muted); font-size: 12px; }
+    .ca-cache-row .ca-tag   { color: var(--d1); font-weight: 500; }
+    .ca-cache-row .ca-block { color: var(--muted); font-size: 0.75rem; }
 
-    /* ── Cards ── */
-    .ca-card {
-      border: 1px solid var(--rule); border-radius: var(--r-md);
-      padding: 12px; margin-bottom: 12px;
-      background: var(--paper);
-    }
-    .ca-card-title {
-      font-family: var(--f-ui);
-      font-weight: 600; font-size: 11px; text-transform: uppercase;
-      letter-spacing: 0.1em; margin-bottom: 8px; color: var(--muted);
-    }
-
-    /* ── Input ── */
-    .ca-input-row { display: flex; gap: 8px; margin-bottom: 4px; }
-    .ca-input-row input {
-      flex: 1; padding: 6px 10px; border: 1px solid var(--rule);
-      border-radius: var(--r-sm); font-family: var(--f-mono); font-size: 14px;
-      background: var(--paper-2); color: var(--ink);
-      transition: border-color var(--t-quick), box-shadow var(--t-quick);
-    }
-    .ca-input-row input:focus {
-      outline: none; border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-    }
-    .ca-access-btn {
-      padding: 6px 16px; background: var(--accent); color: var(--paper);
-      border: 1px solid var(--accent);
-      border-radius: var(--r-sm); cursor: pointer; font-size: 13px; font-weight: 600;
-      transition: background var(--t-quick), border-color var(--t-quick);
-    }
-    .ca-access-btn:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
-    .ca-reset-btn {
-      padding: 6px 12px; background: transparent; border: 1px solid var(--rule);
-      border-radius: var(--r-sm); cursor: pointer; font-size: 12px; color: var(--ink-2);
-      transition: border-color var(--t-quick), color var(--t-quick);
-    }
-    .ca-reset-btn:hover { border-color: var(--ink-2); color: var(--ink); }
+    /* ── Sidebar: one panel, hairline groups ── */
+    .ca-side { padding: 0; }
+    .ca-group { padding: 16px 20px; }
+    .ca-group + .ca-group { border-top: 1px solid var(--border); }
+    .ca-group h3 { margin: 0 0 10px; }
+    .ca-group-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 
     /* ── Stats ── */
-    .ca-stats-grid {
-      display: grid; grid-template-columns: 1fr 1fr;
-      gap: 4px 12px; font-size: 13px;
-    }
     .ca-stat-item { display: flex; justify-content: space-between; padding: 2px 0; }
     .ca-stat-label { color: var(--muted); }
-    .ca-stat-value { font-family: var(--f-mono); font-weight: 600; }
+    .ca-stat-value { font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
     .ca-color-hit  { color: var(--success); }
     .ca-color-miss { color: var(--error); }
-    .ca-hit-rate {
-      text-align: center; font-size: 22px; font-weight: 700;
-      font-family: var(--f-mono); margin-top: 6px; padding: 4px 0;
-    }
 
     /* ── Queue chips ── */
-    .ca-queue-chips {
-      display: flex; flex-wrap: wrap; gap: 4px;
-      margin-bottom: 8px; min-height: 24px;
-    }
+    .ca-queue-chips { display: flex; flex-wrap: wrap; gap: 4px; min-height: 24px; }
     .ca-chip {
-      padding: 2px 8px; border-radius: 10px; font-size: 12px;
-      font-family: var(--f-mono); background: var(--paper-2);
-      border: 1px solid var(--rule); color: var(--ink-2);
+      padding: 2px 8px; border-radius: 999px; font-size: 0.75rem;
+      font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+      background: var(--well); border: 1px solid transparent; color: var(--ink-2);
     }
-    .ca-chip-current {
-      background: var(--accent) !important; color: var(--paper);
-      border-color: var(--accent) !important; font-weight: 600;
-    }
-    .ca-chip-hit {
-      background: color-mix(in oklab, var(--success) 20%, transparent) !important;
-      border-color: var(--success) !important; opacity: 0.85;
-    }
-    .ca-chip-miss {
-      background: color-mix(in oklab, var(--error) 18%, transparent) !important;
-      border-color: var(--error) !important; opacity: 0.85;
-    }
-    .ca-next-btn {
-      width: 100%; padding: 8px; background: var(--accent); color: var(--paper);
-      border: 1px solid var(--accent); border-radius: var(--r-sm); cursor: pointer;
-      font-size: 13px; font-weight: 600; display: none;
-      transition: background var(--t-quick), border-color var(--t-quick);
-    }
-    .ca-next-btn.visible { display: block; }
-    .ca-next-btn:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
+    .ca-chip-current { background: var(--ink) !important; color: var(--bg); border-color: var(--ink) !important; font-weight: 600; }
+    .ca-chip-hit  { background: var(--success-wash) !important; border-color: var(--success) !important; color: var(--success); }
+    .ca-chip-miss { background: var(--error-wash) !important; border-color: var(--error) !important; color: var(--error); }
 
-    /* ── Presets ── */
-    .ca-preset-grid { display: flex; flex-direction: column; gap: 6px; }
+    /* ── Pattern rows ── */
+    .ca-preset-grid { display: flex; flex-direction: column; margin: 0 -20px; }
     .ca-preset-btn {
-      padding: 8px 10px; border: 1px solid var(--rule); border-radius: var(--r-sm);
+      display: block; width: 100%; padding: 10px 20px; border: 0; border-top: 1px solid var(--border-soft);
       background: transparent; text-align: left; cursor: pointer;
-      font-family: inherit; font-size: 12px; color: var(--ink-2);
-      transition: border-color var(--t-quick), color var(--t-quick);
-      line-height: 1.4;
+      font-family: var(--font-sans); font-size: 0.8125rem; color: var(--ink-2); line-height: 1.45;
+      transition: background var(--dur-quick) var(--ease-out);
     }
-    .ca-preset-btn:hover { border-color: var(--accent); color: var(--ink); }
-    .ca-preset-btn strong { display: block; font-size: 13px; margin-bottom: 2px; color: var(--ink); }
-    .ca-preset-btn em {
-      font-style: normal; color: var(--accent); font-size: 11px;
-      display: block; margin-top: 2px;
-    }
-    .ca-preset-btn[data-applicable="false"] { opacity: 0.55; }
+    .ca-preset-btn:hover { background: var(--well); }
+    .ca-preset-btn:focus-visible { outline-offset: -2px; border-radius: 0; }
+    .ca-preset-btn strong { display: block; font-size: 0.875rem; margin-bottom: 1px; color: var(--ink); font-weight: 600; }
+    .ca-preset-btn em { font-style: normal; color: var(--muted); font-size: 0.75rem; display: block; margin-top: 3px; }
+    .ca-preset-btn[data-applicable="false"] strong, .ca-preset-btn[data-applicable="false"] { color: var(--muted); }
     .ca-preset-btn[data-applicable="false"] em { color: var(--error); }
+    .ca-group .btn-t.ca-prompt-btn { margin-top: 12px; }
 
-    /* ── History ── */
-    .ca-history-panel {
-      border: 1px solid var(--rule); border-radius: var(--r-md);
-      padding: 12px; margin-bottom: 16px; overflow-x: auto;
-      background: var(--paper);
+    /* ── History and comparison ── */
+    .ca-history-panel, .ca-compare-panel { overflow-x: auto; }
+    .ca-history-header, .ca-compare-header {
+      display: grid; padding: 6px 0; font-family: var(--font-sans); font-size: 0.75rem; font-weight: 500;
+      color: var(--muted); border-bottom: 1px solid var(--border);
     }
-    .ca-history-header {
-      display: grid; grid-template-columns: 30px 50px 1fr 50px 35px 38px 50px;
-      padding: 4px 0; font-size: 11px; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--muted); font-weight: 600;
-      border-bottom: 1px solid var(--rule); min-width: 340px;
-    }
-    .ca-history-list { max-height: 200px; overflow-y: auto; min-width: 340px; }
+    .ca-history-header, .ca-history-row { grid-template-columns: 32px 52px 1fr 52px 40px 40px 56px; min-width: 360px; }
+    .ca-history-list { max-height: 220px; overflow-y: auto; min-width: 360px; }
     .ca-history-row {
-      display: grid; grid-template-columns: 30px 50px 1fr 50px 35px 38px 50px;
-      padding: 3px 0; font-size: 12px; font-family: var(--f-mono);
-      border-bottom: 1px solid var(--rule-soft);
+      display: grid; padding: 4px 0; font-size: 0.8125rem; font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+      border-bottom: 1px solid var(--border-soft);
     }
     .ca-history-hit  { color: var(--success); font-weight: 600; }
     .ca-history-miss { color: var(--error);   font-weight: 600; }
-
-    /* ── Nested details (formulas) ── */
-    .ca-inner-details {
-      margin-top: 10px;
-      border: 1px solid var(--rule);
-      border-radius: var(--r-sm);
-      overflow: hidden;
-    }
-    .ca-inner-details summary {
-      padding: 8px 12px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 12.5px;
-      letter-spacing: 0.04em;
-      background: var(--paper-2);
-      color: var(--muted);
-      list-style: none;
-    }
-    .ca-inner-details summary:hover { color: var(--ink); }
-    .ca-inner-details summary::-webkit-details-marker { display: none; }
-    .ca-inner-details summary::before { content: "\25B6\00a0"; font-size: 10px; color: var(--faint); }
-    .ca-inner-details[open] summary::before { content: "\25BC\00a0"; }
-    .ca-inner-details .ca-formula-table { margin: 0; }
-
-    /* ── Comparison table ── */
-    .ca-compare-panel {
-      border: 1px solid var(--rule); border-radius: var(--r-md);
-      padding: 12px; margin-bottom: 16px; overflow-x: auto;
-      background: var(--paper);
-    }
-    .ca-compare-header {
-      display: grid; grid-template-columns: 1fr 45px 50px 45px 55px 45px 50px 55px;
-      padding: 4px 0; font-size: 11px; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--muted); font-weight: 600;
-      border-bottom: 1px solid var(--rule); min-width: 420px;
-    }
+    .ca-compare-header, .ca-compare-row { grid-template-columns: 1fr 48px 56px 48px 60px 48px 56px 60px; min-width: 460px; }
     .ca-compare-row {
-      display: grid; grid-template-columns: 1fr 45px 50px 45px 55px 45px 50px 55px;
-      padding: 4px 0; font-size: 12px; font-family: var(--f-mono);
-      border-bottom: 1px solid var(--rule-soft); min-width: 420px;
+      display: grid; padding: 4px 0; font-size: 0.8125rem; font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+      border-bottom: 1px solid var(--border-soft);
     }
     .ca-compare-row .ca-rate-cell { font-weight: 600; }
 
-    /* ── Formulas table ── */
+    /* ── Formula disclosure inside "How it works" ── */
+    .ca-inner-details { margin-top: 12px; }
+    .ca-inner-details summary {
+      cursor: pointer; font-weight: 500; font-size: 0.875rem; color: var(--ink-2); list-style: none; user-select: none;
+    }
+    .ca-inner-details summary:hover { color: var(--ink); }
+    .ca-inner-details summary::-webkit-details-marker { display: none; }
+    .ca-inner-details summary::after {
+      content: ''; display: inline-block; width: 6px; height: 6px; margin-left: 8px;
+      border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+      transform: rotate(45deg) translateY(-3px);
+    }
+    .ca-inner-details[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
     .ca-formula-table {
-      width: 100%; margin-top: 8px; border-collapse: collapse;
-      font-size: 13px; font-family: var(--f-mono);
+      width: 100%; margin-top: 10px; border-collapse: collapse; font-size: 0.8125rem;
+      font-family: var(--font-mono); font-variant-numeric: tabular-nums; background: var(--surface); border-radius: var(--radius-control);
     }
-    .ca-formula-table th {
-      padding: 4px 8px; text-align: left; color: var(--muted);
-      border-bottom: 1px solid var(--rule);
-    }
-    .ca-formula-table td {
-      padding: 4px 8px;
-      border-bottom: 1px solid var(--rule-soft);
-    }
+    .ca-formula-table th { padding: 6px 10px; text-align: left; color: var(--muted); font-family: var(--font-sans); font-weight: 500; border-bottom: 1px solid var(--border); }
+    .ca-formula-table td { padding: 6px 10px; border-bottom: 1px solid var(--border-soft); }
     .ca-formula-table tr:last-child td { border-bottom: none; }
 
-    /* ── Placeholder text ── */
-    .ca-placeholder { color: var(--muted); font-size: 12px; }
+    .ca-placeholder { color: var(--muted); font-size: 0.8125rem; }
 
     /* ── Toast ── */
     .ca-toast {
       position: fixed; bottom: 24px; left: 50%;
       transform: translateX(-50%) translateY(80px);
-      background: var(--ink); color: var(--paper); padding: 10px 24px;
-      border-radius: var(--r-md); font-size: 13px; opacity: 0;
-      transition: transform 0.3s, opacity 0.3s;
-      z-index: 1000; pointer-events: none;
+      background: var(--ink); color: var(--bg); padding: 10px 16px;
+      border-radius: var(--radius-control); font-size: 0.875rem; font-weight: 500; opacity: 0;
+      transition: transform var(--dur-smooth) var(--ease-out), opacity var(--dur-smooth) var(--ease-out);
+      z-index: var(--z-toast); pointer-events: none;
     }
     .ca-toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-    /* ── Mobile ── */
-    @media (max-width: 700px) {
-      .ca-config-bar { gap: 12px; padding: 8px 12px; }
-      .ca-cache-header, .ca-cache-row {
-        grid-template-columns: 32px 32px 24px 1fr 1fr;
-        font-size: 12px; padding: 3px 6px;
-      }
+    /* ── Phones ── */
+    @media (max-width: 640px) {
+      .ca-config-bar { gap: 12px 16px; }
+      .ca-config-item { flex: 1 1 40%; }
+      .ca-config-item select { width: 100%; }
+      .ca-access-row .ca-addr-field { flex: none; }
+      .ca-cache-header, .ca-cache-row { padding-left: 12px; padding-right: 12px; }
+      .ca-group { padding: 14px 16px; }
+      .ca-preset-grid { margin: 0 -16px; }
+      .ca-preset-btn { padding: 10px 16px; }
+    }
+
+    /* ── Two-column page: controls left, results right ── */
+    .ca-page .tool-controls { position: static; }
+    .ca-config-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+    .ca-config-item select { width: 100%; }
+    .ca-access-row { flex-direction: column; align-items: stretch; }
+    .ca-access-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .ca-access-btns .btn-go { flex: 1 1 auto; justify-content: center; }
+    .ca-access-row .ca-addr-field { flex: none; }
+    .ca-queue { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-soft); }
+    .ca-queue .lbl { margin-bottom: 8px; }
+    .ca-stats-strip {
+      display: flex; gap: 16px 24px; flex-wrap: wrap; align-items: baseline;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+    }
+    .ca-stats-strip .ca-stat-item { gap: 8px; }
+    .ca-stats-strip .ca-stat-rate { margin-left: auto; }
+    .ca-stats-strip .ca-stat-rate .ca-stat-value { font-size: 1.125rem; }
+    .ca-side { margin-bottom: 0; }
+    .ca-access-row.has-queue .ca-next-btn { order: -1; }
+    @media (max-width: 960px) {
+      /* One column: workbench, then the cache contents, then the pattern list. */
+      .ca-page .tool-controls { display: contents; }
+      .ca-page .workbench { order: 1; }
+      .ca-page .tool-results { order: 2; }
+      .ca-page .ca-side { order: 3; }
+      .ca-config-bar { grid-template-columns: repeat(3, 1fr); }
+      .ca-access-row { flex-direction: row; align-items: flex-end; }
+      .ca-access-row .ca-addr-field { flex: 0 1 200px; }
+      .ca-side { margin-bottom: 24px; }
+    }
+    @media (max-width: 640px) {
+      .ca-config-bar { grid-template-columns: 1fr 1fr; }
+      .ca-access-row { flex-direction: column; align-items: stretch; }
+      .ca-access-row .ca-addr-field { flex: none; }
     }
   </style>
 </head>
@@ -312,68 +275,68 @@
   }
 })();
 </script>
-  <main class="container">
-    <div class="nav-row">
-      <div class="nav-links">
-        <a href="/" class="back-link">&larr; p14m.com</a>
-        <span>|</span>
-        <a href="/adders/">Adders</a>
-        <span>|</span>
-        <a href="/bits/">Bits</a>
-        <span>|</span>
-        <a href="/circuitgen/">CircuitGen</a>
-        <span>|</span>
-        <a href="/float/">Float</a>
-        <span>|</span>
-        <a href="/kmap/">K-Map</a>
-        <span>|</span>
-        <a href="/multipliers/">Multipliers</a>
-        <span>|</span>
-        <a href="/orderbook/">OrderBook</a>
-        <span>|</span>
-        <a href="/learn/">Learn</a>
-      </div>
-      <button class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-text">&#9790;</span>
-      </button>
-    </div>
+  <a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+    <nav class="site-links" aria-label="Site">
+      <a href="/#tools">Tools</a>
+      <a href="/learn/">Learn</a>
+      <a href="/#about">About</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" onclick="toggleTheme()">Dark</button>
+    </nav>
+  </div>
+  <nav class="tool-strip" aria-label="Tools">
+    <a href="/adders/">Adders</a>
+    <a href="/bits/">Bits</a>
+    <a href="/cache/" aria-current="page">Cache</a>
+    <a href="/circuitgen/">CircuitGen</a>
+    <a href="/float/">Float</a>
+    <a href="/kmap/">K-Map</a>
+    <a href="/multipliers/">Multipliers</a>
+    <a href="/orderbook/">Order Book</a>
+  </nav>
+</header>
+<main id="main" class="container">
 
-    <h1>Cache Simulator</h1>
-    <p class="subtitle">Visualize how CPU caches map, store, and evict memory blocks</p>
+    <div class="page-head">
+    <h1>Cache simulator</h1>
+    <p class="lede">Configure a small CPU cache and step through memory accesses to see how addresses map to sets, when lines hit or miss, and which line gets evicted.</p>
+  </div>
 
     <!-- How to Use -->
     <details class="how-to">
-      <summary>How to use</summary>
+      <summary>How it works</summary>
       <div class="how-to-body">
-        <p>This cache simulator lets you access memory addresses and watch how a CPU cache maps, stores, and evicts data in real time. Step through preset access patterns to see spatial locality, temporal locality, thrashing, and conflict misses in action across direct-mapped, set-associative, and fully associative cache configurations with LRU, FIFO, and random replacement policies.</p>
-        <p><strong>Configure</strong> the cache using the dropdowns above. Block size determines how many consecutive bytes are fetched together (spatial locality). Cache lines sets the total capacity. Associativity controls how many ways per set. More ways means fewer conflict misses but more hardware cost. Replacement policy (LRU, FIFO, Random) determines which line gets evicted when a set is full.</p>
-        <p><strong>Access addresses</strong> by typing a number (0&ndash;255) and clicking Access, or load a preset pattern and step through with the Next button or <strong>Spacebar</strong>.</p>
-        <p><strong>Watch the breakdown</strong> above the cache table. It shows how each address splits into <span style="color:var(--accent);font-weight:600">tag</span>, <span style="color:var(--success);font-weight:600">index</span>, and <span style="color:var(--mant);font-weight:600">offset</span> bits, which determines where data maps in the cache.</p>
-        <p><strong>Try different configs</strong> with the same pattern. Load Thrashing in direct-mapped mode, then switch to 2-way and reload to see how associativity eliminates conflict misses.</p>
+        <p>Access memory addresses and watch how a CPU cache maps, stores and evicts data. Step through preset access patterns to see spatial locality, temporal locality, thrashing and conflict misses across direct-mapped, set-associative and fully associative configurations with LRU, FIFO and random replacement.</p>
+        <p><strong>Configure</strong> the cache with the selectors in the panel below. Block size sets how many consecutive bytes are fetched together (spatial locality). Cache lines sets the total capacity. Associativity sets how many ways each set has: more ways means fewer conflict misses but more hardware. The replacement policy (LRU, FIFO or random) decides which line is evicted when a set is full.</p>
+        <p><strong>Access addresses</strong> by typing a number from 0 to 255 and choosing Access address, or load a pattern and step through it with Next access or the <strong>space bar</strong>.</p>
+        <p><strong>Watch the breakdown</strong> under the address field. It shows how each address splits into <span class="ca-key-tag">tag</span>, <span class="ca-key-index">index</span> and <span class="ca-key-offset">offset</span> bits, which decides where the data maps in the cache.</p>
+        <p><strong>Try different configurations</strong> with the same pattern. Load Thrashing in direct-mapped mode, then switch to 2-way and reload to see associativity remove the conflict misses.</p>
         <details class="ca-inner-details">
-          <summary>Bit Split Formulas</summary>
-          <div style="padding:8px 12px">
+          <summary>Bit split formulas</summary>
+          <div>
           <table class="ca-formula-table">
             <tr>
               <th>Field</th><th>Formula</th><th>Example (default)</th>
             </tr>
             <tr>
-              <td style="color:var(--mant);font-weight:600">Offset bits</td>
+              <td class="ca-key-offset">Offset bits</td>
               <td>log<sub>2</sub>(block size)</td>
               <td>log<sub>2</sub>(4) = 2</td>
             </tr>
             <tr>
-              <td style="color:var(--success);font-weight:600">Index bits</td>
+              <td class="ca-key-index">Index bits</td>
               <td>log<sub>2</sub>(cache lines / associativity)</td>
               <td>log<sub>2</sub>(8 / 1) = 3</td>
             </tr>
             <tr>
-              <td style="color:var(--accent);font-weight:600">Tag bits</td>
+              <td class="ca-key-tag">Tag bits</td>
               <td>address bits &minus; index bits &minus; offset bits</td>
               <td>8 &minus; 3 &minus; 2 = 3</td>
             </tr>
             <tr>
-              <td>Num sets</td>
+              <td>Number of sets</td>
               <td>cache lines / associativity</td>
               <td>8 / 1 = 8</td>
             </tr>
@@ -383,136 +346,135 @@
       </div>
     </details>
 
-    <!-- Config bar -->
-    <div class="ca-config-bar">
-      <div class="ca-config-item">
-        <label for="ca-block-size">Block Size</label>
-        <select id="ca-block-size" onchange="updateConfig()">
-          <option value="1">1 byte</option>
-          <option value="2">2 bytes</option>
-          <option value="4" selected>4 bytes</option>
-        </select>
+    <div class="tool-layout ca-page">
+    <div class="tool-controls">
+    <!-- Workbench: configure, then access -->
+    <div class="section workbench">
+      <div class="ca-config-bar">
+        <div class="ca-config-item">
+          <label class="lbl" for="ca-block-size">Block size</label>
+          <select id="ca-block-size" onchange="updateConfig()">
+            <option value="1">1 byte</option>
+            <option value="2">2 bytes</option>
+            <option value="4" selected>4 bytes</option>
+          </select>
+        </div>
+        <div class="ca-config-item">
+          <label class="lbl" for="ca-lines">Cache lines</label>
+          <select id="ca-lines" onchange="onLinesChanged()">
+            <option value="4">4</option>
+            <option value="8" selected>8</option>
+            <option value="16">16</option>
+          </select>
+        </div>
+        <div class="ca-config-item">
+          <label class="lbl" for="ca-assoc">Associativity</label>
+          <select id="ca-assoc" onchange="updateConfig()">
+            <option value="1" selected>Direct mapped</option>
+            <option value="2">2-way</option>
+            <option value="4">4-way</option>
+          </select>
+        </div>
+        <div class="ca-config-item">
+          <label class="lbl" for="ca-replace">Replacement</label>
+          <select id="ca-replace" onchange="updateConfig()">
+            <option value="lru" selected>LRU</option>
+            <option value="fifo">FIFO</option>
+            <option value="random">Random</option>
+          </select>
+        </div>
+        <div class="ca-config-item">
+          <span class="lbl">Addresses</span>
+          <span class="ca-fixed">8-bit (0&ndash;255)</span>
+        </div>
+        <div class="ca-config-item">
+          <span class="lbl">Bit split</span>
+          <span class="ca-fixed" id="ca-bit-split">3t / 3i / 2o</span>
+        </div>
       </div>
-      <div class="ca-config-item">
-        <label for="ca-lines">Cache Lines</label>
-        <select id="ca-lines" onchange="onLinesChanged()">
-          <option value="4">4</option>
-          <option value="8" selected>8</option>
-          <option value="16">16</option>
-        </select>
+
+      <div class="ca-access-row" id="ca-access-row">
+        <div class="ca-addr-field">
+          <label class="lbl" for="ca-addr">Address</label>
+          <input type="number" id="ca-addr" min="0" max="255" placeholder="0 to 255" inputmode="numeric">
+        </div>
+        <div class="ca-access-btns">
+          <button class="btn-go ca-access-btn" onclick="doAccess()">Access address</button>
+          <button class="btn-go ca-next-btn" id="ca-next-btn" onclick="stepQueue()">Next access <span class="ca-kbd">space</span></button>
+          <button class="btn-t ca-reset-btn" onclick="resetCache()">Reset cache</button>
+        </div>
       </div>
-      <div class="ca-config-item">
-        <label for="ca-assoc">Associativity</label>
-        <select id="ca-assoc" onchange="updateConfig()">
-          <option value="1" selected>Direct Mapped</option>
-          <option value="2">2-Way</option>
-          <option value="4">4-Way</option>
-        </select>
+
+      <div class="ca-breakdown" id="ca-breakdown">
+        Enter an address (0&ndash;255) to see its tag, set index and offset bits
       </div>
-      <div class="ca-config-item">
-        <label for="ca-replace">Replacement</label>
-        <select id="ca-replace" onchange="updateConfig()">
-          <option value="lru" selected>LRU</option>
-          <option value="fifo">FIFO</option>
-          <option value="random">Random</option>
-        </select>
-      </div>
-      <div class="ca-config-item">
-        <label>Addresses</label>
-        <span class="ca-fixed">8-bit (0&ndash;255)</span>
-      </div>
-      <div class="ca-config-item">
-        <label>Bit Split</label>
-        <span class="ca-fixed" id="ca-bit-split">3t / 3i / 2o</span>
+      <div class="ca-narration" id="ca-narration"></div>
+
+      <div class="ca-queue">
+        <span class="lbl">Access queue</span>
+        <div class="ca-queue-chips" id="ca-queue"></div>
       </div>
     </div>
 
-    <!-- Address breakdown -->
-    <div class="ca-breakdown" id="ca-breakdown">
-      Enter an address (0&ndash;255) to see the tag / index / offset breakdown
+    <div class="section ca-side">
+      <div class="ca-group">
+        <h3>Patterns</h3>
+        <div class="ca-preset-grid">
+          <button class="ca-preset-btn" data-preset="sequential" onclick="loadPreset('sequential')">
+            <strong>Sequential</strong>
+            Consecutive addresses. Spatial locality means most accesses hit after the first block fetch. <em data-hint></em>
+          </button>
+          <button class="ca-preset-btn" data-preset="temporal" onclick="loadPreset('temporal')">
+            <strong>Temporal loop</strong>
+            The same blocks accessed twice, like a loop body re-reading its variables. The second pass hits. <em data-hint></em>
+          </button>
+          <button class="ca-preset-btn" data-preset="thrashing" onclick="loadPreset('thrashing')">
+            <strong>Thrashing</strong>
+            Two addresses fight for the same set. <em data-hint></em>
+          </button>
+          <button class="ca-preset-btn" data-preset="stride" onclick="loadPreset('stride')">
+            <strong>Power-of-2 stride</strong>
+            A strided pattern that creates worst-case conflict misses. <em data-hint></em>
+          </button>
+          <button class="ca-preset-btn" data-preset="lru-vs-fifo" onclick="loadPreset('lru-vs-fifo')">
+            <strong>LRU vs FIFO</strong>
+            Overfill a set, then re-access early entries to see the two policies evict differently. <em data-hint></em>
+          </button>
+          <button class="ca-preset-btn" data-preset="column" onclick="loadPreset('column')">
+            <strong>Column traversal</strong>
+            Column 0 of a row-major matrix. Every row maps to the same set, so each access conflicts. <em data-hint></em>
+          </button>
+          <button class="ca-preset-btn" data-preset="random" onclick="loadPreset('random')">
+            <strong>Random</strong>
+            20 random addresses with no locality: the baseline for the structured patterns. <em data-hint></em>
+          </button>
+        </div>
+        <button class="btn-t ca-prompt-btn" onclick="copyLearnPrompt()">Copy a prompt for an AI assistant</button>
+      </div>
+    </div>
     </div>
 
-    <!-- Narration -->
-    <div class="ca-narration" id="ca-narration"></div>
-
-    <!-- Main layout -->
-    <div class="ca-layout">
-      <!-- Cache table -->
-      <div class="ca-cache-panel">
+    <div class="tool-results">
+    <!-- Cache contents with the running statistics -->
+    <div class="section ca-cache-panel">
+      <div class="ca-stats-strip">
+        <div class="ca-stat-item"><span class="ca-stat-label">Accesses</span><span class="ca-stat-value" id="ca-stat-total">0</span></div>
+        <div class="ca-stat-item"><span class="ca-stat-label">Hits</span><span class="ca-stat-value ca-color-hit" id="ca-stat-hits">0</span></div>
+        <div class="ca-stat-item"><span class="ca-stat-label">Misses</span><span class="ca-stat-value ca-color-miss" id="ca-stat-misses">0</span></div>
+        <div class="ca-stat-item ca-stat-rate"><span class="ca-stat-label">Hit rate</span><span class="ca-stat-value" id="ca-stat-rate">&mdash;</span></div>
+        <div class="ca-hit-rate" id="ca-hit-bar" hidden></div>
+      </div>
+      <div class="ca-cache-scroll">
         <div class="ca-cache-header">
           <span>Set</span><span>Way</span><span>V</span><span>Tag</span><span>Block</span>
         </div>
         <div id="ca-cache-body"></div>
       </div>
-
-      <!-- Controls sidebar -->
-      <div>
-        <div class="ca-card">
-          <div class="ca-card-title">Access Memory</div>
-          <div class="ca-input-row">
-            <input type="number" id="ca-addr" min="0" max="255" placeholder="0&ndash;255" aria-label="Memory address">
-            <button class="ca-access-btn" onclick="doAccess()">Access</button>
-            <button class="ca-reset-btn" onclick="resetCache()">Reset</button>
-          </div>
-        </div>
-
-        <div class="ca-card">
-          <div class="ca-card-title">Access Queue</div>
-          <div class="ca-queue-chips" id="ca-queue"></div>
-          <button class="ca-next-btn" id="ca-next-btn" onclick="stepQueue()">Next Access (Space)</button>
-        </div>
-
-        <div class="ca-card">
-          <div class="ca-card-title">Patterns</div>
-          <div class="ca-preset-grid">
-            <button class="ca-preset-btn" data-preset="sequential" onclick="loadPreset('sequential')" aria-label="Pattern: Sequential Access">
-              <strong>Sequential</strong>
-              Iterate through consecutive addresses. Spatial locality means most accesses hit after the first block fetch. <em data-hint></em>
-            </button>
-            <button class="ca-preset-btn" data-preset="temporal" onclick="loadPreset('temporal')" aria-label="Pattern: Temporal Loop">
-              <strong>Temporal Loop</strong>
-              Same blocks accessed twice. Like a loop body re-reading its variables. Second pass hits from temporal locality. <em data-hint></em>
-            </button>
-            <button class="ca-preset-btn" data-preset="thrashing" onclick="loadPreset('thrashing')" aria-label="Pattern: Thrashing">
-              <strong>Thrashing</strong>
-              Two addresses fight for the same set. <em data-hint></em>
-            </button>
-            <button class="ca-preset-btn" data-preset="stride" onclick="loadPreset('stride')" aria-label="Pattern: Power-of-2 Stride">
-              <strong>Power-of-2 Stride</strong>
-              Strided access pattern that creates worst-case conflict misses. <em data-hint></em>
-            </button>
-            <button class="ca-preset-btn" data-preset="lru-vs-fifo" onclick="loadPreset('lru-vs-fifo')" aria-label="Pattern: LRU vs FIFO">
-              <strong>LRU vs FIFO</strong>
-              Overfill a set, then re-access early entries to see different eviction choices. <em data-hint></em>
-            </button>
-            <button class="ca-preset-btn" data-preset="column" onclick="loadPreset('column')" aria-label="Pattern: Column Traversal">
-              <strong>Column Traversal</strong>
-              Access column 0 of a row-major matrix. Every row maps to the same set, causing repeated conflict misses. <em data-hint></em>
-            </button>
-            <button class="ca-preset-btn" data-preset="random" onclick="loadPreset('random')" aria-label="Pattern: Random">
-              <strong>Random</strong>
-              20 random addresses with no locality. The baseline for comparing against structured patterns. <em data-hint></em>
-            </button>
-          </div>
-          <button class="btn-t" onclick="copyLearnPrompt()" style="margin-top:10px;">Ask AI about this</button>
-        </div>
-
-        <div class="ca-card">
-          <div class="ca-card-title">Statistics</div>
-          <div class="ca-stats-grid">
-            <div class="ca-stat-item"><span class="ca-stat-label">Accesses</span><span class="ca-stat-value" id="ca-stat-total">0</span></div>
-            <div class="ca-stat-item"><span class="ca-stat-label">Hits</span><span class="ca-stat-value ca-color-hit" id="ca-stat-hits">0</span></div>
-            <div class="ca-stat-item"><span class="ca-stat-label">Misses</span><span class="ca-stat-value ca-color-miss" id="ca-stat-misses">0</span></div>
-            <div class="ca-stat-item"><span class="ca-stat-label">Hit Rate</span><span class="ca-stat-value" id="ca-stat-rate">&mdash;</span></div>
-          </div>
-          <div class="ca-hit-rate" id="ca-hit-bar"></div>
-        </div>
-      </div>
     </div>
 
     <!-- History -->
-    <div class="ca-history-panel">
-      <div class="ca-card-title">Access History</div>
+    <div class="section ca-history-panel">
+      <h3>Access history</h3>
       <div class="ca-history-header">
         <span>#</span><span>Addr</span><span>Binary</span><span>Tag</span><span>Set</span><span>Way</span><span>Result</span>
       </div>
@@ -520,20 +482,44 @@
     </div>
 
     <!-- Comparison table -->
-    <div class="ca-compare-panel" id="ca-compare-panel" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span class="ca-card-title" style="margin-bottom:0">Pattern Comparison</span>
-        <button class="ca-reset-btn" onclick="clearComparison()">Clear</button>
+    <div class="section ca-compare-panel" id="ca-compare-panel" style="display:none">
+      <div class="ca-group-head">
+        <h3>Pattern comparison</h3>
+        <button class="btn-t" onclick="clearComparison()">Clear comparison</button>
       </div>
       <div class="ca-compare-header">
         <span>Pattern</span><span>Lines</span><span>Assoc</span><span>Block</span><span>Replace</span><span>Hits</span><span>Misses</span><span>Rate</span>
       </div>
       <div id="ca-compare-body"></div>
     </div>
+    </div>
+    </div>
     <div class="feedback-box" data-topic="tool-cache" data-label="Was this tool useful?"></div>
-
-    <div class="footer">&copy; 2026 <a href="/">p14m.com</a> <span class="footer-sep">·</span> <a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Submit feedback</a></div>
-  </main>
+</main>
+<footer class="site-footer">
+  <nav aria-label="Footer">
+    <ul class="site-footer-pages">
+      <li><a href="/adders/">Adder architecture visualizer</a></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a></li>
+      <li><a href="/cache/">Cache simulator</a></li>
+      <li><a href="/circuitgen/">CircuitGen</a></li>
+      <li><a href="/float/">IEEE 754 floating-point converter</a></li>
+      <li><a href="/kmap/">K-Map generator</a></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
+      <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/learn/">Learn</a></li>
+    </ul>
+  </nav>
+  <div class="site-footer-line">
+    <span>&copy; 2026 Peter Moses</span>
+    <ul class="site-footer-meta">
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Send feedback</a></li>
+    </ul>
+  </div>
+</footer>
 
   <div class="ca-toast" id="ca-toast"></div>
 
@@ -578,12 +564,12 @@ function rebuildAssocOptions() {
 
   sel.innerHTML = '';
   var opt1 = document.createElement('option');
-  opt1.value = '1'; opt1.textContent = 'Direct Mapped';
+  opt1.value = '1'; opt1.textContent = 'Direct mapped';
   sel.appendChild(opt1);
   for (var w = 2; w <= totalLines; w *= 2) {
     var opt = document.createElement('option');
     opt.value = '' + w;
-    opt.textContent = w === totalLines ? 'Fully Assoc (' + w + '-Way)' : w + '-Way';
+    opt.textContent = w === totalLines ? 'Fully associative (' + w + '-way)' : w + '-way';
     sel.appendChild(opt);
   }
 
@@ -621,8 +607,9 @@ function resetCache() {
   document.getElementById('ca-narration').textContent = '';
   document.getElementById('ca-narration').className = 'ca-narration';
   document.getElementById('ca-breakdown').innerHTML =
-    'Enter an address (0\u2013255) to see the tag / index / offset breakdown';
+    'Enter an address (0\u2013255) to see its tag, set index and offset bits';
   document.getElementById('ca-next-btn').classList.remove('visible');
+  document.getElementById('ca-access-row').classList.remove('has-queue');
   renderCache();
   renderHistory();
   renderStats();
@@ -739,7 +726,7 @@ function renderBreakdown(d) {
   if (offsetBits > 0) labelsHtml += '<span class="ca-bit-offset" style="font-size:11px">offset = ' + d.offset + '</span>';
 
   el.innerHTML =
-    '<div style="font-size:15px;margin-bottom:4px">Address <strong>' + d.addr + '</strong> \u2192 ' + toBin(d.addr, ADDRESS_BITS) + '</div>' +
+    '<div style="font-size:15px;margin-bottom:4px">Address <strong>' + d.addr + '</strong> = ' + toBin(d.addr, ADDRESS_BITS) + '</div>' +
     '<div style="font-size:18px;letter-spacing:2px">' + bitsHtml + '</div>' +
     '<div style="display:flex;gap:6px;justify-content:center">' + labelsHtml + '</div>';
 }
@@ -749,12 +736,12 @@ function renderNarration(result) {
   var tagStr = toBin(result.tag, tagBits);
   if (result.hit) {
     el.className = 'ca-narration ca-hit';
-    el.textContent = 'HIT \u2014 Tag ' + tagStr + ' found in Set ' + result.index + ', Way ' + result.way;
+    el.textContent = 'Hit: tag ' + tagStr + ' found in set ' + result.index + ', way ' + result.way;
   } else {
-    var text = 'MISS \u2014 Tag ' + tagStr + ' not in Set ' + result.index + '. Placed in Way ' + result.way;
+    var text = 'Miss: tag ' + tagStr + ' not in set ' + result.index + '. Placed in way ' + result.way;
     if (result.evictedTag !== null) {
       var policyLabel = replacePolicy === 'lru' ? 'least recently used' : replacePolicy === 'fifo' ? 'first in' : 'random';
-      text += ' (evicted tag ' + toBin(result.evictedTag, tagBits) + ' \u2014 ' + policyLabel + ')';
+      text += ' (evicted tag ' + toBin(result.evictedTag, tagBits) + ', ' + policyLabel + ')';
     }
     el.className = 'ca-narration ca-miss';
     el.textContent = text;
@@ -811,10 +798,10 @@ function renderHistory() {
       '<span>' + toBin(h.tag, tagBits) + '</span>' +
       '<span>' + h.index + '</span>' +
       '<span>' + h.way + '</span>' +
-      '<span class="' + cls + '">' + (h.hit ? 'HIT' : 'MISS') + '</span>' +
+      '<span class="' + cls + '">' + (h.hit ? 'Hit' : 'Miss') + '</span>' +
       '</div>';
   }
-  el.innerHTML = html || '<div class="ca-placeholder" style="padding:8px">No accesses yet</div>';
+  el.innerHTML = html || '<div class="ca-placeholder" style="padding:8px 0">No accesses yet. Enter an address or load a pattern.</div>';
 }
 
 function renderStats() {
@@ -911,8 +898,9 @@ function stepQueue() {
       var rate = total > 0 ? (finalHits / total * 100).toFixed(1) : '0.0';
       var el = document.getElementById('ca-narration');
       el.className = 'ca-narration ca-info';
-      el.textContent = 'Pattern complete \u2014 ' + finalHits + ' hits, ' + finalMisses + ' misses (' + rate + '% hit rate)';
+      el.textContent = 'Pattern complete: ' + finalHits + ' hits, ' + finalMisses + ' misses (' + rate + '% hit rate)';
       document.getElementById('ca-next-btn').classList.remove('visible');
+  document.getElementById('ca-access-row').classList.remove('has-queue');
       if (finalPreset) addComparisonRow(finalPreset, finalHits, finalMisses);
     }, 700);
   }
@@ -928,7 +916,7 @@ function presetHint(name) {
   switch (name) {
     case 'sequential': {
       var count = Math.min(bs * 4, 256);
-      if (bs === 1) return { applicable: true, text: 'With 1-byte blocks, every access is a miss — no spatial locality. Raise block size to ≥2 to see hits.' };
+      if (bs === 1) return { applicable: true, text: 'With 1-byte blocks every access misses: there is no spatial locality. Raise the block size to 2 or more to see hits.' };
       return { applicable: true, text: 'Addresses 0–' + (count - 1) + '. Each ' + bs + '-byte block fetch gives ' + (bs - 1) + ' hit' + (bs > 2 ? 's' : '') + ' after the first miss.' };
     }
     case 'temporal': {
@@ -939,9 +927,9 @@ function presetHint(name) {
       var a = 0, b = stride;
       if (b > 255) b = stride % 256 || bs;
       if (associativity >= 2) {
-        return { applicable: true, text: 'Addresses ' + a + ' and ' + b + ' both map to Set 0. With ' + assocLabel + ', both fit — no thrashing here. Switch to direct-mapped to see it.' };
+        return { applicable: true, text: 'Addresses ' + a + ' and ' + b + ' both map to set 0. With ' + assocLabel + ' both fit, so nothing thrashes. Switch to direct mapped to see it.' };
       }
-      return { applicable: true, text: 'Addresses ' + a + ' and ' + b + ' both map to Set 0 and evict each other every access.' };
+      return { applicable: true, text: 'Addresses ' + a + ' and ' + b + ' both map to set 0 and evict each other on every access.' };
     }
     case 'stride': {
       var s = 2 * bs;
@@ -949,16 +937,16 @@ function presetHint(name) {
     }
     case 'lru-vs-fifo': {
       if (associativity < 2) {
-        return { applicable: false, text: 'Needs ≥ 2-way associativity. Switch Associativity first, then reload.' };
+        return { applicable: false, text: 'Needs 2-way associativity or more. Change Associativity first, then load again.' };
       }
-      return { applicable: true, text: 'Currently ' + associativity + '-way / ' + replacePolicy.toUpperCase() + '. Run, switch replacement policy, and reload to compare.' };
+      return { applicable: true, text: 'Currently ' + associativity + '-way, ' + replacePolicy.toUpperCase() + '. Run it, switch the replacement policy, and load again to compare.' };
     }
     case 'column': {
       var rowWidth = ns * bs;
-      return { applicable: true, text: 'Row width ' + rowWidth + ' bytes. ' + (associativity === 1 ? 'Every row conflicts at Set 0 — worst case.' : 'Up to ' + associativity + ' rows fit per set before eviction.') };
+      return { applicable: true, text: 'Row width ' + rowWidth + ' bytes. ' + (associativity === 1 ? 'Every row conflicts at set 0: the worst case.' : 'Up to ' + associativity + ' rows fit per set before eviction.') };
     }
     case 'random': {
-      return { applicable: true, text: 'No locality — baseline for comparison. Works with any config.' };
+      return { applicable: true, text: 'No locality, so it is the baseline for comparison. Works with any configuration.' };
     }
   }
   return { applicable: true, text: '' };
@@ -988,11 +976,11 @@ function generatePreset(name) {
       var addrs = [];
       for (var i = 0; i < count; i++) addrs.push(i);
       return {
-        name: 'Sequential Access',
+        name: 'Sequential',
         addresses: addrs,
         briefing: [
           'Sequential addresses 0 through ' + (count - 1) + '. With block size ' + bs + ', each cache block holds ' + bs + ' consecutive byte' + (bs > 1 ? 's' : '') + '.',
-          'Watch: the first access to each block is a compulsory miss.' + (bs > 1 ? ' But the next ' + (bs - 1) + ' address' + (bs > 2 ? 'es' : '') + ' in that block hit \u2014 the block was already fetched. This is spatial locality.' : '')
+          'Watch: the first access to each block is a compulsory miss.' + (bs > 1 ? ' But the next ' + (bs - 1) + ' address' + (bs > 2 ? 'es' : '') + ' in that block hit, because the block was already fetched. This is spatial locality.' : '')
         ]
       };
     }
@@ -1004,11 +992,11 @@ function generatePreset(name) {
       for (var i = 0; i < n; i++) addrs.push(i * bs);
       var last = (n - 1) * bs;
       return {
-        name: 'Temporal Loop',
+        name: 'Temporal loop',
         addresses: addrs,
         briefing: [
-          n + ' block-aligned addresses accessed twice each: ' + addrs.slice(0, n).join(', ') + ' \u2192 then again.',
-          'Watch: the first pass misses on every access (compulsory misses). The second pass hits every time \u2014 the data is still in cache. This is temporal locality.'
+          n + ' block-aligned addresses accessed twice each: ' + addrs.slice(0, n).join(', ') + ', then the same again.',
+          'Watch: the first pass misses on every access (compulsory misses). The second pass hits every time because the data is still in the cache. This is temporal locality.'
         ]
       };
     }
@@ -1021,7 +1009,7 @@ function generatePreset(name) {
         name: 'Thrashing',
         addresses: addrs,
         briefing: [
-          'Addresses ' + a + ' and ' + b + ' alternate. Both map to Set 0 \u2014 they keep evicting each other in direct-mapped mode.',
+          'Addresses ' + a + ' and ' + b + ' alternate. Both map to set 0, so in direct-mapped mode they keep evicting each other.',
           'Every access is a miss despite using only two addresses. This is thrashing. Switch to 2-way associativity and reload to see it disappear.'
         ]
       };
@@ -1036,7 +1024,7 @@ function generatePreset(name) {
         addrs.push(addr);
       }
       return {
-        name: 'Power-of-2 Stride',
+        name: 'Power-of-2 stride',
         addresses: addrs,
         briefing: [
           'Stride-' + s + ' pattern across ' + count + ' accesses. The stride hits every other set, then wraps around to conflict with earlier entries.',
@@ -1046,7 +1034,7 @@ function generatePreset(name) {
     }
     case 'lru-vs-fifo': {
       if (associativity < 2) {
-        return { blocked: true, blockedReason: 'LRU vs FIFO needs at least 2-way associativity — set Associativity to 2-Way or higher, then reload.' };
+        return { blocked: true, blockedReason: 'LRU vs FIFO needs at least 2-way associativity. Set Associativity to 2-way or higher, then load the pattern again.' };
       }
       var ways = associativity;
       // Collect all block-aligned addresses that map to set 0
@@ -1093,11 +1081,11 @@ function generatePreset(name) {
         if (addr < 256) addrs.push(addr);
       }
       return {
-        name: 'Column Traversal',
+        name: 'Column traversal',
         addresses: addrs,
         briefing: [
-          'Simulates accessing column 0 of a row-major matrix with row width ' + rowWidth + '. Each row access is ' + rowWidth + ' bytes apart \u2014 every access maps to Set 0.',
-          'In direct-mapped mode, rows beyond the first evict each other from Set 0. With higher associativity, more rows fit. The second pass shows whether temporal locality helps with your current config.'
+          'Simulates accessing column 0 of a row-major matrix with row width ' + rowWidth + '. Each row access is ' + rowWidth + ' bytes apart, so every access maps to set 0.',
+          'In direct-mapped mode, rows beyond the first evict each other from set 0. With higher associativity, more rows fit. The second pass shows whether temporal locality helps with your current config.'
         ]
       };
     }
@@ -1108,7 +1096,7 @@ function generatePreset(name) {
         name: 'Random',
         addresses: addrs,
         briefing: [
-          '20 random addresses with no locality pattern. This is the baseline \u2014 what cache performance looks like without any spatial or temporal locality.',
+          '20 random addresses with no locality. This is the baseline: cache performance without any spatial or temporal locality.',
           'Compare the hit rate here against the structured patterns to see how much locality matters. Larger caches and higher associativity help, but not as much as having a good access pattern.'
         ]
       };
@@ -1147,8 +1135,9 @@ function loadPreset(name) {
   lastPresetName = preset.name;
   lastPresetKey = name;
   document.getElementById('ca-next-btn').classList.add('visible');
+  document.getElementById('ca-access-row').classList.add('has-queue');
   document.getElementById('ca-breakdown').innerHTML =
-    'Step through to see each access';
+    'Choose Next access to step through the pattern';
 
   renderCache();
   renderHistory();
@@ -1221,26 +1210,6 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// ── Theme ──
-function toggleTheme() {
-  var body = document.body;
-  var text = document.getElementById('theme-text');
-  if (body.classList.contains('dark')) {
-    body.classList.remove('dark');
-    text.innerHTML = '&#9790;';
-    localStorage.setItem('theme', 'light');
-  } else {
-    body.classList.add('dark');
-    text.innerHTML = '&#9788;';
-    localStorage.setItem('theme', 'dark');
-  }
-}
-document.addEventListener('DOMContentLoaded', function() {
-  if (document.body.classList.contains('dark')) {
-    document.getElementById('theme-text').innerHTML = '&#9788;';
-  }
-});
-
 // ── Toast ──
 var toastTimer;
 function showToast(msg) {
@@ -1253,7 +1222,7 @@ function showToast(msg) {
 
 // ── Ask AI ──
 function copyLearnPrompt() {
-  var prompt = 'Explain how CPU cache memory works. Cover: 1) How addresses split into tag, index, and offset bits for cache lookup. 2) Direct-mapped vs set-associative vs fully associative caches and their tradeoffs. 3) Spatial locality (why block size > 1 helps) and temporal locality (why recently used data hits). 4) Replacement policies: LRU (least recently used) vs FIFO (first in first out) vs Random \u2014 when does the choice matter? 5) Thrashing \u2014 why two addresses mapping to the same set cause 0% hit rate in direct-mapped, and how associativity fixes it. 6) Real-world patterns: explain why sequential array access gets ~75% hit rate (spatial locality), why a temporal loop gets 50% then improves on second pass, why power-of-2 strides and column traversal in row-major matrices cause worst-case conflict misses, and how random access with no locality serves as a baseline. Use an 8-bit address space with an 8-line cache for concrete examples.';
+  var prompt = 'Explain how CPU cache memory works. Cover: 1) How addresses split into tag, index, and offset bits for cache lookup. 2) Direct-mapped vs set-associative vs fully associative caches and their tradeoffs. 3) Spatial locality (why block size > 1 helps) and temporal locality (why recently used data hits). 4) Replacement policies: LRU (least recently used) vs FIFO (first in first out) vs Random: when does the choice matter? 5) Thrashing: why two addresses mapping to the same set cause 0% hit rate in direct-mapped, and how associativity fixes it. 6) Real-world patterns: explain why sequential array access gets ~75% hit rate (spatial locality), why a temporal loop gets 50% then improves on second pass, why power-of-2 strides and column traversal in row-major matrices cause worst-case conflict misses, and how random access with no locality serves as a baseline. Use an 8-bit address space with an 8-line cache for concrete examples.';
   navigator.clipboard.writeText(prompt).then(function() { showToast('Prompt copied to clipboard'); });
 }
 

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta name="robots" content="noindex">
+<!-- Source for /og/*.png. Render at 1200x630 with ?t=Title&d=Description (see DESIGN.md, SEO contract). -->
+<link rel="stylesheet" href="/shared.css">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body { padding: 0; background: #101214; color: #E9EBEE; font-family: var(--font-sans); }
+  .card { position: relative; width: 1200px; height: 630px; padding: 72px 80px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+  .mark { display: flex; align-items: baseline; gap: 8px; font-weight: 700; font-stretch: 105%; font-size: 30px; letter-spacing: -0.02em; }
+  .mark i { display: inline-block; width: 11px; height: 11px; background: #F2C14E; border-radius: 2.5px; transform: translateY(-2px); }
+  h1 { color: #E9EBEE; font-size: 78px; line-height: 1.02; letter-spacing: -0.025em; font-weight: 600; font-stretch: 105%; margin: 0 0 22px; max-width: 980px; }
+  p { font-size: 30px; line-height: 1.35; color: #B9BEC6; margin: 0; max-width: 900px; }
+  .foot { display: flex; justify-content: space-between; align-items: flex-end; font-size: 22px; color: #8B929C; }
+  .bits { display: flex; gap: 8px; }
+  .bits b { width: 26px; height: 26px; border-radius: 5px; background: #20242A; border: 1px solid #2B3038; }
+  .bits b.on { background: #F2C14E; border-color: #F2C14E; }
+</style></head>
+<body><div class="card">
+  <div class="mark">p14m<i></i></div>
+  <div><h1 id="t"></h1><p id="d"></p></div>
+  <div class="foot"><span>p14m.com</span><div class="bits" id="bits"></div></div>
+</div>
+<script>
+  var q = new URLSearchParams(location.search);
+  document.getElementById('t').textContent = q.get('t') || '';
+  document.getElementById('d').textContent = q.get('d') || '';
+  var word = (q.get('t') || 'p14m'); var bits = '';
+  for (var i = 0; i < 8; i++) { var c = word.charCodeAt(i % word.length) || 0; bits += '<b class="' + ((c >> (i % 7)) & 1 ? 'on' : '') + '"></b>'; }
+  document.getElementById('bits').innerHTML = bits;
+</script></body></html>

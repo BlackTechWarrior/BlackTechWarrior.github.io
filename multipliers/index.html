@@ -1,419 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Multiplier Visualizer: Booth, Array, Wallace Tree | p14m</title>
+  <meta name="description" content="Compare shift-and-add, Booth radix-2, array and Wallace tree multipliers on the same operands. Step through partial product reduction and compare area and delay.">
+  <meta name="author" content="Peter Moses">
+  <link rel="canonical" href="https://p14m.com/multipliers/">
+  <meta name="theme-color" content="#F4F5F7">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="p14m">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://p14m.com/multipliers/">
+  <meta property="og:title" content="Multiplier Visualizer: Booth, Array, Wallace Tree | p14m">
+  <meta property="og:description" content="Compare shift-and-add, Booth radix-2, array and Wallace tree multipliers on the same operands. Step through partial product reduction and compare area and delay.">
+  <meta property="og:image" content="https://p14m.com/og/multipliers.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Multiplier architecture visualizer on p14m.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Multiplier Visualizer: Booth, Array, Wallace Tree | p14m">
+  <meta name="twitter:description" content="Compare shift-and-add, Booth radix-2, array and Wallace tree multipliers on the same operands. Step through partial product reduction and compare area and delay.">
+  <meta name="twitter:image" content="https://p14m.com/og/multipliers.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" href="/favicon-48.png">
+  <link rel="preload" href="/fonts/mona-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/monaspace-neon-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/shared.css">
+  <script src="/lib/site.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Multiplier architecture visualizer","url":"https://p14m.com/multipliers/","description":"Compare shift-and-add, Booth radix-2, array and Wallace tree multipliers on the same operands. Step through partial product reduction and compare area and delay.","applicationCategory":"EducationalApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Peter Moses","url":"https://p14m.com/"},"inLanguage":"en","image":"https://p14m.com/og/multipliers.png"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"p14m","item":"https://p14m.com/"},{"@type":"ListItem","position":2,"name":"Multiplier architecture visualizer","item":"https://p14m.com/multipliers/"}]}]}</script>
+  <script src="/lib/feedback.js" defer></script>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Interactive multiplier architecture visualizer comparing Shift-and-Add, Booth's Radix-2, Array, and Wallace Tree multipliers with animated partial product reduction.">
-  <meta property="og:title" content="Multiplier Visualizer | p14m.com">
-  <meta property="og:description" content="Compare binary multiplier architectures side-by-side with animated partial product reduction and area-speed tradeoffs.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://p14m.com/multipliers/">
-  <title>Multiplier Visualizer | p14m.com</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
-  <link rel="stylesheet" href="/shared.css">
-  <script src="/lib/feedback.js" defer></script>
   <style>
     /* ── Multiplier-specific styles ── */
 
-    .controls-grid {
-      display: grid;
-      grid-template-columns: auto 1fr 1fr;
-      gap: 15px;
-      align-items: end;
-      margin-bottom: 15px;
-    }
+    /* Workbench controls (stacked in the controls column) */
+    .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); margin-bottom: var(--s-4); }
+    .controls-grid > .span2 { grid-column: 1 / -1; }
+    .controls-grid .mode-selector { margin-bottom: 0; display: flex; width: 100%; }
+    .controls-grid .mode-btn { flex: 1; text-align: center; padding-left: 8px; padding-right: 8px; }
+    .field-block { margin-bottom: var(--s-4); }
+    .field-block .mode-selector { margin-bottom: 0; }
 
-    .operand-input {
-      width: 100%;
-      background: var(--paper-2);
-      border: 1px solid var(--rule);
-      border-radius: 6px;
-      color: var(--ink);
-      font-family: var(--f-mono);
-      font-size: 14px;
-      padding: 8px 10px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .operand-input:focus { border-color: var(--accent); }
-    .operand-input::placeholder { color: var(--muted); }
-    body.dark .operand-input {
-      background: var(--paper-2);
-      border-color: var(--rule);
-      color: var(--ink);
-    }
-    body.dark .operand-input:focus { border-color: var(--accent); }
+    .arch-checks { display: grid; grid-template-columns: 1fr; gap: var(--s-2); margin-bottom: var(--s-4); }
+    .arch-checks label { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; cursor: pointer; user-select: none; white-space: nowrap; }
+    .arch-checks input[type="checkbox"] { accent-color: var(--ink); width: 15px; height: 15px; margin: 0; }
+    .wt-final { font-size: 0.8125rem; color: var(--muted); margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+    .wt-final select { font-size: 0.8125rem; font-family: var(--font-sans); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-control-sm); padding: 2px 6px; color: var(--ink); }
+    .wt-final select:focus { border-color: var(--accent-ink); outline: none; }
 
-    .arch-checks {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 15px;
-    }
-    .arch-checks label {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 13px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .arch-checks input[type="checkbox"] {
-      accent-color: var(--accent);
-    }
-    body.dark .arch-checks input[type="checkbox"] {
-      accent-color: var(--accent);
-    }
-
-    .wt-final {
-      font-size: 12px;
-      color: var(--muted);
-      margin-left: 4px;
-    }
-    body.dark .wt-final { color: var(--muted); }
-    .wt-final select {
-      font-size: 12px;
-      font-family: inherit;
-      background: var(--paper-2);
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      padding: 2px 4px;
-      color: inherit;
-    }
-    body.dark .wt-final select {
-      background: var(--ink);
-      border-color: var(--muted);
-      color: var(--ink);
-    }
-
-    /* ── Playback ── */
-    .playback-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
+    /* Playback */
+    .btn-row { margin-top: 0; }
+    .playback-row { display: flex; align-items: center; gap: var(--s-1); flex-wrap: wrap; }
     .pb-btn {
-      background: transparent;
-      border: 1px solid var(--rule);
-      color: var(--muted);
-      border-radius: 5px;
-      padding: 5px 12px;
-      font-family: inherit;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.15s;
-      min-width: 36px;
-      text-align: center;
+      background: transparent; border: 1px solid var(--border); color: var(--ink-2);
+      border-radius: var(--radius-control-sm); padding: 6px 10px; font-family: var(--font-sans);
+      font-size: 0.8125rem; min-width: 34px; text-align: center;
+      transition: border-color var(--dur-quick) var(--ease-out), color var(--dur-quick) var(--ease-out), background var(--dur-quick) var(--ease-out);
     }
-    .pb-btn:hover { border-color: var(--muted); color: var(--ink); }
-    .pb-btn.active { border-color: var(--accent); color: var(--accent); background: color-mix(in oklab, var(--accent) 5%, transparent); }
-    body.dark .pb-btn { border-color: var(--rule); color: var(--muted); }
-    body.dark .pb-btn:hover { border-color: var(--muted); color: var(--ink); }
-    body.dark .pb-btn.active { border-color: var(--accent); color: var(--accent); background: color-mix(in oklab, var(--accent) 10%, transparent); }
+    .pb-btn:hover { border-color: var(--border-strong); color: var(--ink); background: var(--well); }
+    .pb-btn.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .speed-label { font-size: 0.8125rem; color: var(--muted); margin-left: var(--s-2); }
+    .speed-slider { width: 72px; accent-color: var(--ink); }
 
-    .speed-label {
-      font-size: 12px;
-      color: var(--muted);
-      margin-left: 8px;
-    }
-    body.dark .speed-label { color: var(--muted); }
-    .speed-slider {
-      width: 80px;
-      accent-color: var(--accent);
-    }
-    body.dark .speed-slider { accent-color: var(--accent); }
+    /* Result */
+    .result-row { display: flex; align-items: baseline; gap: var(--s-3); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.9375rem; flex-wrap: wrap; }
+    .result-val { font-weight: 700; font-size: 1.25rem; color: var(--ink); }
+    .result-fmt { font-size: 0.8125rem; color: var(--muted); }
+    .signed-info { font-size: 0.8125rem; color: var(--muted); margin-top: var(--s-2); width: 100%; font-family: var(--font-sans); }
 
-    /* ── Race Lanes ── */
-    .race-container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      margin-top: 15px;
-    }
+    /* Race lanes: hairline-separated rows inside one panel */
+    .race-container { display: flex; flex-direction: column; }
+    .race-lane { padding: var(--s-4) 0; border-top: 1px solid var(--border); }
+    .race-lane:first-child { border-top: 0; padding-top: 0; }
+    .race-lane:last-child { padding-bottom: 0; }
+    .lane-header { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); margin-bottom: var(--s-2); flex-wrap: wrap; }
+    .lane-title { font-weight: 600; font-size: 0.9375rem; }
+    .lane-title .lane-done { font-weight: 500; font-size: 0.8125rem; color: var(--success); margin-left: var(--s-2); }
+    .lane-stats { font-size: 0.8125rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .lane-stats b { font-weight: 500; color: var(--ink-2); font-family: var(--font-mono); }
+    .lane-step { font-size: 0.8125rem; color: var(--ink-2); margin-top: var(--s-2); min-height: 1.3em; }
+    .lane-step b { font-family: var(--font-mono); font-weight: 500; color: var(--muted); margin-right: 6px; font-variant-numeric: tabular-nums; }
 
-    .race-lane {
-      border: 1px solid var(--rule);
-      border-radius: 8px;
-      padding: 14px;
-      position: relative;
-    }
-    body.dark .race-lane { border-color: var(--rule); }
-    .race-lane.finished {
-      border-color: var(--success);
-    }
-    body.dark .race-lane.finished {
-      border-color: var(--success);
-    }
-
-    .lane-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .lane-title {
-      font-weight: 600;
-      font-size: 14px;
-    }
-    .lane-stats {
-      font-size: 12px;
-      color: var(--muted);
-      font-family: var(--f-mono);
-    }
-    body.dark .lane-stats { color: var(--muted); }
-
-    .lane-step {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 8px;
-      min-height: 1.3em;
-    }
-    body.dark .lane-step { color: var(--muted); }
-
-    /* ── Partial Product Matrix (canvas-like grid) ── */
-    .pp-matrix {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      margin: 8px 0;
-      overflow-x: auto;
-    }
-    .pp-row {
-      display: flex;
-      gap: 2px;
-      justify-content: flex-end;
-    }
-    .pp-spacer {
-      width: 18px;
-      height: 18px;
-      flex-shrink: 0;
-    }
+    /* Partial product matrix */
+    .pp-matrix { display: flex; flex-direction: column; gap: 2px; margin: var(--s-2) 0; overflow-x: auto; padding-bottom: 2px; }
+    .pp-row { display: flex; gap: 2px; justify-content: flex-end; }
+    .pp-spacer { width: 18px; height: 18px; flex-shrink: 0; }
     .pp-dot {
-      width: 18px;
-      height: 18px;
-      border-radius: 3px;
-      font-size: 9px;
-      font-family: var(--f-mono);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: background 0.2s, color 0.2s;
-      background: var(--paper-2);
-      color: var(--muted);
-      border: 1px solid var(--rule);
+      width: 18px; height: 18px; border-radius: 3px; font-size: 9px;
+      font-family: var(--font-mono); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: background var(--dur-quick) var(--ease-out), color var(--dur-quick) var(--ease-out);
+      background: var(--well); color: var(--muted); border: 1px solid transparent;
     }
-    body.dark .pp-dot {
-      background: var(--paper-2);
-      color: var(--muted);
-      border-color: var(--rule);
-    }
-    .pp-dot.active {
-      background: color-mix(in oklab, var(--warn) 18%, var(--paper));
-      color: var(--warn);
-      border-color: var(--warn);
-    }
-    body.dark .pp-dot.active {
-      background: color-mix(in oklab, var(--warn) 18%, var(--paper));
-      color: var(--warn);
-      border-color: var(--warn);
-    }
-    .pp-dot.done {
-      background: color-mix(in oklab, var(--success) 15%, transparent);
-      color: var(--success);
-      border-color: var(--success);
-      font-weight: 600;
-    }
-    body.dark .pp-dot.done {
-      background: color-mix(in oklab, var(--success) 15%, transparent);
-      color: var(--success);
-      border-color: var(--success);
-    }
-    .pp-dot.neg {
-      background: color-mix(in oklab, var(--error) 10%, transparent);
-      color: var(--error);
-      border-color: var(--error);
-    }
-    body.dark .pp-dot.neg {
-      background: color-mix(in oklab, var(--error) 15%, transparent);
-      color: var(--error);
-      border-color: var(--error);
-    }
-    .pp-dot.neg-done {
-      background: color-mix(in oklab, var(--error) 15%, transparent);
-      color: var(--error);
-      border-color: var(--success);
-      font-weight: 600;
-    }
-    body.dark .pp-dot.neg-done {
-      background: color-mix(in oklab, var(--error) 15%, transparent);
-      color: var(--error);
-      border-color: var(--success);
-    }
+    .pp-dot.active { background: var(--d1-wash); color: var(--d1); border-color: var(--d1); }
+    .pp-dot.done { background: var(--d5-wash); color: var(--d5); border-color: var(--d5); font-weight: 600; }
+    .pp-dot.neg { background: var(--error-wash); color: var(--error); border-color: var(--error); }
+    .pp-dot.neg-done { background: var(--error-wash); color: var(--error); border-color: var(--d5); font-weight: 600; }
+    .pp-sign { background: none; border: 0; color: var(--ink-2); font-size: 11px; font-weight: 600; }
+    .result-dots { display: flex; gap: 2px; justify-content: flex-end; margin-top: 4px; padding-top: 4px; border-top: 2px solid var(--ink); }
+    .pp-dot.result { background: var(--surface); color: var(--ink); border-color: var(--border-strong); font-weight: 600; }
+    .pp-dot.result.done { background: var(--d5-wash); color: var(--d5); border-color: var(--d5); }
 
-    .booth-encoding {
-      font-size: 11px;
-      font-family: var(--f-mono);
-      color: var(--muted);
-      margin: 6px 0;
-    }
-    body.dark .booth-encoding { color: var(--muted); }
+    .booth-encoding { font-size: 0.8125rem; font-family: var(--font-mono); color: var(--muted); margin: 0 0 var(--s-2); }
     .booth-encoding .booth-neg { color: var(--error); font-weight: 600; }
-    .booth-encoding .booth-pos { color: var(--success); font-weight: 600; }
+    .booth-encoding .booth-pos { color: var(--d5); font-weight: 600; }
     .booth-encoding .booth-zero { color: var(--muted); }
-    body.dark .booth-encoding .booth-neg { color: var(--error); }
-    body.dark .booth-encoding .booth-pos { color: var(--success); }
 
-    .result-dots {
-      display: flex;
-      gap: 2px;
-      justify-content: flex-end;
-      margin-top: 4px;
-      padding-top: 4px;
-      border-top: 2px solid var(--accent);
-    }
-    body.dark .result-dots {
-      border-top-color: var(--accent);
-    }
-    .pp-dot.result {
-      background: color-mix(in oklab, var(--accent) 10%, transparent);
-      color: var(--accent);
-      border-color: var(--accent);
-      font-weight: 600;
-    }
-    body.dark .pp-dot.result {
-      background: color-mix(in oklab, var(--accent) 15%, transparent);
-      color: var(--accent);
-      border-color: var(--accent);
-    }
+    .pp-legend { display: flex; gap: var(--s-4); flex-wrap: wrap; font-size: 0.75rem; color: var(--muted); margin-bottom: var(--s-3); }
+    .pp-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .pp-legend i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid; }
+    .pp-legend .l-wait i { background: var(--well); border-color: var(--border); }
+    .pp-legend .l-active i { background: var(--d1-wash); border-color: var(--d1); }
+    .pp-legend .l-done i { background: var(--d5-wash); border-color: var(--d5); }
+    .pp-legend .l-neg i { background: var(--error-wash); border-color: var(--error); }
 
-    /* ── Result Display ── */
-    .result-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 12px;
-      font-family: var(--f-mono);
-      font-size: 14px;
-      flex-wrap: wrap;
-    }
-    .result-val {
-      font-weight: 600;
-      color: var(--accent);
-    }
-    body.dark .result-val { color: var(--accent); }
-    .result-fmt {
-      font-size: 12px;
-      color: var(--muted);
-    }
-    body.dark .result-fmt { color: var(--muted); }
+    /* Progress */
+    .progress-bar { height: 3px; background: var(--well-2); border-radius: 2px; margin-top: var(--s-2); overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--d1); transition: width 0.15s; border-radius: 2px; }
+    .progress-fill.done { background: var(--d5); }
 
-    /* ── Summary Table ── */
-    .summary-tbl {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-      margin-top: 10px;
-    }
-    .summary-tbl th {
-      text-align: left;
-      padding: 8px 10px;
-      border-bottom: 2px solid var(--rule);
-      font-weight: 600;
-      font-size: 12px;
-      color: var(--muted);
-    }
-    body.dark .summary-tbl th {
-      border-bottom-color: var(--rule);
-      color: var(--muted);
-    }
-    .summary-tbl td {
-      padding: 6px 10px;
-      border-bottom: 1px solid var(--rule-soft);
-      font-family: var(--f-mono);
-    }
-    body.dark .summary-tbl td { border-bottom-color: var(--ink); }
+    /* Summary table */
+    .summary-tbl .arch-name { font-family: var(--font-sans); font-weight: 500; color: var(--ink); }
+    .summary-tbl .best { color: var(--d5); font-weight: 600; }
     .summary-tbl tr:last-child td { border-bottom: none; }
-    .summary-tbl .best {
-      color: var(--success);
-      font-weight: 600;
-    }
-    body.dark .summary-tbl .best { color: var(--success); }
-    .summary-tbl .arch-name {
-      font-family: inherit;
-      font-weight: 500;
-    }
+    .formula-hint { font-size: 0.75rem; color: var(--muted); font-family: var(--font-mono); font-weight: 400; margin-left: 4px; }
 
-    .formula-hint {
-      font-size: 11px;
-      color: var(--muted);
-      font-family: inherit;
-      font-weight: 400;
-    }
-    body.dark .formula-hint { color: var(--muted); }
+    .results-empty { color: var(--muted); font-size: 0.9375rem; }
+    .tool-actions { margin-top: var(--s-4); }
 
-    /* ── Progress bar ── */
-    .progress-bar {
-      height: 3px;
-      background: var(--rule);
-      border-radius: 2px;
-      margin-top: 8px;
-      overflow: hidden;
+    @media (max-width: 960px) {
+      .controls-grid { grid-template-columns: 1fr 1fr 1fr; }
+      .controls-grid > .span2 { grid-column: auto; }
+      .arch-checks { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
     }
-    body.dark .progress-bar { background: var(--ink); }
-    .progress-fill {
-      height: 100%;
-      background: var(--accent);
-      transition: width 0.15s;
-      border-radius: 2px;
-    }
-    body.dark .progress-fill { background: var(--accent); }
-    .progress-fill.done { background: var(--success); }
-    body.dark .progress-fill.done { background: var(--success); }
-
-    .signed-info {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 6px;
-    }
-    body.dark .signed-info { color: var(--muted); }
-
-    /* ── Responsive ── */
-    @media (max-width: 600px) {
-      .controls-grid {
-        grid-template-columns: 1fr;
-      }
-      .arch-checks {
-        gap: 10px;
-      }
-      .playback-row {
-        gap: 4px;
-      }
-      .pb-btn {
-        padding: 5px 8px;
-        font-size: 12px;
-      }
-      .lane-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-      }
-      .summary-tbl {
-        font-size: 11px;
-      }
-      .summary-tbl th, .summary-tbl td {
-        padding: 5px 6px;
-      }
-      .pp-dot, .pp-spacer {
-        width: 14px;
-        height: 14px;
-        font-size: 7px;
-      }
+    @media (max-width: 640px) {
+      .controls-grid { grid-template-columns: 1fr; }
+      .arch-checks { grid-template-columns: 1fr; }
+      .pb-btn { padding: 6px 8px; }
+      .pp-dot, .pp-spacer { width: 15px; height: 15px; font-size: 8px; }
     }
   </style>
 </head>
@@ -426,144 +153,182 @@
   }
 })();
 </script>
-  <main class="container">
-    <div class="nav-row">
-      <div class="nav-links">
-        <a href="/" class="back-link">&larr; p14m.com</a>
-        <span>|</span>
-        <a href="/adders/">Adders</a>
-        <span>|</span>
-        <a href="/bits/">Bits</a>
-        <span>|</span>
-        <a href="/cache/">Cache</a>
-        <span>|</span>
-        <a href="/circuitgen/">CircuitGen</a>
-        <span>|</span>
-        <a href="/float/">Float</a>
-        <span>|</span>
-        <a href="/kmap/">K-Map</a>
-        <span>|</span>
-        <a href="/orderbook/">OrderBook</a>
-        <span>|</span>
-        <a href="/learn/">Learn</a>
-      </div>
-      <button class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-text">&#9790;</span>
-      </button>
-    </div>
+  <a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+    <nav class="site-links" aria-label="Site">
+      <a href="/#tools">Tools</a>
+      <a href="/learn/">Learn</a>
+      <a href="/#about">About</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" onclick="toggleTheme()">Dark</button>
+    </nav>
+  </div>
+  <nav class="tool-strip" aria-label="Tools">
+    <a href="/adders/">Adders</a>
+    <a href="/bits/">Bits</a>
+    <a href="/cache/">Cache</a>
+    <a href="/circuitgen/">CircuitGen</a>
+    <a href="/float/">Float</a>
+    <a href="/kmap/">K-Map</a>
+    <a href="/multipliers/" aria-current="page">Multipliers</a>
+    <a href="/orderbook/">Order Book</a>
+  </nav>
+</header>
+<main id="main" class="container">
 
-    <h1>Multiplier Visualizer</h1>
-    <p class="subtitle">Compare binary multiplier architectures with animated partial product reduction</p>
+    <div class="page-head">
+    <h1>Multiplier architecture visualizer</h1>
+    <p class="lede">Multiply the same operands with shift-and-add, Booth radix-2, array and Wallace tree multipliers, then compare partial product reduction, area and delay.</p>
+  </div>
 
     <details class="how-to">
-      <summary>How to use</summary>
+      <summary>How it works</summary>
       <div class="how-to-body">
-        <p>This binary multiplier visualizer lets you compare Shift-and-Add, Booth's Radix-2, Array, and Wallace Tree multiplier architectures side by side. Animate partial product generation and reduction step by step to understand how each design trades off area for speed, and see signed multiplication with Booth encoding in action.</p>
+        <p>Four multiplier architectures run on the same operands and race against each other, each finishing in proportion to its real gate delay. Watch partial products get generated and reduced step by step, and compare how each design trades area for speed.</p>
         <ul>
-          <li>Enter two operands (A and B) in <strong>decimal, bin (<code>0b1010</code>), octal (<code>0o200</code>) or hex</strong> (<code>0xFF</code>).</li>
-          <li>Select <strong>bit width</strong> (4, 8, 12, or 16) and check which <strong>architectures</strong> to compare.</li>
-          <li>Click <strong>Compute</strong> to see the result, then use playback controls to <strong>animate</strong> partial product reduction.</li>
-          <li>The <strong>race view</strong> shows all selected architectures simultaneously &mdash; each finishes proportional to its actual gate delay.</li>
-          <li><strong>Step</strong> (&#9654;|) advances one gate delay at a time. The description below each diagram explains the current step.</li>
-          <li>The <strong>summary table</strong> compares area (full-adder equivalents), delay (gate delays), and area&times;delay product.</li>
-          <li><strong>Booth's (Radix-2)</strong> encodes the multiplier into {&minus;1, 0, +1} digits, skipping runs of 1s. Partial products shown in <span style="color:var(--error);">red</span> are subtracted. Handles signed multiplication natively.</li>
-          <li><strong>Wallace Tree</strong> uses a selectable final carry-propagation adder (RCA or CLA).</li>
-          <li>Toggle <strong>Signed (2's complement)</strong> to interpret operands and the 2n-bit result as signed integers.</li>
+          <li>Enter operands A and B in <strong>decimal, binary (<code>0b1010</code>), octal (<code>0o200</code>) or hex</strong> (<code>0xFF</code>).</li>
+          <li>Pick a <strong>bit width</strong> (4, 8, 12 or 16) and tick the <strong>architectures</strong> to compare.</li>
+          <li>Click <strong>Compute product</strong>, then use the playback controls to <strong>animate</strong> the reduction. <strong>Step</strong> advances one gate delay at a time; the line under each diagram explains the current step.</li>
+          <li>The <strong>comparison table</strong> lists area in full-adder equivalents, delay in gate delays, and their product.</li>
+          <li><strong>Booth radix-2</strong> recodes the multiplier into {&minus;1, 0, +1} digits and skips runs of ones. Partial products shown in red are subtracted. It handles signed operands natively.</li>
+          <li><strong>Wallace tree</strong> finishes with a carry-propagate adder of your choice (ripple carry or carry lookahead).</li>
+          <li>Choose <strong>Signed (two's complement)</strong> to read the operands and the 2n-bit result as signed integers.</li>
         </ul>
       </div>
     </details>
-    <button class="btn-t" onclick="copyLearnPrompt()" style="margin-bottom:16px;">Ask AI: Booth's Algorithm</button>
 
-    <!-- Input Section -->
-    <div class="section">
-      <div class="controls-grid">
-        <div>
-          <label class="lbl">Bit Width</label>
-          <div class="mode-selector" id="bitWidthSelector">
-            <button class="mode-btn" data-bits="4">4</button>
-            <button class="mode-btn on" data-bits="8">8</button>
-            <button class="mode-btn" data-bits="12">12</button>
-            <button class="mode-btn" data-bits="16">16</button>
+    <div class="tool-layout">
+      <div class="tool-controls">
+        <div class="section workbench">
+          <div class="controls-grid">
+            <div class="span2">
+              <span class="lbl" id="bitWidthLabel">Bit width</span>
+              <div class="mode-selector" id="bitWidthSelector" role="group" aria-labelledby="bitWidthLabel">
+                <button class="mode-btn" data-bits="4">4</button>
+                <button class="mode-btn on" data-bits="8">8</button>
+                <button class="mode-btn" data-bits="12">12</button>
+                <button class="mode-btn" data-bits="16">16</button>
+              </div>
+            </div>
+            <div>
+              <label class="lbl" for="inputA">Operand A</label>
+              <input class="inp" id="inputA" value="13" placeholder="0" spellcheck="false" autocomplete="off">
+            </div>
+            <div>
+              <label class="lbl" for="inputB">Operand B</label>
+              <input class="inp" id="inputB" value="11" placeholder="0" spellcheck="false" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="field-block">
+            <span class="lbl" id="signLabel">Interpretation</span>
+            <div class="mode-selector" id="signSelector" role="group" aria-labelledby="signLabel">
+              <button class="mode-btn on" data-sign="unsigned">Unsigned</button>
+              <button class="mode-btn" data-sign="signed">Signed (two's complement)</button>
+            </div>
+          </div>
+
+          <span class="lbl">Architectures</span>
+          <div class="arch-checks">
+            <label><input type="checkbox" checked data-arch="saa"> Shift-and-add</label>
+            <label><input type="checkbox" data-arch="booth"> Booth radix-2</label>
+            <label><input type="checkbox" checked data-arch="array"> Array multiplier</label>
+            <label>
+              <input type="checkbox" checked data-arch="wallace"> Wallace tree
+              <span class="wt-final" id="wtFinalWrap">
+                <label for="wtFinal" style="font-size:inherit;color:inherit;">final adder</label>
+                <select id="wtFinal" aria-label="Wallace tree final adder"><option value="rca">RCA</option><option value="cla">CLA</option></select>
+              </span>
+            </label>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn-go" id="computeBtn">Compute product</button>
+            <div class="playback-row" id="playbackControls" style="display:none;">
+              <button class="pb-btn" id="resetBtn" title="Reset animation" aria-label="Reset animation">&#8634;</button>
+              <button class="pb-btn" id="playBtn" title="Play" aria-label="Play">&#9654;</button>
+              <button class="pb-btn" id="stepBtn" title="Step one gate delay" aria-label="Step one gate delay">&#9654;|</button>
+              <label class="speed-label" for="speedSlider">Speed</label>
+              <input type="range" class="speed-slider" id="speedSlider" min="1" max="5" value="2">
+            </div>
+          </div>
+
+          <div id="errorBox" class="err" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div class="tool-results">
+        <div id="resultsEmpty" class="section"><p class="results-empty">Set the operands and click Compute product to run the multipliers.</p></div>
+
+        <div id="resultSection" class="section" style="display:none;">
+          <div class="result-label">Product</div>
+          <div id="resultDisplay" class="result-row"></div>
+        </div>
+
+        <div id="raceSection" class="section" style="display:none;">
+          <div class="result-label">Partial product reduction</div>
+          <div class="pp-legend" aria-hidden="true">
+            <span class="l-wait"><i></i>waiting</span>
+            <span class="l-active"><i></i>being added</span>
+            <span class="l-done"><i></i>resolved</span>
+            <span class="l-neg"><i></i>subtracted (Booth)</span>
+          </div>
+          <div class="race-container" id="raceContainer"></div>
+        </div>
+
+        <div id="summarySection" class="section" style="display:none;">
+          <div class="result-label">Comparison <span class="lbl-hint" id="summaryBits"></span></div>
+          <table class="data-table summary-tbl" id="summaryTable">
+            <thead>
+              <tr>
+                <th>Architecture</th>
+                <th>Area (FA equivalents)</th>
+                <th>Delay (gate delays)</th>
+                <th>Area &times; delay</th>
+              </tr>
+            </thead>
+            <tbody id="summaryBody"></tbody>
+          </table>
+          <div class="tool-actions">
+            <button class="btn-t" onclick="copyLearnPrompt()">Copy a prompt about Booth's algorithm</button>
           </div>
         </div>
-        <div>
-          <label class="lbl" for="inputA">Operand A</label>
-          <input class="operand-input" id="inputA" value="13" placeholder="0" spellcheck="false">
-        </div>
-        <div>
-          <label class="lbl" for="inputB">Operand B</label>
-          <input class="operand-input" id="inputB" value="11" placeholder="0" spellcheck="false">
-        </div>
       </div>
-
-      <div style="margin-bottom:15px;">
-        <label class="lbl">Interpretation</label>
-        <div class="mode-selector" id="signSelector">
-          <button class="mode-btn on" data-sign="unsigned">Unsigned</button>
-          <button class="mode-btn" data-sign="signed">Signed (2's complement)</button>
-        </div>
-      </div>
-
-      <div class="arch-checks">
-        <label><input type="checkbox" checked data-arch="saa"> Shift-and-Add</label>
-        <label><input type="checkbox" data-arch="booth"> Booth's (Radix-2)</label>
-        <label><input type="checkbox" checked data-arch="array"> Array Multiplier</label>
-        <label>
-          <input type="checkbox" checked data-arch="wallace"> Wallace Tree
-          <span class="wt-final" id="wtFinalWrap">
-            CPA: <select id="wtFinal"><option value="rca">RCA</option><option value="cla">CLA</option></select>
-          </span>
-        </label>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn-go" id="computeBtn">Compute</button>
-        <div class="playback-row" id="playbackControls" style="display:none;">
-          <button class="pb-btn" id="resetBtn" title="Reset">&#8634;</button>
-          <button class="pb-btn" id="playBtn" title="Play">&#9654;</button>
-          <button class="pb-btn" id="stepBtn" title="Step forward">&#9654;|</button>
-          <span class="speed-label">Speed</span>
-          <input type="range" class="speed-slider" id="speedSlider" min="1" max="5" value="2">
-        </div>
-      </div>
-
-      <div id="errorBox" class="err" style="display:none;"></div>
     </div>
 
-    <!-- Result -->
-    <div id="resultSection" class="section" style="display:none;">
-      <div class="result-label">Result</div>
-      <div id="resultDisplay" class="result-row"></div>
-    </div>
-
-    <!-- Race View -->
-    <div id="raceSection" style="display:none;">
-      <div class="race-container" id="raceContainer"></div>
-    </div>
-
-    <!-- Summary Table -->
-    <div id="summarySection" class="section" style="display:none;">
-      <div class="result-label">Architecture Comparison <span class="lbl-hint" id="summaryBits"></span></div>
-      <table class="summary-tbl" id="summaryTable">
-        <thead>
-          <tr>
-            <th>Architecture</th>
-            <th>Area <span class="formula-hint">(FA eq.)</span></th>
-            <th>Delay <span class="formula-hint">(gate &Delta;)</span></th>
-            <th>A&times;D</th>
-          </tr>
-        </thead>
-        <tbody id="summaryBody"></tbody>
-      </table>
-    </div>
     <div class="feedback-box" data-topic="tool-multipliers" data-label="Was this tool useful?"></div>
-
-    <div class="footer">&copy; 2026 <a href="/">p14m.com</a> <span class="footer-sep">·</span> <a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Submit feedback</a></div>
-  </main>
+</main>
+<footer class="site-footer">
+  <nav aria-label="Footer">
+    <ul class="site-footer-pages">
+      <li><a href="/adders/">Adder architecture visualizer</a></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a></li>
+      <li><a href="/cache/">Cache simulator</a></li>
+      <li><a href="/circuitgen/">CircuitGen</a></li>
+      <li><a href="/float/">IEEE 754 floating-point converter</a></li>
+      <li><a href="/kmap/">K-Map generator</a></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
+      <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/learn/">Learn</a></li>
+    </ul>
+  </nav>
+  <div class="site-footer-line">
+    <span>&copy; 2026 Peter Moses</span>
+    <ul class="site-footer-meta">
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Send feedback</a></li>
+    </ul>
+  </div>
+</footer>
 
 <div id="toast" class="toast" style="display:none;"></div>
 
 <script>
+function escapeHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -581,7 +346,7 @@ function copyLearnPrompt() {
 4. Why does Booth's naturally handle signed multiplication without needing sign extension tricks?
 5. Use a small concrete example (like 5 × -3) and show each step of the encoding and accumulation.`;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(prompt).then(() => showToast('Prompt copied — paste it into any AI chat'));
+    navigator.clipboard.writeText(prompt).then(() => showToast('Prompt copied. Paste it into any AI chat.'));
   }
 }
 </script>
@@ -589,26 +354,7 @@ function copyLearnPrompt() {
 <script>
 /* ═══════════════════════ Theme ═══════════════════════ */
 
-function toggleTheme() {
-  const body = document.body;
-  const themeText = document.getElementById('theme-text');
-  if (body.classList.contains('dark')) {
-    body.classList.remove('dark');
-    themeText.innerHTML = '&#9790;';
-    localStorage.setItem('theme', 'light');
-  } else {
-    body.classList.add('dark');
-    themeText.innerHTML = '&#9788;';
-    localStorage.setItem('theme', 'dark');
-  }
-}
 
-document.addEventListener('DOMContentLoaded', function() {
-  const themeText = document.getElementById('theme-text');
-  if (document.body.classList.contains('dark')) {
-    themeText.innerHTML = '&#9788;';
-  }
-});
 
 /* ═══════════════════════ Constants & Formulas ═══════════════════════ */
 
@@ -633,7 +379,7 @@ function cpaDelay(type, width) {
 
 const MULTIPLIERS = {
   saa: {
-    name: 'Shift-and-Add',
+    name: 'Shift-and-add',
     short: 'S&A',
     area: n => 2 * n,
     delay: n => 2 * n * n,
@@ -641,7 +387,7 @@ const MULTIPLIERS = {
     delayFormula: '2n\u00B2',
   },
   array: {
-    name: 'Array Multiplier',
+    name: 'Array multiplier',
     short: 'Array',
     area: n => n * n,
     delay: n => 4 * (n - 1),
@@ -649,7 +395,7 @@ const MULTIPLIERS = {
     delayFormula: '4(n\u22121)',
   },
   booth: {
-    name: "Booth's (Radix-2)",
+    name: "Booth radix-2",
     short: 'Booth',
     area: n => 2 * n,
     delay: n => 2 * n * n,
@@ -657,7 +403,7 @@ const MULTIPLIERS = {
     delayFormula: '2n\u00B2',
   },
   wallace: {
-    name: 'Wallace Tree',
+    name: 'Wallace tree',
     short: 'Wallace',
     area: (n, ft) => n * n,
     delay: (n, ft) => {
@@ -1077,7 +823,7 @@ function simulateWallace(a, b, n, finalType) {
 
     steps.push({
       time: 1 + (l + 1) * 2, // AND gate (1Δ) + 2Δ per reduction level
-      desc: `Reduction level ${l + 1}: ${rowCount} rows \u2192 ${newCount} rows (${groups3} groups of 3${remaining ? ' + ' + remaining + ' pass-through' : ''})`,
+      desc: `Reduction level ${l + 1}: ${rowCount} rows to ${newCount} rows (${groups3} groups of 3${remaining ? ' + ' + remaining + ' pass-through' : ''})`,
       ppState: ppS,
       resultBits: {},
     });
@@ -1143,7 +889,7 @@ function renderPPMatrix(pp, n, resultWidth, boothDigits) {
       const d = boothDigits[i];
       const sign = d === -1 ? '\u2212' : d === 1 ? '+' : '';
       if (sign) {
-        html += `<div class="pp-dot" style="font-size:11px;font-weight:600;border:none;background:none;color:inherit;">${sign}</div>`;
+        html += `<div class="pp-dot pp-sign">${sign}</div>`;
       }
     }
     // PP dots
@@ -1216,7 +962,7 @@ function buildRaceLanes() {
     lane.innerHTML = `
       <div class="lane-header">
         <span class="lane-title">${info.name}${key === 'wallace' ? ' + ' + state.wtFinal.toUpperCase() : ''}</span>
-        <span class="lane-stats">Area: ${areaVal} FA &middot; Delay: ${delayVal}&Delta;</span>
+        <span class="lane-stats">Area <b>${areaVal}</b> FA, delay <b>${delayVal}</b>&Delta;</span>
       </div>
       ${renderPPMatrix(sim.pp, n, resultWidth, sim.boothDigits)}
       <div class="progress-bar"><div class="progress-fill" data-pf="${key}" style="width:0%"></div></div>
@@ -1264,12 +1010,12 @@ function updateRaceStep(currentTime) {
         const resultWidth = 2 * state.bitWidth;
         if (state.signed) {
           const sv = toSigned2n(sim.result, resultWidth);
-          desc.textContent = `Done at ${finalTime}\u0394 \u2014 Result: ${sv} (${toHex2n(sim.result, resultWidth)})`;
+          desc.innerHTML = `<b>${finalTime}\u0394</b>Done. Result ${sv} (${toHex2n(sim.result, resultWidth)})`;
         } else {
-          desc.textContent = `Done at ${finalTime}\u0394 \u2014 Result: ${sim.result} (${toHex2n(sim.result, resultWidth)})`;
+          desc.innerHTML = `<b>${finalTime}\u0394</b>Done. Result ${sim.result} (${toHex2n(sim.result, resultWidth)})`;
         }
       } else {
-        desc.textContent = `[${activeStep.time}\u0394] ${activeStep.desc}`;
+        desc.innerHTML = `<b>${activeStep.time}\u0394</b>${escapeHtml(activeStep.desc)}`;
       }
     }
 
@@ -1443,7 +1189,7 @@ function compute() {
     // The unsigned result bits are the same — just interpret differently
     resultHTML = `
       <span class="result-val">${signedResult}</span>
-      <span class="result-fmt">(unsigned: ${result})</span>
+      <span class="result-fmt">unsigned ${result}</span>
       <span class="result-fmt">= ${toHex2n(result, resultWidth)}</span>
       <span class="result-fmt">= 0b${toBin2n(result, resultWidth)}</span>
     `;
@@ -1457,6 +1203,7 @@ function compute() {
   }
   document.getElementById('resultDisplay').innerHTML = resultHTML;
   document.getElementById('resultSection').style.display = '';
+  document.getElementById('resultsEmpty').style.display = 'none';
 
   // Build race lanes and summary
   buildRaceLanes();

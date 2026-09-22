@@ -1,23 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>K-Map Generator: Karnaugh Map Solver and Calculator, 2 to 6 Variables | p14m</title>
+  <meta name="description" content="Free online K-map generator and Karnaugh map calculator for 2 to 6 variables. Enter a Boolean expression, minterms or maxterms and get the minimized SOP and POS, groups, truth table, Verilog, VHDL and circuit.">
+  <meta name="author" content="Peter Moses">
+  <link rel="canonical" href="https://p14m.com/kmap/">
+  <meta name="theme-color" content="#F4F5F7">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="p14m">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://p14m.com/kmap/">
+  <meta property="og:title" content="K-Map Generator: Karnaugh Map Solver and Calculator, 2 to 6 Variables | p14m">
+  <meta property="og:description" content="Free online K-map generator and Karnaugh map calculator for 2 to 6 variables. Enter a Boolean expression, minterms or maxterms and get the minimized SOP and POS, groups, truth table, Verilog, VHDL and circuit.">
+  <meta property="og:image" content="https://p14m.com/og/kmap.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="K-Map generator on p14m.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="K-Map Generator: Karnaugh Map Solver and Calculator, 2 to 6 Variables | p14m">
+  <meta name="twitter:description" content="Free online K-map generator and Karnaugh map calculator for 2 to 6 variables. Enter a Boolean expression, minterms or maxterms and get the minimized SOP and POS, groups, truth table, Verilog, VHDL and circuit.">
+  <meta name="twitter:image" content="https://p14m.com/og/kmap.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" href="/favicon-48.png">
+  <link rel="preload" href="/fonts/mona-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/monaspace-neon-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/shared.css">
+  <script src="/lib/site.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"K-Map generator","url":"https://p14m.com/kmap/","description":"Free online K-map generator and Karnaugh map calculator for 2 to 6 variables. Enter a Boolean expression, minterms or maxterms and get the minimized SOP and POS, groups, truth table, Verilog, VHDL and circuit.","applicationCategory":"EducationalApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Peter Moses","url":"https://p14m.com/"},"inLanguage":"en","image":"https://p14m.com/og/kmap.png"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"p14m","item":"https://p14m.com/"},{"@type":"ListItem","position":2,"name":"K-Map generator","item":"https://p14m.com/kmap/"}]}]}</script>
+  <script src="/lib/feedback.js" defer></script>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Interactive Karnaugh Map generator supporting 2-6 variables with SOP/POS minimization, XOR/XNOR detection, and don't-care states.">
-  <meta property="og:title" content="K-Map Generator | p14m.com">
-  <meta property="og:description" content="Interactive Karnaugh Map solver with SOP/POS minimization, XOR/XNOR detection, and don't-care states.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://p14m.com/kmap/">
-  <title>K-Map Generator | p14m.com</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
-  <link rel="stylesheet" href="/shared.css">
-  <script src="/lib/feedback.js" defer></script>
   <style>
     /* ── K-Map Specific ── */
+
     .km-tbl {
       border-collapse: collapse;
       margin: 0 auto;
@@ -62,15 +81,15 @@
       pointer-events: none;
       z-index: 1;
     }
-    .km-cell.v1 { color: var(--accent); }
+    .km-cell.v1 { color: var(--ink); }
     .km-cell.v0 { color: var(--muted); }
     .km-cell.vx { color: var(--mant); }
-    body.dark .km-cell.v1 { color: var(--accent); }
+    body.dark .km-cell.v1 { color: var(--ink); }
     body.dark .km-cell.v0 { color: var(--muted); }
     body.dark .km-cell.vx { color: var(--warn); }
     .km-cell.click { cursor: pointer; }
-    .km-cell.click:hover { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 5%, transparent) !important; }
-    body.dark .km-cell.click:hover { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 10%, transparent) !important; }
+    .km-cell.click:hover { border-color: var(--border-strong); background: var(--well) !important; }
+    body.dark .km-cell.click:hover { border-color: var(--border-strong); background: var(--well) !important; }
 
     .tt {
       border-collapse: collapse;
@@ -94,58 +113,35 @@
       color: var(--muted);
     }
     body.dark .tt td { border-bottom-color: var(--ink); color: var(--muted); }
-    .tt tr:hover td { background: color-mix(in oklab, var(--accent) 3%, transparent); }
-    body.dark .tt tr:hover td { background: color-mix(in oklab, var(--accent) 5%, transparent); }
-    .tt .o1 { color: var(--accent); font-weight: 600; }
+    .tt tr:hover td { background: var(--well); }
+        .tt .o1 { color: var(--ink); font-weight: 600; }
     .tt .o0 { color: var(--muted); }
     .tt .ox { color: var(--mant); font-weight: 600; }
-    body.dark .tt .o1 { color: var(--accent); }
-    body.dark .tt .o0 { color: var(--muted); }
+        body.dark .tt .o0 { color: var(--muted); }
     body.dark .tt .ox { color: var(--warn); }
 
-    .tag {
-      display: inline-block;
-      background: color-mix(in oklab, var(--accent) 10%, transparent);
-      border-radius: 3px;
-      padding: 2px 6px;
-      font-size: 10px;
-      color: var(--accent);
-      font-weight: 500;
-      margin-left: 6px;
-    }
-    body.dark .tag { background: color-mix(in oklab, var(--accent) 15%, transparent); color: var(--accent); }
-    .tag.xor { background: rgba(230, 126, 34, 0.1); color: var(--mant); }
-    body.dark .tag.xor { background: color-mix(in oklab, var(--warn) 15%, transparent); color: var(--warn); }
-
+    .tag.xor { background: var(--d6-wash); color: var(--d6); }
+    
     .mint-box {
-      background: var(--paper-2);
-      border: 1px solid var(--rule);
-      border-radius: 6px;
-      padding: 10px 14px;
       font-size: 13px;
       font-family: var(--f-mono);
       color: var(--muted);
       line-height: 1.8;
     }
-    body.dark .mint-box { background: var(--paper-2); border-color: var(--rule); color: var(--muted); }
-    .mint-box .sym { font-weight: 600; }
+        .mint-box .sym { font-weight: 600; }
     .mint-box .dc { color: var(--mant); }
     body.dark .mint-box .dc { color: var(--warn); }
 
     .steps-box {
-      background: var(--paper-2);
-      border: 1px solid var(--rule);
-      border-radius: 6px;
       padding: 14px 16px;
       font-size: 13px;
       line-height: 1.7;
     }
-    body.dark .steps-box { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
+    body.dark .steps-box { color: var(--ink-2); }
     .steps-box .step { margin-bottom: 12px; }
     .steps-box .step:last-child { margin-bottom: 0; }
-    .steps-box .step-num { font-weight: 700; color: var(--accent); margin-right: 4px; }
-    body.dark .steps-box .step-num { color: var(--accent); }
-    .steps-box .step-title { font-weight: 600; }
+    .steps-box .step-num { font-weight: 600; color: var(--ink-2); margin-right: 4px; font-variant-numeric: tabular-nums; }
+        .steps-box .step-title { font-weight: 600; }
     .steps-box .step-body { margin-top: 4px; padding-left: 20px; color: var(--muted); }
     body.dark .steps-box .step-body { color: var(--muted); }
     .steps-box .step-body code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 3px; font-family: var(--f-mono); }
@@ -178,12 +174,17 @@
     }
 
     .circuit-wrap {
-      overflow: auto; border: 1px solid var(--rule); border-radius: 6px;
-      background: var(--paper-2); min-height: 150px; position: relative;
+      overflow: auto; border-radius: var(--radius-control);
+      background: var(--well); min-height: 150px; position: relative;
     }
-    body.dark .circuit-wrap { border-color: var(--rule); background: var(--paper); }
     .circuit-wrap svg { display: block; min-width: 100%; }
 
+    .tool-controls .input-row { grid-template-columns: 1fr; }
+    .tool-controls .btn-row { flex-direction: column; align-items: stretch; }
+    .tool-controls .btn-go { width: 100%; }
+    .tool-controls .toggle-btns { margin-left: 0; }
+    .tool-controls .ref-section { font-size: 0.75rem; }
+    .empty-state { color: var(--muted); font-size: 0.9375rem; padding: var(--s-6) 0; }
     @media (max-width: 600px) {
       .km-cell { width: 38px; height: 38px; font-size: 14px; }
     }
@@ -198,64 +199,66 @@
   }
 })();
 </script>
-  <main class="container">
-    <div class="nav-row">
-      <div class="nav-links">
-        <a href="/" class="back-link">&larr; p14m.com</a>
-        <span>|</span>
-        <a href="/adders/">Adders</a>
-        <span>|</span>
-        <a href="/bits/">Bits</a>
-        <span>|</span>
-        <a href="/cache/">Cache</a>
-        <span>|</span>
-        <a href="/circuitgen/">CircuitGen</a>
-        <span>|</span>
-        <a href="/float/">Float</a>
-        <span>|</span>
-        <a href="/multipliers/">Multipliers</a>
-        <span>|</span>
-        <a href="/orderbook/">OrderBook</a>
-        <span>|</span>
-        <a href="/learn/">Learn</a>
-      </div>
-      <button class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-text">&#9790;</span>
-      </button>
-    </div>
+  <a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+    <nav class="site-links" aria-label="Site">
+      <a href="/#tools">Tools</a>
+      <a href="/learn/">Learn</a>
+      <a href="/#about">About</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" onclick="toggleTheme()">Dark</button>
+    </nav>
+  </div>
+  <nav class="tool-strip" aria-label="Tools">
+    <a href="/adders/">Adders</a>
+    <a href="/bits/">Bits</a>
+    <a href="/cache/">Cache</a>
+    <a href="/circuitgen/">CircuitGen</a>
+    <a href="/float/">Float</a>
+    <a href="/kmap/" aria-current="page">K-Map</a>
+    <a href="/multipliers/">Multipliers</a>
+    <a href="/orderbook/">Order Book</a>
+  </nav>
+</header>
+<main id="main" class="container">
 
-    <h1>K-Map Generator</h1>
-    <p class="subtitle">Karnaugh Map Solver &amp; Visualizer</p>
+    <div class="page-head">
+    <h1>K-Map generator</h1>
+    <p class="lede">Karnaugh map solver for 2 to 6 variables. Enter an expression, minterms or maxterms and get the grouped map, minimized SOP and POS, a truth table, Verilog, VHDL and the circuit.</p>
+  </div>
 
     <details class="how-to">
-      <summary>How to use</summary>
+      <summary>How it works</summary>
       <div class="how-to-body">
-        <p>This Karnaugh Map solver generates and minimizes K-Maps for 2 to 6 variables, producing simplified SOP and POS expressions with automatic grouping. Enter a boolean expression, minterms, or maxterms to visualize prime implicant groups, view the minimized output in Verilog or VHDL, and generate a gate-level circuit diagram.</p>
+        <p>The solver builds the Karnaugh map for 2 to 6 variables, finds the prime implicant groups, and reads off the minimized SOP and POS expressions. You can also view the truth table, get the result as Verilog or VHDL, and draw the gate-level circuit.</p>
         <ul>
           <li>Supports <strong>2&ndash;6 variables</strong>. Enter them comma-separated (e.g. <code>A, B, C, D</code>).</li>
-          <li><strong>Operators are flexible</strong> &mdash; you can mix symbols and words freely:
+          <li><strong>Operators are flexible.</strong> You can mix symbols and words freely:
             <code>A * B + C'</code> and <code>A and B or not C</code> are both valid, even <code>A * B or !C</code>.</li>
           <li>Multiple symbols per gate: NOT is <code>' ~ !</code>, AND is <code>. * &amp;</code>, OR is <code>+ |</code>, XOR is <code>^</code>, XNOR is <code>@</code>, NAND is <code>%</code>, NOR is <code>#</code>.</li>
-          <li><strong>Precedence:</strong> NOT &rarr; AND/NAND &rarr; XOR/XNOR &rarr; OR/NOR. Use parentheses to override.</li>
-          <li>Leave the expression blank and click Generate to enter <strong>manual mode</strong> &mdash; click cells directly to set 1, 0, or X.</li>
+          <li><strong>Precedence:</strong> NOT, then AND and NAND, then XOR and XNOR, then OR and NOR. Use parentheses to override.</li>
+          <li>Leave the expression blank and click Generate to enter <strong>manual mode</strong>, then click cells directly to set 1, 0, or X.</li>
           <li>Switch to <strong>Minterms/Maxterms</strong> mode to enter indices directly (e.g. <code>1, 3, 5, 7</code>).</li>
-          <li>Click any cell in the K-map to toggle between <strong>0, 1, and X</strong> (don't-care) &mdash; works in <strong>all modes</strong>. Click <strong>Revert to input</strong> or re-click Generate to restore the original values.</li>
+          <li>Click any cell in the K-map to toggle between <strong>0, 1, and X</strong> (don't-care). This works in <strong>all modes</strong>. Click <strong>Revert to input</strong> or re-click Generate to restore the original values.</li>
           <li>Toggle <strong>POS</strong>, <strong>Verilog</strong>, <strong>VHDL</strong>, and <strong>Steps</strong> with the buttons below Generate.</li>
           <li>XOR/XNOR patterns are <strong>auto-detected</strong> when the SOP can be simplified using XOR gates.</li>
         </ul>
       </div>
     </details>
 
+    <div class="tool-layout">
+    <div class="tool-controls">
     <!-- Input Section -->
-    <div class="section">
+    <div class="section workbench">
       <div class="input-row">
         <div>
           <label class="lbl" for="varInput">Variables</label>
           <input class="inp" id="varInput" value="A, B, C" placeholder="A, B, C, D" spellcheck="false">
         </div>
         <div>
-          <label class="lbl">Input Mode</label>
-          <div class="mode-selector">
+          <span class="lbl" id="modeLabel">Input mode</span>
+          <div class="mode-selector" role="group" aria-labelledby="modeLabel">
             <button class="mode-btn on" id="modeExpr">Expression</button>
             <button class="mode-btn" id="modeMinterms">Minterms</button>
             <button class="mode-btn" id="modeMaxterms">Maxterms</button>
@@ -265,30 +268,30 @@
 
       <div id="inputContainer">
         <div id="exprInputRow">
-          <label class="lbl" for="exprInput">Boolean Expression <span class="lbl-hint">(leave empty for manual)</span></label>
+          <label class="lbl" for="exprInput">Boolean expression <span class="lbl-hint">(leave empty to fill cells by hand)</span></label>
           <input class="inp" id="exprInput" value="A * B + C'" placeholder="A * B + ~C . D" spellcheck="false">
         </div>
         <div id="mintermsInputRow" style="display: none;">
           <label class="lbl" for="mintermsInput">Minterms <span class="lbl-hint">(comma-separated indices where F=1)</span></label>
-          <input class="inp" id="mintermsInput" placeholder="e.g. 1, 3, 5, 7" spellcheck="false">
+          <input class="inp" id="mintermsInput" placeholder="1, 3, 5, 7" spellcheck="false">
         </div>
         <div id="maxtermsInputRow" style="display: none;">
           <label class="lbl" for="maxtermsInput">Maxterms <span class="lbl-hint">(comma-separated indices where F=0)</span></label>
-          <input class="inp" id="maxtermsInput" placeholder="e.g. 0, 2, 4, 6" spellcheck="false">
+          <input class="inp" id="maxtermsInput" placeholder="0, 2, 4, 6" spellcheck="false">
         </div>
       </div>
 
       <div style="margin-top: 15px;">
         <label class="lbl" for="dcInput">Don't-care terms <span class="lbl-hint">(optional)</span></label>
-        <input class="inp" id="dcInput" placeholder="e.g. 2, 5, 7" spellcheck="false" style="max-width: 300px;">
+        <input class="inp" id="dcInput" placeholder="2, 5, 7" spellcheck="false" style="max-width: 300px;">
       </div>
 
       <div class="btn-row">
-        <button class="btn-go" id="generateBtn">Generate</button>
+        <button class="btn-go" id="generateBtn">Generate map</button>
         <div class="toggle-btns">
           <button class="btn-t on" id="groupsBtn">Groups</button>
           <button class="btn-t" id="posBtn">POS</button>
-          <button class="btn-t" id="truthBtn">Truth Table</button>
+          <button class="btn-t" id="truthBtn">Truth table</button>
           <button class="btn-t" id="verilogBtn">Verilog</button>
           <button class="btn-t" id="vhdlBtn">VHDL</button>
           <button class="btn-t" id="stepsBtn">Steps</button>
@@ -299,11 +302,21 @@
       <div id="errorBox" class="err" style="display: none;"></div>
 
       <div class="ref-section" id="refSection">
-        <strong>Operators:</strong> ' ~ ! (NOT) &middot; . * &amp; (AND) &middot; + | (OR) &middot; ^ (XOR) &middot; @ (XNOR) &middot; % (NAND) &middot; # (NOR)<br>
-        <strong>Keywords:</strong> and, or, not, nand, nor, xor, xnor &middot; <strong>Precedence:</strong> NOT &rarr; AND/NAND &rarr; XOR/XNOR &rarr; OR/NOR
+        <table class="ref-table" aria-label="Operator reference">
+          <tr><th>NOT</th><td><code>'</code> <code>~</code> <code>!</code> <code>not</code></td></tr>
+          <tr><th>AND</th><td><code>.</code> <code>*</code> <code>&amp;</code> <code>and</code></td></tr>
+          <tr><th>OR</th><td><code>+</code> <code>|</code> <code>or</code></td></tr>
+          <tr><th>XOR</th><td><code>^</code> <code>xor</code></td></tr>
+          <tr><th>XNOR</th><td><code>@</code> <code>xnor</code></td></tr>
+          <tr><th>NAND</th><td><code>%</code> <code>nand</code></td></tr>
+          <tr><th>NOR</th><td><code>#</code> <code>nor</code></td></tr>
+          <tr><th colspan="2" class="ref-note">Precedence: NOT, then AND and NAND, then XOR and XNOR, then OR and NOR. Parentheses override.</th></tr>
+        </table>
       </div>
     </div>
 
+    </div>
+    <div class="tool-results">
     <!-- K-Map Panel -->
     <div id="kmapPanel" class="section" style="display: none;"></div>
 
@@ -315,41 +328,43 @@
 
     <!-- Circuit Panel -->
     <div id="circuitPanel" class="section" style="display: none;">
-      <div class="result-label" style="margin-top:0;">Circuit Diagram<span class="tag">Gate-Level</span></div>
+      <div class="result-label" style="margin-top:0;">Circuit diagram</div>
       <div id="circuitWrap" class="circuit-wrap"></div>
     </div>
+    <div id="emptyState" class="empty-state">Enter an expression and generate the map.</div>
+    </div>
+    </div>
     <div class="feedback-box" data-topic="tool-kmap" data-label="Was this tool useful?"></div>
-
-    <div class="footer">&copy; 2026 <a href="/">p14m.com</a> <span class="footer-sep">·</span> <a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Submit feedback</a></div>
-  </main>
+</main>
+<footer class="site-footer">
+  <nav aria-label="Footer">
+    <ul class="site-footer-pages">
+      <li><a href="/adders/">Adder architecture visualizer</a></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a></li>
+      <li><a href="/cache/">Cache simulator</a></li>
+      <li><a href="/circuitgen/">CircuitGen</a></li>
+      <li><a href="/float/">IEEE 754 floating-point converter</a></li>
+      <li><a href="/kmap/">K-Map generator</a></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
+      <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/learn/">Learn</a></li>
+    </ul>
+  </nav>
+  <div class="site-footer-line">
+    <span>&copy; 2026 Peter Moses</span>
+    <ul class="site-footer-meta">
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Send feedback</a></li>
+    </ul>
+  </div>
+</footer>
 
   <div id="toast" class="toast" style="display: none;"></div>
 
 <script src="/lib/circuit.js"></script>
 <script>
-/* ───────────────────────── Theme ───────────────────────── */
-
-function toggleTheme() {
-  const body = document.body;
-  const themeText = document.getElementById('theme-text');
-  if (body.classList.contains('dark')) {
-    body.classList.remove('dark');
-    themeText.innerHTML = '&#9790;';
-    localStorage.setItem('theme', 'light');
-  } else {
-    body.classList.add('dark');
-    themeText.innerHTML = '&#9788;';
-    localStorage.setItem('theme', 'dark');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  const themeText = document.getElementById('theme-text');
-  if (document.body.classList.contains('dark')) {
-    themeText.innerHTML = '&#9788;';
-  }
-});
-
 /* ───────────────────────── helpers ───────────────────────── */
 
 const GRAY_CODE = {
@@ -1548,11 +1563,11 @@ function generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetect
     const wraps = [];
     if (group.rSize > 1) {
       const rEnd = (group.rStart + group.rSize - 1) % rows;
-      if (group.rStart + group.rSize > rows) wraps.push('rows (top\u2194bottom)');
+      if (group.rStart + group.rSize > rows) wraps.push('rows (top to bottom)');
     }
     if (group.cSize > 1) {
       const cEnd = (group.cStart + group.cSize - 1) % cols;
-      if (group.cStart + group.cSize > cols) wraps.push('columns (left\u2194right)');
+      if (group.cStart + group.cSize > cols) wraps.push('columns (left to right)');
     }
 
     // Find which variables are eliminated vs kept
@@ -1577,11 +1592,11 @@ function generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetect
     let b = '<ul>';
     b += '<li><strong>Cells covered:</strong> ' + gCells.join(', ') + ' (group of ' + size + ')</li>';
     if (wraps.length > 0) b += '<li><strong>Wraparound:</strong> wraps across ' + wraps.join(' and ') + '</li>';
-    if (eliminated.length > 0) b += '<li><strong>Eliminated:</strong> ' + eliminated.join(', ') + ' (changes 0\u21921 within group)</li>';
+    if (eliminated.length > 0) b += '<li><strong>Eliminated:</strong> ' + eliminated.join(', ') + ' (changes 0 to 1 within group)</li>';
     b += '<li><strong>Kept literals:</strong> ' + (kept.length > 0 ? kept.map(k => k.literal + ' (' + k.var + '=' + k.val + ')').join(', ') : 'none (tautology)') + '</li>';
     b += '<li><strong>Product term:</strong> <code>' + term + '</code></li>';
     b += '</ul>';
-    steps.push({ title: 'Group ' + (gi + 1) + ': ' + size + '-cell group \u2192 <code>' + term + '</code>', body: b });
+    steps.push({ title: 'Group ' + (gi + 1) + ': ' + size + '-cell group gives <code>' + term + '</code>', body: b });
   });
 
   // Combine step
@@ -1610,13 +1625,16 @@ function generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetect
 function render() {
   const effectiveResult = getEffectiveResult();
 
+  const emptyState = document.getElementById('emptyState');
   if (!effectiveResult?.kmap) {
     kmapPanel.style.display = 'none';
     truthPanel.style.display = 'none';
     stepsPanel.style.display = 'none';
     circuitPanel.style.display = 'none';
+    if (emptyState) emptyState.style.display = '';
     return;
   }
+  if (emptyState) emptyState.style.display = 'none';
 
   const { varNames, truthTable, kmap } = effectiveResult;
 
@@ -1637,9 +1655,9 @@ function render() {
   });
 
   let html = `<div class="kmap-header">
-    <div class="result-label" style="margin: 0;">Karnaugh Map</div>
-    ${state.manualMode ? '<span class="manual-indicator">MANUAL - click cells to cycle 0 &rarr; 1 &rarr; X</span>' : ''}
-    ${!state.manualMode && Object.keys(state.manualOverrides).length > 0 ? '<span class="manual-indicator">EDITED - click cells to cycle 0 &rarr; 1 &rarr; X &nbsp; <button class="btn-copy" onclick="state.manualOverrides={};render();">Revert to input</button></span>' : ''}
+    <div class="result-label" style="margin: 0;">Karnaugh map</div>
+    ${state.manualMode ? '<span class="manual-indicator">Manual mode: click a cell to cycle 0, 1, X</span>' : ''}
+    ${!state.manualMode && Object.keys(state.manualOverrides).length > 0 ? '<span class="manual-indicator">Edited: click a cell to cycle 0, 1, X &nbsp; <button class="btn-copy" onclick="state.manualOverrides={};render();">Revert to input</button></span>' : ''}
   </div>`;
 
   html += '<div style="overflow-x: auto; padding: 2px 0;"><table class="km-tbl"><thead><tr>';
@@ -1703,11 +1721,11 @@ function render() {
     if (!allOnes) console.warn("K-map sanity check: SOP contains '1' term but truth table is not all-1s. SOP:", sopExpr);
   }
   if (sopExpr) {
-    html += `<div class="result-label">Minimized SOP<span class="tag">Sum of Products</span></div>
+    html += `<div class="result-label">Minimized SOP<span class="tag">sum of products</span></div>
       <div class="expr-box">
         <span class="expr-text">${sopExpr}</span>
         <button class="btn-copy" data-copy="${encodeURIComponent(sopExpr)}" data-label="SOP">Copy</button>
-        <a class="btn-copy" href="/circuitgen/?expr=${encodeURIComponent(sopExpr)}" style="text-decoration:none;">View Circuit &rarr;</a>
+        <a class="btn-copy" href="/circuitgen/?expr=${encodeURIComponent(sopExpr)}" style="text-decoration:none;">View circuit</a>
       </div>`;
   }
 
@@ -1722,7 +1740,7 @@ function render() {
 
   if (state.showPOS) {
     const posExpr = zeroGroups.length > 0 ? computeMinimizedPOS(zeroGroups, kmap) : "1";
-    html += `<div class="result-label">Minimized POS<span class="tag">Product of Sums</span></div>
+    html += `<div class="result-label">Minimized POS<span class="tag">product of sums</span></div>
       <div class="expr-box">
         <span class="expr-text">${posExpr}</span>
         <button class="btn-copy" data-copy="${encodeURIComponent(posExpr)}" data-label="POS">Copy</button>
@@ -1752,7 +1770,7 @@ function render() {
   }
 
   const mintermInfo = getMintermInfo(truthTable, varNames);
-  html += `<div class="result-label">Canonical Form</div>
+  html += `<div class="result-label">Canonical form</div>
     <div class="mint-box">
       <div><span class="sym">\u03a3m</span>(${mintermInfo.minterms.join(', ') || '\u2205'})${mintermInfo.dontcares.length > 0 ? ` + <span class="sym">d</span>(<span class="dc">${mintermInfo.dontcares.join(', ')}</span>)` : ''}</div>
       <div><span class="sym">\u03a0M</span>(${mintermInfo.maxterms.join(', ') || '\u2205'})${mintermInfo.dontcares.length > 0 ? ` + <span class="sym">d</span>(<span class="dc">${mintermInfo.dontcares.join(', ')}</span>)` : ''}</div>
@@ -1812,7 +1830,7 @@ function render() {
   });
 
   if (state.showTruth) {
-    let ttHtml = '<div class="result-label" style="margin-top: 0;">Truth Table</div>';
+    let ttHtml = '<div class="result-label" style="margin-top: 0;">Truth table</div>';
     ttHtml += '<div style="overflow-x: auto; max-height: 350px; overflow-y: auto;"><table class="tt"><thead><tr>';
     varNames.forEach(v => { ttHtml += `<th>${v}</th>`; });
     ttHtml += '<th>F</th></tr></thead><tbody>';
@@ -1831,7 +1849,7 @@ function render() {
 
   if (state.showSteps) {
     const steps = generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetected);
-    let sHtml = '<div class="result-label" style="margin-top: 0;">Minimization Steps<span class="tag">Learning Aid</span></div>';
+    let sHtml = '<div class="result-label" style="margin-top: 0;">Minimization steps</div>';
     sHtml += '<div class="steps-box">';
     steps.forEach((s, i) => {
       sHtml += `<div class="step"><span class="step-num">Step ${i + 1}.</span> <span class="step-title">${s.title}</span><div class="step-body">${s.body}</div></div>`;

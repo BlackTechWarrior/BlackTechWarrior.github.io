@@ -1,434 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Bit Manipulation Visualizer: Bitwise Ops Step by Step | p14m</title>
+  <meta name="description" content="Visualize bitwise operations step by step: AND, OR, XOR, shifts, rotates, popcount and more on 4 to 32-bit values, with a variable bank and a reference of common bit tricks.">
+  <meta name="author" content="Peter Moses">
+  <link rel="canonical" href="https://p14m.com/bits/">
+  <meta name="theme-color" content="#F4F5F7">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="p14m">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://p14m.com/bits/">
+  <meta property="og:title" content="Bit Manipulation Visualizer: Bitwise Ops Step by Step | p14m">
+  <meta property="og:description" content="Visualize bitwise operations step by step: AND, OR, XOR, shifts, rotates, popcount and more on 4 to 32-bit values, with a variable bank and a reference of common bit tricks.">
+  <meta property="og:image" content="https://p14m.com/og/bits.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Bit manipulation visualizer on p14m.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Bit Manipulation Visualizer: Bitwise Ops Step by Step | p14m">
+  <meta name="twitter:description" content="Visualize bitwise operations step by step: AND, OR, XOR, shifts, rotates, popcount and more on 4 to 32-bit values, with a variable bank and a reference of common bit tricks.">
+  <meta name="twitter:image" content="https://p14m.com/og/bits.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" href="/favicon-48.png">
+  <link rel="preload" href="/fonts/mona-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/monaspace-neon-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/shared.css">
+  <script src="/lib/site.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Bit manipulation visualizer","url":"https://p14m.com/bits/","description":"Visualize bitwise operations step by step: AND, OR, XOR, shifts, rotates, popcount and more on 4 to 32-bit values, with a variable bank and a reference of common bit tricks.","applicationCategory":"EducationalApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Peter Moses","url":"https://p14m.com/"},"inLanguage":"en","image":"https://p14m.com/og/bits.png"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"p14m","item":"https://p14m.com/"},{"@type":"ListItem","position":2,"name":"Bit manipulation visualizer","item":"https://p14m.com/bits/"}]}]}</script>
+  <script src="/lib/feedback.js" defer></script>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Interactive bit manipulation visualizer and mini expression REPL with step-by-step expression evaluation, variable bank, and bit tricks reference.">
-  <meta property="og:title" content="Bit Manipulation Visualizer | p14m.com">
-  <meta property="og:description" content="Online Interactive bit manipulation visualizer with step-by-step expression evaluation and bit tricks reference.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://p14m.com/bits/">
-  <title>Bit Visualizer | p14m.com</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
-  <link rel="stylesheet" href="/shared.css">
-  <script src="/lib/feedback.js" defer></script>
   <style>
-    /* ── Variable Bank ── */
-    .var-controls {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 15px;
-    }
+    /* ── Variable bank ── */
+    .var-controls { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-4); }
+    .var-controls .mode-selector { margin-bottom: 0; }
+    .var-row { padding: var(--s-4) 0; border-top: 1px solid var(--border-soft); }
+    .var-row:first-child { border-top: 0; padding-top: 0; }
+    .var-row:last-child { padding-bottom: 0; }
+    .var-top { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); }
+    .var-name-input { width: 44px; text-align: center; font-weight: 600; padding: 6px 4px; }
+    .var-value-input { flex: 1; max-width: 180px; padding: 6px 10px; }
+    .var-eq { color: var(--muted); font-size: 0.8125rem; }
+    .var-bits { overflow-x: auto; max-width: 100%; padding-bottom: 2px; }
 
-    .var-row {
-      margin-bottom: 16px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--rule-soft);
-    }
-    .var-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-    body.dark .var-row { border-bottom-color: var(--ink); }
-
-    .var-top {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-
-    .var-name-input {
-      width: 40px;
-      background: var(--paper-2);
-      border: 1px solid var(--rule);
-      border-radius: 6px;
-      color: var(--ink);
-      font-family: var(--f-mono);
-      font-size: 14px;
-      font-weight: 600;
-      padding: 6px 8px;
-      outline: none;
-      transition: border-color 0.2s;
-      text-align: center;
-    }
-    .var-name-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-
-    .var-value-input {
-      flex: 1;
-      max-width: 180px;
-      background: var(--paper-2);
-      border: 1px solid var(--rule);
-      border-radius: 6px;
-      color: var(--ink);
-      font-family: var(--f-mono);
-      font-size: 14px;
-      padding: 6px 10px;
-      outline: none;
-      transition: border-color var(--t-quick), box-shadow var(--t-quick);
-    }
-    .var-value-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-    .var-value-input::placeholder { color: var(--muted); }
-
-    /* ── Bit Cells ── */
-    .bit-row {
-      display: flex;
-      align-items: flex-end;
-      gap: 1px;
-      flex-wrap: wrap;
-    }
-
+    /* ── Bit cells ── */
+    .bit-row { display: flex; align-items: flex-end; gap: 1px; flex-wrap: nowrap; width: max-content; max-width: 100%; }
+    .bit-scroll { overflow-x: auto; max-width: 100%; }
     .nibble-gap { width: 8px; flex-shrink: 0; }
-
-    .bit-col {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .bit-idx {
-      font-size: 10px;
-      color: var(--muted);
-      font-family: var(--f-mono);
-      margin-bottom: 2px;
-      height: 14px;
-      line-height: 14px;
-    }
-    body.dark .bit-idx { color: var(--muted); }
-
+    .bit-col { display: flex; flex-direction: column; align-items: center; }
+    .bit-idx { font-size: 10px; color: var(--muted); font-family: var(--font-mono); margin-bottom: 2px; height: 14px; line-height: 14px; }
     .bit-cell {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--f-mono);
-      font-weight: 600;
-      border: 1px solid var(--rule);
-      transition: all 0.12s;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums;
+      border: 1px solid var(--border); background: var(--surface); border-radius: 3px;
+      transition: background var(--dur-quick) var(--ease-out), border-color var(--dur-quick) var(--ease-out);
       user-select: none;
     }
-    body.dark .bit-cell { border-color: var(--rule); }
-
-    .bit-cell.b1 { color: var(--accent); }
+    .bit-cell.b1 { color: var(--ink); background: var(--well); }
     .bit-cell.b0 { color: var(--muted); }
-    body.dark .bit-cell.b1 { color: var(--accent); }
-    body.dark .bit-cell.b0 { color: var(--muted); }
-
     .bit-cell.click { cursor: pointer; }
-    .bit-cell.click:hover { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 5%, transparent); }
-    body.dark .bit-cell.click:hover { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 10%, transparent); }
-
-    .bit-cell.highlight { background: rgba(230, 126, 34, 0.15); }
-    body.dark .bit-cell.highlight { background: rgba(230, 126, 34, 0.15); }
-
+    .bit-cell.click:hover { border-color: var(--border-strong); }
+    .bit-cell.click:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+    .bit-cell.highlight { background: var(--d1-wash); border-color: var(--d1); color: var(--d1); }
     .bit-4 { width: 32px; height: 32px; font-size: 14px; }
     .bit-8 { width: 28px; height: 28px; font-size: 13px; }
     .bit-16 { width: 24px; height: 24px; font-size: 12px; }
     .bit-32 { width: 20px; height: 20px; font-size: 10px; }
-
     .bit-small { width: 20px; height: 20px; font-size: 10px; }
 
-    .format-line {
-      font-family: var(--f-mono);
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 6px;
-      word-break: break-all;
-    }
-    body.dark .format-line { color: var(--muted); }
+    /* ── Value readout: Dec 0  Unsigned 0  Hex 0x00 ── */
+    .format-line { display: flex; flex-wrap: wrap; gap: 2px 14px; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-2); margin-top: var(--s-2); }
+    .format-line .fk { font-family: var(--font-sans); color: var(--muted); margin-right: 5px; }
+    .overflow-val { color: var(--error); background: var(--error-wash); border-radius: 3px; padding: 0 3px; }
 
-    /* ── Expression Input — inverted fill so it stands off the page ── */
-    .expr-input {
-      width: 100%;
-      background: var(--ink);
-      color: var(--paper);
-      border: 1px solid var(--ink);
-      border-radius: 6px;
-      padding: 12px 16px;
-      font-family: var(--f-mono);
-      font-size: 15px;
-      outline: none;
-      transition: border-color var(--t-quick), box-shadow var(--t-quick);
-      caret-color: var(--accent);
-    }
-    .expr-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-    }
-    .expr-input::placeholder {
-      color: color-mix(in oklab, var(--paper) 55%, transparent);
-    }
-    .expr-input::selection {
-      background: color-mix(in oklab, var(--accent) 50%, transparent);
-      color: var(--paper);
-    }
+    /* ── Expression ── */
+    .expr-input { font-size: 1rem; padding: 12px 14px; }
+    .chain-controls { display: flex; align-items: center; gap: var(--s-2); margin-top: var(--s-3); flex-wrap: wrap; }
+    .chain-hint { display: block; font-size: 0.8125rem; color: var(--muted); margin-top: var(--s-2); }
+    .chain-hint code { font-size: 0.8125rem; color: var(--ink); }
+    .chain-pipeline { margin-top: var(--s-3); background: var(--well); border-radius: var(--radius-control); padding: var(--s-1) var(--s-3); }
+    .chain-step { display: flex; align-items: center; gap: var(--s-3); padding: 6px 0; font-family: var(--font-mono); font-size: 13px; flex-wrap: wrap; border-top: 1px solid var(--border-soft); }
+    .chain-step:first-child { border-top: 0; }
+    .chain-num { font-family: var(--font-sans); font-weight: 500; font-size: 12px; color: var(--muted); min-width: 24px; flex-shrink: 0; }
+    .chain-expr { min-width: 100px; flex-shrink: 0; }
+    .chain-vals { font-size: 12px; color: var(--muted); flex-shrink: 0; }
 
-    /* ── Step Rows ── */
-    .step-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 10px;
-      font-family: var(--f-mono);
-      font-size: 13px;
-      flex-wrap: wrap;
-    }
-    .step-row:nth-child(even) { background: rgba(0, 0, 0, 0.02); }
-    body.dark .step-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
-
-    .step-label {
-      font-weight: 600;
-      min-width: 55px;
-      flex-shrink: 0;
-    }
-
-    .step-expr {
-      min-width: 120px;
-      flex-shrink: 0;
-    }
-
+    /* ── Result and steps ── */
+    .eval-empty { margin: 0; color: var(--muted); font-size: 0.9375rem; }
+    #evalSection:has(#exprResult > *) .eval-empty, #evalSection:has(#historyContainer[style*="block"]) .eval-empty { display: none; }
+    #exprResult .result-label { margin-top: 0; }
+    #exprSteps .result-label, #historyContainer .result-label { margin-top: var(--s-5); }
+    .result-box { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-2); flex-wrap: wrap; }
+    .result-dec { font-family: var(--font-mono); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .result-hex { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+    .step-group { padding: var(--s-2) 0; border-top: 1px solid var(--border-soft); }
+    .step-group:first-of-type { border-top: 0; }
+    .step-header { display: flex; align-items: center; gap: var(--s-3); padding: 4px 0; font-family: var(--font-mono); font-size: 13px; flex-wrap: wrap; }
+    .step-label { font-family: var(--font-sans); font-weight: 500; font-size: 12px; color: var(--muted); min-width: 48px; flex-shrink: 0; }
+    .step-expr { min-width: 120px; flex-shrink: 0; font-weight: 500; }
     .step-eq { color: var(--muted); flex-shrink: 0; }
-
-    .step-vals {
-      font-size: 12px;
-      color: var(--muted);
-      flex-shrink: 0;
-    }
-    body.dark .step-vals { color: var(--muted); }
-
-    .step-desc {
-      font-style: italic;
-      color: var(--muted);
-      font-size: 12px;
-      margin-left: auto;
-    }
-    body.dark .step-desc { color: var(--muted); }
-
-    /* ── Overflow ── */
-    .overflow-val {
-      color: var(--error);
-      background: rgba(239, 68, 68, 0.1);
-      border-radius: 3px;
-      padding: 0 3px;
-    }
-    body.dark .overflow-val {
-      color: var(--error);
-      background: rgba(239, 68, 68, 0.15);
-    }
-
-    /* ── Hierarchical Steps ── */
-    .step-group {
-      margin-bottom: 2px;
-      border-bottom: 1px solid var(--rule-soft);
-      padding-bottom: 6px;
-    }
-    .step-group:last-child { border-bottom: none; }
-    body.dark .step-group { border-bottom-color: var(--ink); }
-
-    .step-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 10px 4px;
-      font-family: var(--f-mono);
-      font-size: 13px;
-      flex-wrap: wrap;
-    }
-
-    .step-operand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 3px 10px 3px 32px;
-      font-family: var(--f-mono);
-      font-size: 12px;
-      color: var(--muted);
-      flex-wrap: wrap;
-    }
-    body.dark .step-operand { color: var(--muted); }
-
+    .step-vals { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+    .step-operand { display: flex; align-items: center; gap: var(--s-3); padding: 3px 0 3px 60px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); flex-wrap: wrap; }
     .step-operand-expr { min-width: 80px; flex-shrink: 0; }
-
-    .step-applied {
-      padding: 2px 10px 6px 32px;
-      font-family: var(--f-mono);
-      font-size: 11px;
-      font-style: italic;
-      color: var(--muted);
-    }
-    body.dark .step-applied { color: var(--muted); }
-
-    .step-from-ref {
-      font-size: 10px;
-      color: var(--muted);
-    }
-    body.dark .step-from-ref { color: var(--muted); }
-
-    /* ── Result Box ── */
-    .result-box {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 10px;
-      flex-wrap: wrap;
-    }
+    .step-applied { padding: 2px 0 4px 60px; font-size: 12px; color: var(--muted); }
+    .step-from-ref { font-family: var(--font-sans); font-size: 11px; color: var(--muted); }
+    .step-overflow { padding-left: 60px; margin-top: 2px; }
 
     /* ── History ── */
-    .history-list {
-      max-height: 200px;
-      overflow-y: auto;
-      margin-top: 10px;
-    }
+    .history-list { max-height: 200px; overflow-y: auto; margin-top: var(--s-2); }
+    .history-item { font-family: var(--font-mono); font-size: 13px; padding: 4px 8px; cursor: pointer; border-radius: var(--radius-control-sm); color: var(--ink-2); transition: background var(--dur-quick) var(--ease-out); }
+    .history-item:hover { background: var(--well); color: var(--ink); }
 
-    .history-item {
-      font-family: var(--f-mono);
-      font-size: 13px;
-      padding: 4px 8px;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: background 0.15s;
-      color: var(--muted);
-    }
-    .history-item:hover { background: color-mix(in oklab, var(--accent) 5%, transparent); color: var(--ink); }
-    body.dark .history-item { color: var(--muted); }
-    body.dark .history-item:hover { background: color-mix(in oklab, var(--accent) 10%, transparent); color: var(--rule); }
+    /* ── Operator reference ── */
+    .ref-table { border-collapse: collapse; width: 100%; font-size: 0.8125rem; }
+    .ref-table th { text-align: left; font-weight: 500; color: var(--ink-2); padding: 3px 10px 3px 0; white-space: nowrap; width: 1%; vertical-align: top; }
+    .ref-table td { padding: 3px 18px 3px 0; color: var(--muted); vertical-align: top; }
+    .ref-table code { color: var(--ink); background: var(--well); padding: 0 5px; border-radius: 4px; font-size: 0.75rem; margin-right: 2px; white-space: nowrap; }
+    .ref-table .ref-note code { margin: 0; }
+    .ref-table .ref-note { font-weight: 400; color: var(--muted); white-space: normal; }
 
-    /* ── Bit Tricks ── */
-    .trick-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 10px;
-      font-family: var(--f-mono);
-      font-size: 13px;
-      flex-wrap: wrap;
-    }
-    .trick-row:nth-child(even) { background: rgba(0, 0, 0, 0.02); }
-    body.dark .trick-row:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+    /* ── Bit tricks ── */
+    .trick-row { display: flex; align-items: center; gap: var(--s-3); padding: 7px 0; font-family: var(--font-mono); font-size: 13px; flex-wrap: wrap; border-top: 1px solid var(--border-soft); }
+    .trick-row:first-child { border-top: 0; }
+    .trick-name { font-family: var(--font-sans); font-size: 13px; min-width: 140px; flex-shrink: 0; font-weight: 500; color: var(--ink-2); }
+    .trick-expr { min-width: 120px; flex-shrink: 0; color: var(--ink-2); }
+    .trick-vals { font-size: 12px; color: var(--muted); }
 
-    .trick-name {
-      min-width: 140px;
-      flex-shrink: 0;
-      font-weight: 500;
-      color: var(--muted);
-    }
-    body.dark .trick-name { color: var(--muted); }
-
-    .trick-expr {
-      min-width: 120px;
-      flex-shrink: 0;
-      color: var(--muted);
-    }
-    body.dark .trick-expr { color: var(--muted); }
-
-    .trick-vals {
-      font-size: 12px;
-      color: var(--muted);
-    }
-    body.dark .trick-vals { color: var(--muted); }
-
-    /* ── Chain Mode ── */
-    .chain-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .chain-toggle {
-      background-color: var(--paper-2);
-      border: 1px solid var(--rule);
-      padding: 6px 14px;
-      border-radius: 16px;
-      cursor: pointer;
-      font-size: 0.85em;
-      font-family: inherit;
-      transition: background 0.2s, border-color 0.2s;
-    }
-    .chain-toggle:hover { border-color: var(--muted); }
-    .chain-toggle.on { background-color: var(--accent); color: var(--paper); border-color: var(--accent); }
-    body.dark .chain-toggle { background-color: var(--ink); border-color: var(--muted); color: var(--rule); }
-    body.dark .chain-toggle:hover { border-color: var(--muted); }
-    body.dark .chain-toggle.on { background-color: var(--accent); color: var(--paper); border-color: var(--accent); }
-
-    .chain-clear {
-      background: none;
-      border: 1px solid var(--rule);
-      padding: 4px 10px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 0.8em;
-      font-family: inherit;
-      color: var(--muted);
-    }
-    .chain-clear:hover { border-color: var(--muted); color: var(--ink); }
-    body.dark .chain-clear { border-color: var(--muted); color: var(--muted); }
-    body.dark .chain-clear:hover { border-color: var(--muted); color: var(--rule); }
-
-    .chain-pipeline {
-      margin-top: 12px;
-      border: 1px solid var(--rule);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    body.dark .chain-pipeline { border-color: var(--rule); }
-
-    .chain-step {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 10px;
-      font-family: var(--f-mono);
-      font-size: 13px;
-      flex-wrap: wrap;
-      border-bottom: 1px solid var(--rule-soft);
-    }
-    .chain-step:last-child { border-bottom: none; }
-    .chain-step:nth-child(even) { background: rgba(0, 0, 0, 0.02); }
-    body.dark .chain-step:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
-    body.dark .chain-step { border-bottom-color: var(--ink); }
-
-    .chain-num {
-      font-weight: 700;
-      min-width: 28px;
-      flex-shrink: 0;
-      color: var(--accent);
-    }
-    body.dark .chain-num { color: var(--accent); }
-
-    .chain-expr {
-      min-width: 100px;
-      flex-shrink: 0;
-    }
-
-    .chain-vals {
-      font-size: 12px;
-      color: var(--muted);
-      flex-shrink: 0;
-    }
-    body.dark .chain-vals { color: var(--muted); }
-
-    .chain-arrow {
-      color: var(--muted);
-      font-size: 11px;
-    }
-    body.dark .chain-arrow { color: var(--muted); }
-
-    @media (max-width: 600px) {
+    @media (max-width: 640px) {
       .bit-4 { width: 28px; height: 28px; font-size: 13px; }
       .bit-8 { width: 24px; height: 24px; font-size: 12px; }
       .bit-16 { width: 20px; height: 20px; font-size: 10px; }
-      .bit-32 { width: 16px; height: 16px; font-size: 9px; }
+      .bit-32 { width: 18px; height: 18px; font-size: 9px; }
       .bit-small { width: 16px; height: 16px; font-size: 9px; }
       .var-top { flex-wrap: wrap; }
       .var-value-input { max-width: 140px; }
-      .step-row, .trick-row { font-size: 11px; gap: 6px; padding: 6px 6px; }
-      .step-label { min-width: 45px; }
-      .step-expr { min-width: 80px; }
+      .step-header, .trick-row { font-size: 12px; gap: var(--s-2); }
+      .step-operand, .step-applied, .step-overflow { padding-left: 0; }
+      .step-label { min-width: 0; }
+      .step-expr { min-width: 0; }
       .trick-name { min-width: 100px; }
-      .trick-expr { min-width: 80px; }
+      .trick-expr { min-width: 0; }
+      .ref-table tr { display: flex; flex-wrap: wrap; gap: 2px 0; }
+      .ref-table th, .ref-table td { display: inline-block; width: auto; padding: 2px 10px 2px 0; }
+      .ref-table .ref-note { width: 100%; padding-top: 6px; }
     }
   </style>
 </head>
@@ -441,131 +159,158 @@
   }
 })();
 </script>
-  <main class="container">
-    <div class="nav-row">
-      <div class="nav-links">
-        <a href="/" class="back-link">&larr; p14m.com</a>
-        <span>|</span>
-        <a href="/adders/">Adders</a>
-        <span>|</span>
-        <a href="/cache/">Cache</a>
-        <span>|</span>
-        <a href="/circuitgen/">CircuitGen</a>
-        <span>|</span>
-        <a href="/float/">Float</a>
-        <span>|</span>
-        <a href="/kmap/">K-Map</a>
-        <span>|</span>
-        <a href="/multipliers/">Multipliers</a>
-        <span>|</span>
-        <a href="/orderbook/">OrderBook</a>
-        <span>|</span>
-        <a href="/learn/">Learn</a>
-      </div>
-      <button class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-text">&#9790;</span>
-      </button>
-    </div>
+  <a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+    <nav class="site-links" aria-label="Site">
+      <a href="/#tools">Tools</a>
+      <a href="/learn/">Learn</a>
+      <a href="/#about">About</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" onclick="toggleTheme()">Dark</button>
+    </nav>
+  </div>
+  <nav class="tool-strip" aria-label="Tools">
+    <a href="/adders/">Adders</a>
+    <a href="/bits/" aria-current="page">Bits</a>
+    <a href="/cache/">Cache</a>
+    <a href="/circuitgen/">CircuitGen</a>
+    <a href="/float/">Float</a>
+    <a href="/kmap/">K-Map</a>
+    <a href="/multipliers/">Multipliers</a>
+    <a href="/orderbook/">Order Book</a>
+  </nav>
+</header>
+<main id="main" class="container">
 
-    <h1>Bit Manipulation Visualizer</h1>
-    <p class="subtitle">Interactive bit operations with step-by-step evaluation</p>
+    <div class="page-head">
+    <h1>Bit manipulation visualizer</h1>
+    <p class="lede">Evaluate bitwise expressions step by step on 4 to 32-bit values, keep a bank of variables, and see the common bit tricks applied live.</p>
+  </div>
 
     <details class="how-to">
-      <summary>How to use</summary>
+      <summary>How it works</summary>
       <div class="how-to-body">
         <p>This bit manipulation visualizer lets you evaluate bitwise expressions step by step and see the binary result of every operation. Define variables, toggle individual bits, and use operators like AND, OR, XOR, shifts, and rotates to explore how bitwise logic works at the bit level.</p>
         <ul>
           <li>Define variables in the <strong>variable bank</strong> (up to 6). Click any bit cell to toggle it, or type a value directly.</li>
-          <li>Enter expressions like <code>(A &gt;&gt; 4) &amp; 0xF</code> and press Enter to evaluate. You can also use numbers directly without variables &mdash; <code>255 + 1</code> or <code>0xFF &amp; 0x0F</code> work on their own.</li>
+          <li>Enter expressions like <code>(A &gt;&gt; 4) &amp; 0xF</code> and press Enter to evaluate. Numbers work on their own too: <code>255 + 1</code> or <code>0xFF &amp; 0x0F</code>.</li>
           <li><strong>Number literals</strong> work in decimal (<code>255</code>), hex (<code>0xFF</code>), binary (<code>0b11111111</code>), and octal (<code>0o377</code>).</li>
           <li><strong>Equality:</strong> <code>==</code> and <code>!=</code> compare two expressions and return 1 (true) or 0 (false), e.g. <code>A &amp; 1 == 0</code>.</li>
           <li><strong>Functions:</strong> <code>rol(val, n)</code> and <code>ror(val, n)</code> for bitwise rotate left/right. <code>popcount(val)</code> counts set bits, <code>clz(val)</code> counts leading zeros, <code>ctz(val)</code> counts trailing zeros.</li>
           <li><strong>Shift operators use JS semantics:</strong> <code>&gt;&gt;</code> is arithmetic right shift (sign-extending), <code>&gt;&gt;&gt;</code> is logical right shift (zero-filling). This matters for negative values.</li>
-          <li><strong>Operator precedence</strong> (low to high): <code>== !=</code> &rarr; <code>|</code> &rarr; <code>^</code> &rarr; <code>&amp;</code> &rarr; <code>&lt;&lt; &gt;&gt; &gt;&gt;&gt;</code> &rarr; <code>+ -</code> &rarr; <code>* / %</code> &rarr; <code>~ -</code>(unary) &rarr; functions. Use parentheses to override.</li>
+          <li><strong>Operator precedence</strong> (low to high): <code>== !=</code>, then <code>|</code>, <code>^</code>, <code>&amp;</code>, shifts <code>&lt;&lt; &gt;&gt; &gt;&gt;&gt;</code>, <code>+ -</code>, <code>* / %</code>, unary <code>~ -</code>, then functions. Use parentheses to override.</li>
           <li><strong>Chain mode:</strong> toggle it on to pipe results between expressions. Use <code>$</code> to reference the previous step's result, e.g. <code>A &gt;&gt; 4</code> then <code>$ &amp; 0xF</code>.</li>
           <li>Arrow keys <strong>Up/Down</strong> in the expression input to cycle through history. Press <strong>Escape</strong> to clear.</li>
           <li>Changing <strong>bit width</strong> resets all variable values to 0 and clears the chain.</li>
-          <li>A <span style="color:var(--error);">red Dec value</span> means signed overflow (the sign flipped from the true mathematical result). A <span style="color:var(--error);">red Unsigned value</span> means the true result exceeded the bit width's unsigned range.</li>
-          <li>The <strong>Bit Tricks</strong> section at the bottom auto-updates for the last focused variable.</li>
+          <li>A <span class="overflow-val">red Dec value</span> means signed overflow (the sign flipped from the true mathematical result). A <span class="overflow-val">red Unsigned value</span> means the true result exceeded the bit width's unsigned range.</li>
+          <li>The <strong>Bit tricks</strong> section at the bottom follows the last focused variable.</li>
         </ul>
       </div>
     </details>
 
-    <!-- Section 1: Variable Bank -->
-    <div class="section" id="varSection">
-      <div class="var-controls">
-        <div class="mode-selector" id="bitWidthSelector">
-          <button class="mode-btn" data-bits="4">4-bit</button>
-          <button class="mode-btn on" data-bits="8">8-bit</button>
-          <button class="mode-btn" data-bits="16">16-bit</button>
-          <button class="mode-btn" data-bits="32">32-bit</button>
+    <div class="tool-layout">
+      <div class="tool-controls">
+        <div class="section" id="varControls">
+          <span class="lbl" id="widthLabel">Bit width</span>
+          <div class="var-controls">
+            <div class="mode-selector" id="bitWidthSelector" role="group" aria-labelledby="widthLabel">
+              <button class="mode-btn" data-bits="4">4-bit</button>
+              <button class="mode-btn on" data-bits="8">8-bit</button>
+              <button class="mode-btn" data-bits="16">16-bit</button>
+              <button class="mode-btn" data-bits="32">32-bit</button>
+            </div>
+          </div>
+          <div class="var-controls" style="margin-bottom:0;">
+            <button class="btn-t" id="addVarBtn">Add variable</button>
+            <button class="btn-t" id="rmVarBtn">Remove variable</button>
+          </div>
         </div>
-        <button class="btn-t" id="addVarBtn">+ Add</button>
-        <button class="btn-t" id="rmVarBtn">&minus; Remove</button>
-      </div>
-      <div id="varBank"></div>
-    </div>
 
-    <!-- Section 2: Expression Evaluator -->
-    <div class="section" id="exprSection">
-      <label class="lbl" for="exprInput">Expression</label>
-      <input class="expr-input" id="exprInput" aria-label="Bitwise expression" placeholder="e.g. (A >> 4) & 0xF" spellcheck="false" autocomplete="off">
-      <div class="chain-controls">
-        <button class="chain-toggle" id="chainToggle" onclick="toggleChainMode()">Chain Mode</button>
-        <button class="chain-clear" id="chainClear" onclick="clearChain()" style="display:none;">Clear Chain</button>
-        <span id="chainHint" style="font-size:12px;color:var(--muted);display:none;">Use <code>$</code> to reference the previous result</span>
+        <div class="section workbench" id="exprSection">
+          <label class="lbl" for="exprInput">Expression</label>
+          <input class="inp expr-input" id="exprInput" aria-label="Bitwise expression" placeholder="(A >> 4) & 0xF" spellcheck="false" autocomplete="off">
+          <div class="chain-controls">
+            <button class="btn-go" id="evalBtn" onclick="evaluate()">Evaluate</button>
+            <button class="btn-t" id="chainToggle" onclick="toggleChainMode()" aria-pressed="false">Chain mode</button>
+            <button class="btn-t" id="chainClear" onclick="clearChain()" style="display:none;">Clear chain</button>
+          </div>
+          <span id="chainHint" class="chain-hint" style="display:none;">Use <code>$</code> for the previous result</span>
+          <div id="chainPipeline"></div>
+          <div id="exprError" class="err" style="display:none;"></div>
+          <div class="ref-section">
+            <table class="ref-table" aria-label="Operator reference">
+              <tr><th>NOT</th><td><code>~</code></td></tr>
+              <tr><th>Multiply</th><td><code>*</code> <code>/</code> <code>%</code></td></tr>
+              <tr><th>Add</th><td><code>+</code> <code>-</code></td></tr>
+              <tr><th>Shift</th><td><code>&lt;&lt;</code> <code>&gt;&gt;</code> <code>&gt;&gt;&gt;</code></td></tr>
+              <tr><th>AND</th><td><code>&amp;</code></td></tr>
+              <tr><th>XOR</th><td><code>^</code></td></tr>
+              <tr><th>OR</th><td><code>|</code></td></tr>
+              <tr><th>Equality</th><td><code>==</code> <code>!=</code></td></tr>
+              <tr><th>Functions</th><td><code>rol(v,n)</code> <code>ror(v,n)</code> <code>popcount(v)</code> <code>clz(v)</code> <code>ctz(v)</code></td></tr>
+              <tr><th>Literals</th><td><code>255</code> <code>0xFF</code> <code>0b11111111</code> <code>0o377</code></td></tr>
+              <tr><th colspan="2" class="ref-note">Precedence, highest first: <code>~</code>, then <code>* / %</code>, <code>+ -</code>, shifts, <code>&amp;</code>, <code>^</code>, <code>|</code>, then <code>== !=</code>.</th></tr>
+            </table>
+          </div>
+        </div>
       </div>
-      <div id="chainPipeline"></div>
-      <div class="ref-section" style="margin-top:10px;">
-        <strong>Operators:</strong> ~ (NOT) &middot; * / % (Mul) &middot; + - (Add) &middot; &lt;&lt; &gt;&gt; &gt;&gt;&gt; (Shift) &middot; &amp; (AND) &middot; ^ (XOR) &middot; | (OR) &middot; == != (Eq)<br>
-        <strong>Functions:</strong> rol(v,n) &middot; ror(v,n) &middot; popcount(v) &middot; clz(v) &middot; ctz(v)<br>
-        <strong>Literals:</strong> 255 &middot; 0xFF &middot; 0b11111111 &middot; 0o377 &middot; <strong>Precedence:</strong> ~ &rarr; * / % &rarr; + - &rarr; Shift &rarr; &amp; &rarr; ^ &rarr; | &rarr; == !=
-      </div>
-      <div id="exprError" class="err" style="display:none;"></div>
-      <div id="exprResult"></div>
-      <div id="exprSteps"></div>
-      <div id="historyContainer" style="display:none;">
-        <div class="result-label" style="margin-top:15px;">History</div>
-        <div class="history-list" id="historyList"></div>
-      </div>
-    </div>
 
-    <!-- Section 3: Bit Tricks -->
-    <div class="section" id="tricksSection">
-      <div class="result-label" style="margin-top:0;">Bit Tricks <span class="lbl-hint" id="tricksActiveVar">(applied to A)</span></div>
-      <div id="tricksBody"></div>
+      <div class="tool-results">
+        <div class="section" id="varSection">
+          <div class="result-label" style="margin-top:0;">Variables <span class="lbl-hint">(click a bit to flip it)</span></div>
+          <div id="varBank"></div>
+        </div>
+
+        <div class="section" id="evalSection">
+          <p class="eval-empty" id="evalEmpty">Enter an expression to see its value and every step of the evaluation.</p>
+          <div id="exprResult"></div>
+          <div id="exprSteps"></div>
+          <div id="historyContainer" style="display:none;">
+            <div class="result-label">History</div>
+            <div class="history-list" id="historyList"></div>
+          </div>
+        </div>
+
+        <div class="section" id="tricksSection">
+          <div class="result-label" style="margin-top:0;">Bit tricks <span class="lbl-hint" id="tricksActiveVar">(applied to A)</span></div>
+          <div id="tricksBody"></div>
+        </div>
+      </div>
     </div>
     <div class="feedback-box" data-topic="tool-bits" data-label="Was this tool useful?"></div>
-
-    <div class="footer">&copy; 2026 <a href="/">p14m.com</a> <span class="footer-sep">·</span> <a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Submit feedback</a></div>
-  </main>
+</main>
+<footer class="site-footer">
+  <nav aria-label="Footer">
+    <ul class="site-footer-pages">
+      <li><a href="/adders/">Adder architecture visualizer</a></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a></li>
+      <li><a href="/cache/">Cache simulator</a></li>
+      <li><a href="/circuitgen/">CircuitGen</a></li>
+      <li><a href="/float/">IEEE 754 floating-point converter</a></li>
+      <li><a href="/kmap/">K-Map generator</a></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
+      <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/learn/">Learn</a></li>
+    </ul>
+  </nav>
+  <div class="site-footer-line">
+    <span>&copy; 2026 Peter Moses</span>
+    <ul class="site-footer-meta">
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Send feedback</a></li>
+    </ul>
+  </div>
+</footer>
 
   <div id="toast" class="toast" style="display:none;"></div>
 
 <script>
 /* ═══════════════════════ Theme ═══════════════════════ */
 
-function toggleTheme() {
-  const body = document.body;
-  const themeText = document.getElementById('theme-text');
-  if (body.classList.contains('dark')) {
-    body.classList.remove('dark');
-    themeText.innerHTML = '&#9790;';
-    localStorage.setItem('theme', 'light');
-  } else {
-    body.classList.add('dark');
-    themeText.innerHTML = '&#9788;';
-    localStorage.setItem('theme', 'dark');
-  }
-  renderAll();
-}
 
-document.addEventListener('DOMContentLoaded', function() {
-  const themeText = document.getElementById('theme-text');
-  if (document.body.classList.contains('dark')) {
-    themeText.innerHTML = '&#9788;';
-  }
-});
 
 /* ═══════════════════════ State ═══════════════════════ */
 
@@ -670,10 +415,11 @@ function fmtUnsigned(v) {
 function formatLine(v, overflow) {
   let s = toSigned(v);
   let u = toUnsigned(v);
-  let decStr = 'Dec: ' + (overflow && overflow.signedOverflow ? '<span class="overflow-val">' + escHtml(s.toString()) + '</span>' : escHtml(s.toString()));
-  let unsStr = 'Unsigned: ' + (overflow && overflow.unsignedOverflow ? '<span class="overflow-val">' + escHtml(u.toString()) + '</span>' : escHtml(u.toString()));
-  let parts = [decStr, unsStr, 'Hex: ' + escHtml(fmtHex(v)), 'Oct: ' + escHtml(fmtOct(v)), 'Bin: ' + escHtml(fmtBin(v))];
-  return parts.join(' | ');
+  let pair = (k, val) => '<span><span class="fk">' + k + '</span>' + val + '</span>';
+  let decStr = pair('Dec', overflow && overflow.signedOverflow ? '<span class="overflow-val">' + escHtml(s.toString()) + '</span>' : escHtml(s.toString()));
+  let unsStr = pair('Unsigned', overflow && overflow.unsignedOverflow ? '<span class="overflow-val">' + escHtml(u.toString()) + '</span>' : escHtml(u.toString()));
+  let parts = [decStr, unsStr, pair('Hex', escHtml(fmtHex(v))), pair('Oct', escHtml(fmtOct(v))), pair('Bin', escHtml(fmtBin(v)))];
+  return parts.join('');
 }
 
 /* ═══════════════════════ Bit Cell Rendering ═══════════════════════ */
@@ -754,9 +500,9 @@ function renderVarBank() {
   variables.forEach((v, i) => {
     html += '<div class="var-row" data-var-idx="' + i + '">';
     html += '<div class="var-top">';
-    html += '<input class="var-name-input" value="' + escHtml(v.name) + '" data-var-idx="' + i + '" data-field="name" maxlength="4" spellcheck="false" aria-label="Variable name">';
-    html += '<span style="color:var(--muted);font-size:12px;">=</span>';
-    html += '<input class="var-value-input" value="' + escHtml(toSigned(v.value).toString()) + '" data-var-idx="' + i + '" data-field="value" placeholder="0" spellcheck="false" aria-label="Value for variable ' + escHtml(v.name) + '">';
+    html += '<input class="inp var-name-input" value="' + escHtml(v.name) + '" data-var-idx="' + i + '" data-field="name" maxlength="4" spellcheck="false" aria-label="Variable name">';
+    html += '<span class="var-eq">=</span>';
+    html += '<input class="inp var-value-input" value="' + escHtml(toSigned(v.value).toString()) + '" data-var-idx="' + i + '" data-field="value" placeholder="0" spellcheck="false" aria-label="Value for variable ' + escHtml(v.name) + '">';
     html += '</div>';
     html += '<div class="var-bits" data-var-idx="' + i + '">';
     html += renderBitCells(v.value, true);
@@ -1288,7 +1034,7 @@ function evaluate() {
       throw new Error('$ is only available in chain mode');
     }
     if (hasDollar && chainMode && chainSteps.length === 0) {
-      throw new Error('No previous result — $ is not available in the first step');
+      throw new Error('No previous result: $ is not available in the first step');
     }
 
     // Build env from variables
@@ -1333,8 +1079,8 @@ function evaluate() {
     let html = '<div class="result-label">Result</div>';
     html += '<div class="result-box">';
     html += renderSmallBitCells(rv);
-    html += '<span style="font-family:monospace;font-size:14px;font-weight:600;">' + escHtml(fmtDec(rv)) + '</span>';
-    html += '<span style="font-family:monospace;font-size:12px;color:var(--muted);">' + escHtml(fmtHex(rv)) + '</span>';
+    html += '<span class="result-dec">' + escHtml(fmtDec(rv)) + '</span>';
+    html += '<span class="result-hex">' + escHtml(fmtHex(rv)) + '</span>';
     html += '<button class="btn-copy" onclick="copyText(\'' + escHtml(fmtDec(rv)) + '\', \'result\')">Copy</button>';
     html += '</div>';
     html += '<div class="format-line">' + formatLine(rv, finalOverflow) + '</div>';
@@ -1351,9 +1097,9 @@ function evaluate() {
 
         // Step header
         sHtml += '<div class="step-header">';
-        sHtml += '<span class="step-label">Step ' + (i + 1) + ':</span>';
+        sHtml += '<span class="step-label">Step ' + (i + 1) + '</span>';
         sHtml += '<span class="step-expr">' + escHtml(step.expr) + '</span>';
-        sHtml += '<span class="step-eq">&rarr;</span>';
+        sHtml += '<span class="step-eq">=</span>';
         sHtml += renderSmallBitCells(step.result, prevVal);
         sHtml += '<span class="step-vals">' + escHtml(toSigned(step.result).toString()) + '&nbsp;&nbsp;' + escHtml(fmtHex(step.result)) + '</span>';
         sHtml += '</div>';
@@ -1367,7 +1113,7 @@ function evaluate() {
           sHtml += renderSmallBitCells(op.value);
           sHtml += '<span class="step-vals">' + escHtml(toSigned(op.value).toString()) + '&nbsp;&nbsp;' + escHtml(fmtHex(op.value)) + '</span>';
           if (op.fromStep) {
-            sHtml += '<span class="step-from-ref">(from Step ' + op.fromStep + ')</span>';
+            sHtml += '<span class="step-from-ref">(from step ' + op.fromStep + ')</span>';
           }
           sHtml += '</div>';
         }
@@ -1377,7 +1123,7 @@ function evaluate() {
 
         // Format line with overflow indicators for this step
         if (step.overflow) {
-          sHtml += '<div class="format-line" style="padding-left:32px;padding-bottom:4px;font-size:12px;">' + formatLine(step.result, step.overflow) + '</div>';
+          sHtml += '<div class="format-line step-overflow">' + formatLine(step.result, step.overflow) + '</div>';
         }
 
         sHtml += '</div>';
@@ -1562,7 +1308,7 @@ function renderTricks() {
     } else if (t.isNum) {
       html += '<span class="trick-vals">' + t.value + '</span>';
     } else if (t.dash) {
-      html += '<span class="trick-vals">&mdash;</span>';
+      html += '<span class="trick-vals">none</span>';
     } else {
       html += renderSmallBitCells(t.value);
       html += '<span class="trick-vals">' + toUnsigned(t.value) + '&nbsp;&nbsp;' + fmtHex(t.value) + '</span>';
@@ -1650,6 +1396,7 @@ function toggleChainMode() {
   chainMode = !chainMode;
   chainSteps = [];
   document.getElementById('chainToggle').classList.toggle('on', chainMode);
+  document.getElementById('chainToggle').setAttribute('aria-pressed', chainMode ? 'true' : 'false');
   document.getElementById('chainClear').style.display = chainMode ? '' : 'none';
   document.getElementById('chainHint').style.display = chainMode ? '' : 'none';
   document.getElementById('chainPipeline').innerHTML = '';
@@ -1676,8 +1423,7 @@ function renderChainPipeline() {
     let step = chainSteps[i];
     let prevVal = i > 0 ? chainSteps[i - 1].result : undefined;
     html += '<div class="chain-step">';
-    html += '<span class="chain-num">#' + (i + 1) + '</span>';
-    if (i > 0) html += '<span class="chain-arrow">&#9654;</span>';
+    html += '<span class="chain-num">' + (i + 1) + '</span>';
     html += '<span class="chain-expr">' + escHtml(step.expr) + '</span>';
     html += '<span class="step-eq">=</span>';
     html += renderSmallBitCells(step.result, prevVal);

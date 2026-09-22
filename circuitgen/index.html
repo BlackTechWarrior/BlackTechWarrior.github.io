@@ -1,69 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>CircuitGen: Boolean Expression to Logic Circuit Diagram | p14m</title>
+  <meta name="description" content="Turn a Boolean expression into a gate-level logic circuit diagram. Supports AND, OR, NOT, NAND, NOR, XOR and XNOR gates, with SVG export and a link back to the K-map solver.">
+  <meta name="author" content="Peter Moses">
+  <link rel="canonical" href="https://p14m.com/circuitgen/">
+  <meta name="theme-color" content="#F4F5F7">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="p14m">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://p14m.com/circuitgen/">
+  <meta property="og:title" content="CircuitGen: Boolean Expression to Logic Circuit Diagram | p14m">
+  <meta property="og:description" content="Turn a Boolean expression into a gate-level logic circuit diagram. Supports AND, OR, NOT, NAND, NOR, XOR and XNOR gates, with SVG export and a link back to the K-map solver.">
+  <meta property="og:image" content="https://p14m.com/og/circuitgen.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="CircuitGen on p14m.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CircuitGen: Boolean Expression to Logic Circuit Diagram | p14m">
+  <meta name="twitter:description" content="Turn a Boolean expression into a gate-level logic circuit diagram. Supports AND, OR, NOT, NAND, NOR, XOR and XNOR gates, with SVG export and a link back to the K-map solver.">
+  <meta name="twitter:image" content="https://p14m.com/og/circuitgen.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" href="/favicon-48.png">
+  <link rel="preload" href="/fonts/mona-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/monaspace-neon-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/shared.css">
+  <script src="/lib/site.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"CircuitGen","url":"https://p14m.com/circuitgen/","description":"Turn a Boolean expression into a gate-level logic circuit diagram. Supports AND, OR, NOT, NAND, NOR, XOR and XNOR gates, with SVG export and a link back to the K-map solver.","applicationCategory":"EducationalApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Peter Moses","url":"https://p14m.com/"},"inLanguage":"en","image":"https://p14m.com/og/circuitgen.png"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"p14m","item":"https://p14m.com/"},{"@type":"ListItem","position":2,"name":"CircuitGen","item":"https://p14m.com/circuitgen/"}]}]}</script>
+  <script src="/lib/feedback.js" defer></script>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Generate gate-level logic circuit diagrams from boolean expressions with interactive SVG rendering.">
-  <meta property="og:title" content="CircuitGen — Gate-Level Logic Circuit Generator | p14m.com">
-  <meta property="og:description" content="From boolean expressions to gate-level logic circuit diagrams.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://p14m.com/circuitgen/">
-  <title>CircuitGen — Gate-Level Logic Circuit Generator | p14m.com</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
-  <link rel="stylesheet" href="/shared.css">
-  <script src="/lib/feedback.js" defer></script>
   <style>
-    .controls-row {
-      display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin-bottom: 10px;
-    }
-    .controls-row .input-group { flex: 1; min-width: 200px; }
-    .controls-row label {
-      display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px;
-    }
-    body.dark .controls-row label { color: var(--muted); }
+    /* Operator reference table (same pattern as the K-map page) */
+    .ref-table { border-collapse: collapse; width: 100%; font-size: 0.8125rem; }
+    .ref-table th { text-align: left; font-weight: 500; color: var(--ink-2); padding: 3px 10px 3px 0; white-space: nowrap; width: 1%; vertical-align: top; }
+    .ref-table td { padding: 3px 12px 3px 0; color: var(--muted); }
+    .ref-table code { color: var(--ink); background: var(--well); padding: 0 5px; border-radius: 4px; font-size: 0.8125rem; margin-right: 2px; }
+    .ref-table .ref-note { font-weight: 400; color: var(--muted); white-space: normal; }
+    @media (max-width: 640px) { .ref-table tr { display: flex; flex-wrap: wrap; gap: 2px 0; } .ref-table th, .ref-table td { display: inline-block; width: auto; padding: 2px 10px 2px 0; } .ref-table .ref-note { width: 100%; padding-top: 6px; } }
 
-    .expr-input {
-      width: 100%; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 6px;
-      color: var(--ink); font-family: var(--f-mono); font-size: 14px; padding: 8px 10px;
-      outline: none; transition: border-color 0.2s;
-    }
-    .expr-input:focus { border-color: var(--accent); }
-    .expr-input::placeholder { color: var(--muted); }
-    body.dark .expr-input { background: var(--paper-2); border-color: var(--rule); color: var(--rule); }
-    body.dark .expr-input:focus { border-color: var(--accent); }
+    .field + .field { margin-top: var(--s-4); }
+    .link-row { margin-top: var(--s-4); }
 
     .diagram-wrap {
       overflow: auto; -webkit-overflow-scrolling: touch;
-      border: 1px solid var(--rule); border-radius: 6px; background: var(--paper-2);
-      min-height: 200px; position: relative; touch-action: pan-x pan-y pinch-zoom;
+      border-radius: var(--radius-control); background: var(--well);
+      min-height: 240px; position: relative; touch-action: pan-x pan-y pinch-zoom;
     }
-    body.dark .diagram-wrap { border-color: var(--rule); background: var(--paper); }
-    .diagram-wrap svg { display: block; min-width: 100%; min-height: 200px; }
+    .diagram-wrap svg { display: block; min-width: 100%; min-height: 240px; }
     .diagram-empty {
       display: flex; align-items: center; justify-content: center;
-      min-height: 200px; color: var(--muted); font-size: 13px; font-style: italic;
+      min-height: 240px; padding: var(--s-4); text-align: center;
+      color: var(--muted); font-size: 0.875rem;
     }
-    body.dark .diagram-empty { color: var(--muted); }
 
-    .tt-panel { max-height: 300px; overflow: auto; margin-top: 10px; }
-    .tt-table { border-collapse: collapse; font-family: var(--f-mono); font-size: 12px; width: 100%; }
-    .tt-table th, .tt-table td { padding: 3px 8px; text-align: center; border: 1px solid var(--rule); }
-    body.dark .tt-table th, body.dark .tt-table td { border-color: var(--rule); }
-    .tt-table th { background: var(--rule-soft); font-weight: 600; position: sticky; top: 0; }
-    body.dark .tt-table th { background: var(--ink); }
-    .tt-one { color: var(--accent); }
-    body.dark .tt-one { color: var(--accent); }
+    .export-row { display: flex; gap: var(--s-2); margin-top: var(--s-4); flex-wrap: wrap; }
 
-    .export-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-
-    @media (max-width: 600px) {
-      .controls-row { flex-direction: column; }
-      .controls-row .input-group { min-width: 0; }
-    }
+    .tt-panel { max-height: 320px; overflow: auto; margin-top: var(--s-4); border-radius: var(--radius-control); }
+    .tt-table { border-collapse: collapse; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.8125rem; width: 100%; }
+    .tt-table th { font-family: var(--font-sans); font-weight: 500; color: var(--muted); font-size: 0.75rem; background: var(--well); position: sticky; top: 0; padding: 6px 10px; text-align: center; border-bottom: 1px solid var(--border); }
+    .tt-table td { padding: 5px 10px; text-align: center; border-bottom: 1px solid var(--border-soft); color: var(--muted); }
+    .tt-table td.tt-one { color: var(--ink); font-weight: 600; }
+    .tt-table td.tt-out { border-left: 1px solid var(--border); }
   </style>
 </head>
 <body>
@@ -75,88 +77,126 @@
   }
 })();
 </script>
-  <main class="container">
-    <div class="nav-row">
-      <div class="nav-links">
-        <a href="/" class="back-link">&larr; p14m.com</a>
-        <span>|</span>
-        <a href="/adders/">Adders</a>
-        <span>|</span>
-        <a href="/bits/">Bits</a>
-        <span>|</span>
-        <a href="/cache/">Cache</a>
-        <span>|</span>
-        <a href="/float/">Float</a>
-        <span>|</span>
-        <a href="/kmap/">K-Map</a>
-        <span>|</span>
-        <a href="/multipliers/">Multipliers</a>
-        <span>|</span>
-        <a href="/orderbook/">OrderBook</a>
-        <span>|</span>
-        <a href="/learn/">Learn</a>
-      </div>
-      <button class="theme-toggle" onclick="toggleTheme()">
-        <span id="theme-text">&#9790;</span>
-      </button>
-    </div>
+  <a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+    <nav class="site-links" aria-label="Site">
+      <a href="/#tools">Tools</a>
+      <a href="/learn/">Learn</a>
+      <a href="/#about">About</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" onclick="toggleTheme()">Dark</button>
+    </nav>
+  </div>
+  <nav class="tool-strip" aria-label="Tools">
+    <a href="/adders/">Adders</a>
+    <a href="/bits/">Bits</a>
+    <a href="/cache/">Cache</a>
+    <a href="/circuitgen/" aria-current="page">CircuitGen</a>
+    <a href="/float/">Float</a>
+    <a href="/kmap/">K-Map</a>
+    <a href="/multipliers/">Multipliers</a>
+    <a href="/orderbook/">Order Book</a>
+  </nav>
+</header>
+<main id="main" class="container">
 
+  <div class="page-head">
     <h1>CircuitGen</h1>
-    <p class="subtitle">Boolean expression to gate-level circuit diagram</p>
+    <p class="lede">Draw a gate-level circuit from a Boolean expression. Every standard gate is supported and the diagram exports as SVG or PNG.</p>
+  </div>
 
-    <div class="section">
-      <div class="controls-row">
-        <div class="input-group">
-          <label>Boolean Expression</label>
-          <input type="text" class="expr-input" id="exprInput" placeholder="e.g. A * (B + C')" spellcheck="false" autocomplete="off">
+  <details class="how-to">
+    <summary>How it works</summary>
+    <div class="how-to-body">
+      <p>Type an expression and the circuit is drawn as you type. Every gate is placed by hand-written layout code: inputs on the left, output on the right, wires routed between them.</p>
+      <ul>
+        <li>Gates: AND, OR, NOT, XOR, NAND, NOR and XNOR. Variables are single letters, <code>A</code> to <code>Z</code> or <code>a</code> to <code>z</code>.</li>
+        <li>Symbols and words mix freely: <code>A * (B + C')</code> and <code>A and (B or not C)</code> draw the same circuit.</li>
+        <li><strong>Natural fan-in</strong> lets a gate take as many inputs as the expression gives it. <strong>2-input only</strong> rebuilds every gate from 2-input gates, the way most gate libraries do.</li>
+        <li><strong>Truth table</strong> lists every input combination and the output. <strong>Export SVG</strong> and <strong>Export PNG</strong> save the diagram as drawn.</li>
+        <li>With 2 to 6 variables, <strong>Simplify with K-Map</strong> carries the expression to the K-map generator, which can send its minimized result back here.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="tool-layout">
+    <div class="tool-controls">
+      <div class="section workbench">
+        <div class="field">
+          <label class="lbl" for="exprInput">Boolean expression</label>
+          <input type="text" class="inp" id="exprInput" placeholder="A * (B + C')" spellcheck="false" autocomplete="off" autocapitalize="off">
+        </div>
+        <div class="field">
+          <span class="lbl" id="gateModeLabel">Gate fan-in</span>
+          <div class="mode-selector" id="gateMode" role="group" aria-labelledby="gateModeLabel">
+            <button class="mode-btn on" data-mode="natural">Natural</button>
+            <button class="mode-btn" data-mode="two">2-input only</button>
+          </div>
+        </div>
+        <div id="errorMsg" class="err" style="display:none;"></div>
+        <div class="link-row">
+          <a class="btn-t" id="kmapLink" href="/kmap/" style="display:none;">Simplify with K-Map</a>
+        </div>
+        <div class="ref-section">
+          <table class="ref-table" aria-label="Operator reference">
+            <tr><th>NOT</th><td><code>'</code> <code>~</code> <code>!</code> <code>not</code></td></tr>
+            <tr><th>AND</th><td><code>.</code> <code>*</code> <code>&amp;</code> <code>and</code></td></tr>
+            <tr><th>OR</th><td><code>+</code> <code>|</code> <code>or</code></td></tr>
+            <tr><th>XOR</th><td><code>^</code> <code>xor</code></td></tr>
+            <tr><th>XNOR</th><td><code>@</code> <code>xnor</code></td></tr>
+            <tr><th>NAND</th><td><code>%</code> <code>nand</code></td></tr>
+            <tr><th>NOR</th><td><code>#</code> <code>nor</code></td></tr>
+            <tr><th colspan="2" class="ref-note">Precedence: NOT, then AND and NAND, then XOR and XNOR, then OR and NOR. Parentheses override.</th></tr>
+          </table>
         </div>
       </div>
-      <div class="controls-row" style="margin-bottom:0;">
-        <div class="mode-selector" id="gateMode">
-          <button class="mode-btn on" data-mode="natural">Natural fan-in</button>
-          <button class="mode-btn" data-mode="two">2-input only</button>
+    </div>
+
+    <div class="tool-results">
+      <div class="section" id="diagramSection">
+        <div class="result-label">Circuit</div>
+        <div class="diagram-wrap" id="diagramWrap">
+          <div class="diagram-empty">Type an expression to draw its circuit</div>
         </div>
-        <a class="btn-t" id="kmapLink" href="/kmap/" style="font-size:12px;display:none;">Simplify with K-Map &rarr;</a>
+        <div class="export-row">
+          <button class="btn-t" id="btnSvg">Export SVG</button>
+          <button class="btn-t" id="btnPng">Export PNG</button>
+          <button class="btn-t" id="btnTT" aria-pressed="false">Truth table</button>
+        </div>
+        <div id="ttPanel" class="tt-panel" style="display:none;"></div>
       </div>
-      <div id="errorMsg" class="error-msg" style="display:none;"></div>
+      <div class="feedback-box" data-topic="tool-circuitgen" data-label="Was this tool useful?"></div>
     </div>
-
-    <div class="section" id="diagramSection" style="display:none;">
-      <div class="diagram-wrap" id="diagramWrap">
-        <div class="diagram-empty">Enter an expression above</div>
-      </div>
-      <div class="export-row">
-        <button class="btn-t" id="btnSvg">Export SVG</button>
-        <button class="btn-t" id="btnPng">Export PNG</button>
-        <button class="btn-t" id="btnTT">Truth Table</button>
-      </div>
-      <div id="ttPanel" class="tt-panel" style="display:none;"></div>
-    </div>
-
-    <div class="section" id="helpSection">
-      <div class="ref-section" style="border-top:none; padding-top:0;">
-        <p style="margin:0 0 8px;">This logic circuit generator converts any boolean expression into an interactive gate-level diagram you can export as SVG or PNG. Type an expression using AND, OR, NOT, XOR, NAND, NOR, and XNOR gates, and see the corresponding circuit rendered instantly with natural or 2-input-only fan-in.</p>
-        <strong>Operators:</strong> ' ~ ! (NOT) &middot; . * &amp; (AND) &middot; + | (OR) &middot; ^ (XOR) &middot; @ (XNOR) &middot; % (NAND) &middot; # (NOR)<br>
-        <strong>Keywords:</strong> and, or, not, nand, nor, xor, xnor &middot; <strong>Precedence:</strong> NOT &rarr; AND/NAND &rarr; XOR/XNOR &rarr; OR/NOR<br>
-        Variables: any letter (A-Z, a-z). Use parentheses for grouping.
-      </div>
-    </div>
-    <div class="feedback-box" data-topic="tool-circuitgen" data-label="Was this tool useful?"></div>
-
-    <div class="footer">&copy; 2026 <a href="/">p14m.com</a> <span class="footer-sep">·</span> <a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Submit feedback</a></div>
-  </main>
+  </div>
+</main>
+<footer class="site-footer">
+  <nav aria-label="Footer">
+    <ul class="site-footer-pages">
+      <li><a href="/adders/">Adder architecture visualizer</a></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a></li>
+      <li><a href="/cache/">Cache simulator</a></li>
+      <li><a href="/circuitgen/">CircuitGen</a></li>
+      <li><a href="/float/">IEEE 754 floating-point converter</a></li>
+      <li><a href="/kmap/">K-Map generator</a></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
+      <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/learn/">Learn</a></li>
+    </ul>
+  </nav>
+  <div class="site-footer-line">
+    <span>&copy; 2026 Peter Moses</span>
+    <ul class="site-footer-meta">
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Send feedback</a></li>
+    </ul>
+  </div>
+</footer>
 
 <script src="/lib/circuit.js"></script>
 <script>
-/* ── Theme ── */
-function toggleTheme() {
-  var body = document.body, t = document.getElementById('theme-text');
-  if (body.classList.contains('dark')) { body.classList.remove('dark'); t.innerHTML = '&#9790;'; localStorage.setItem('theme', 'light'); }
-  else { body.classList.add('dark'); t.innerHTML = '&#9788;'; localStorage.setItem('theme', 'dark'); }
-}
-document.addEventListener('DOMContentLoaded', function() {
-  if (document.body.classList.contains('dark')) document.getElementById('theme-text').innerHTML = '&#9788;';
-});
 
 /* ── Parser (same as kmap) ── */
 var TOKEN = {
@@ -314,37 +354,35 @@ function showError(msg) { var el = document.getElementById('errorMsg'); el.textC
 function generate() {
   var expr = document.getElementById('exprInput').value.trim();
   var wrap = document.getElementById('diagramWrap');
-  var section = document.getElementById('diagramSection');
   document.getElementById('ttPanel').style.display = 'none';
 
+  var ttBtn = document.getElementById('btnTT'); ttBtn.setAttribute('aria-pressed', 'false');
   if (!expr) {
-    wrap.innerHTML = '<div class="diagram-empty">Enter an expression above</div>';
-    section.style.display = 'none'; showError(''); currentCircuit = null; currentAst = null; currentVars = [];
+    wrap.innerHTML = '<div class="diagram-empty">Type an expression to draw its circuit</div>';
+    showError(''); currentCircuit = null; currentAst = null; currentVars = [];
     updateKmapLink(); return;
   }
 
   try {
     currentVars = extractVars(expr);
     var warning = '';
-    if (currentVars.length > 6) warning = 'Circuits with 7+ variables may have dense wiring. Consider simplifying with K-Map first.';
+    if (currentVars.length > 6) warning = 'Seven or more variables give dense wiring. Simplify with the K-map generator first if you can.';
 
     var tokens = tokenize(expr, currentVars);
     currentAst = parse(tokens);
     currentCircuit = Circuit.build(currentAst, currentMode);
 
-    if (!warning && currentCircuit.gateCount > 20) warning = currentCircuit.gateCount + ' gates — diagram may be dense.';
+    if (!warning && currentCircuit.gateCount > 20) warning = currentCircuit.gateCount + ' gates: the diagram may be dense.';
     showError(warning);
 
     var svg = Circuit.render(currentCircuit);
     wrap.innerHTML = '';
     wrap.appendChild(svg);
-    section.style.display = '';
     Circuit.interact(svg, currentCircuit, wrap);
     updateKmapLink();
   } catch (e) {
     showError(e.message);
     wrap.innerHTML = '<div class="diagram-empty">Fix the expression to see the circuit</div>';
-    section.style.display = '';
     currentCircuit = null; currentAst = null;
   }
 }
@@ -362,17 +400,18 @@ function updateKmapLink() {
 
 /* ── Truth Table ── */
 function toggleTT() {
-  var panel = document.getElementById('ttPanel');
-  if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+  var panel = document.getElementById('ttPanel'), btn = document.getElementById('btnTT');
+  if (panel.style.display !== 'none') { panel.style.display = 'none'; btn.setAttribute('aria-pressed', 'false'); return; }
   if (!currentAst || !currentVars.length) return;
+  btn.setAttribute('aria-pressed', 'true');
   var table = computeTruthTable(currentAst, currentVars);
   var html = '<table class="tt-table"><thead><tr>';
   currentVars.forEach(function(v) { html += '<th>' + v + '</th>'; });
-  html += '<th>Out</th></tr></thead><tbody>';
+  html += '<th class="tt-out">Out</th></tr></thead><tbody>';
   table.forEach(function(row) {
     html += '<tr>';
     currentVars.forEach(function(v) { var val = row.env[v]; html += '<td class="' + (val ? 'tt-one' : '') + '">' + val + '</td>'; });
-    html += '<td class="' + (row.result ? 'tt-one' : '') + '" style="font-weight:600">' + row.result + '</td></tr>';
+    html += '<td class="tt-out' + (row.result ? ' tt-one' : '') + '">' + row.result + '</td></tr>';
   });
   html += '</tbody></table>';
   panel.innerHTML = html; panel.style.display = '';
@@ -390,14 +429,14 @@ function getExportStyles() {
     + '.cg-gate-not .cg-gate-body,.cg-gate-not .cg-bubble{stroke:' + (dark ? '#e08050' : '#b85c2f') + '}'
     + '.cg-gate-xor .cg-gate-body,.cg-gate-xor .cg-bubble{stroke:' + (dark ? '#50d0d0' : '#2fa5a5') + '}'
     + '.cg-gate-xnor .cg-gate-body,.cg-gate-xnor .cg-bubble{stroke:' + (dark ? '#9070e0' : '#6b4fbf') + '}'
-    + '.cg-bubble{fill:' + (dark ? 'var(--paper)' : 'var(--paper)') + ';stroke-width:2}'
-    + '.cg-wire{fill:none;stroke:' + (dark ? 'var(--muted)' : 'var(--muted)') + ';stroke-width:2;stroke-linecap:round}'
-    + '.cg-junction{fill:' + (dark ? 'var(--muted)' : 'var(--muted)') + '}'
-    + '.cg-label{font-family:system-ui,sans-serif;fill:' + (dark ? 'var(--rule)' : 'var(--ink)') + '}'
+    + '.cg-bubble{fill:' + (dark ? '#20242A' : '#EAECEF') + ';stroke-width:2}'
+    + '.cg-wire{fill:none;stroke:' + (dark ? '#8B929C' : '#5F6672') + ';stroke-width:2;stroke-linecap:round}'
+    + '.cg-junction{fill:' + (dark ? '#8B929C' : '#5F6672') + '}'
+    + '.cg-label{font-family:system-ui,sans-serif;fill:' + (dark ? '#E9EBEE' : '#16181C') + '}'
     + '.cg-input-label{font-size:14px;font-weight:600;font-family:monospace}'
     + '.cg-output-label{font-size:14px;font-weight:600}'
     + '.cg-gate-text{font-size:10px;font-weight:600}'
-    + 'svg{background:' + (dark ? 'var(--paper)' : 'var(--paper-2)') + '}'
+    + 'svg{background:' + (dark ? '#20242A' : '#EAECEF') + '}'
     + '</style>';
 }
 

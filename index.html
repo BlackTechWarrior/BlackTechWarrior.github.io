@@ -1,22 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
-    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Peter Moses — Computer Engineering student at UTA. Portfolio, projects, and tools.">
-    <meta name="google-site-verification" content="NBnxCIFrJ-HmNiwbRwvY0riRz5pyfizLblLG5QN5n4U" />
-    <meta property="og:title" content="Peter Moses — p14m.com">
-    <meta property="og:description" content="Computer Engineering student at UTA. Portfolio, projects, and tools.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://p14m.com/">
-    <title>Peter Moses — p14m.com</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
-    <link rel="stylesheet" href="shared.css">
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Peter Moses: Computer Engineering Tools and Portfolio</title>
+  <meta name="description" content="Interactive tools for digital logic and computer architecture (K-map solver, cache simulator, adders, multipliers, IEEE 754, order book) by Peter Moses, computer engineering student at UTA.">
+  <meta name="author" content="Peter Moses">
+  <link rel="canonical" href="https://p14m.com/">
+  <meta name="theme-color" content="#F4F5F7">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="p14m">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://p14m.com/">
+  <meta property="og:title" content="Peter Moses: Computer Engineering Tools and Portfolio">
+  <meta property="og:description" content="Interactive tools for digital logic and computer architecture (K-map solver, cache simulator, adders, multipliers, IEEE 754, order book) by Peter Moses, computer engineering student at UTA.">
+  <meta property="og:image" content="https://p14m.com/og/home.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Peter Moses on p14m.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Peter Moses: Computer Engineering Tools and Portfolio">
+  <meta name="twitter:description" content="Interactive tools for digital logic and computer architecture (K-map solver, cache simulator, adders, multipliers, IEEE 754, order book) by Peter Moses, computer engineering student at UTA.">
+  <meta name="twitter:image" content="https://p14m.com/og/home.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" href="/favicon-48.png">
+  <link rel="preload" href="/fonts/mona-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/monaspace-neon-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/shared.css">
+  <script src="/lib/site.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Person","@id":"https://p14m.com/#person","name":"Peter Moses","url":"https://p14m.com/","image":"https://p14m.com/peter_moses_image.webp","jobTitle":"Computer Engineering student","affiliation":{"@type":"CollegeOrUniversity","name":"University of Texas at Arlington"},"sameAs":["https://github.com/BlackTechWarrior","https://linkedin.com/in/petamos"]},{"@type":"WebSite","@id":"https://p14m.com/#website","url":"https://p14m.com/","name":"p14m","description":"Interactive tools for digital logic and computer architecture (K-map solver, cache simulator, adders, multipliers, IEEE 754, order book) by Peter Moses, computer engineering student at UTA.","publisher":{"@id":"https://p14m.com/#person"},"inLanguage":"en"}]}</script>
+  <meta name="google-site-verification" content="NBnxCIFrJ-HmNiwbRwvY0riRz5pyfizLblLG5QN5n4U" />
+  <link rel="stylesheet" href="/styles.css">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
 </head>
 <body>
 <script>
@@ -27,355 +45,180 @@
   }
 })();
 </script>
-<main class="container">
-    <div class="header">
-        <div class="name-section">
-            <img src="peter_moses_image.webp" alt="Peter Moses" class="profile-picture" width="90" height="90" fetchpriority="high">
-            <h1>Peter Moses here!</h1>
-        </div>
-        <button class="theme-toggle" onclick="toggleTheme()">
-            <span id="theme-text">&#9790;</span>
-        </button>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+    <nav class="site-links" aria-label="Site">
+      <a href="/#tools">Tools</a>
+      <a href="/learn/">Learn</a>
+      <a href="/#about">About</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" onclick="toggleTheme()">Dark</button>
+    </nav>
+  </div>
+  <nav class="tool-strip" aria-label="Tools" hidden>
+    <a href="/adders/">Adders</a>
+    <a href="/bits/">Bits</a>
+    <a href="/cache/">Cache</a>
+    <a href="/circuitgen/">CircuitGen</a>
+    <a href="/float/">Float</a>
+    <a href="/kmap/">K-Map</a>
+    <a href="/multipliers/">Multipliers</a>
+    <a href="/orderbook/">Order Book</a>
+  </nav>
+</header>
+<main id="main" class="container home">
+
+  <section class="intro" aria-labelledby="name">
+    <img src="/peter_moses_image.webp" alt="Peter Moses" class="portrait" width="80" height="80" fetchpriority="high">
+    <h1 id="name">Peter Moses</h1>
+    <p class="lede">Computer engineering student at the University of Texas at Arlington, working on high performance computing and machine learning. I make interactive tools for digital logic and computer architecture.</p>
+    <ul class="intro-links">
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="#contact">Email</a></li>
+    </ul>
+  </section>
+
+  <div class="home-body">
+  <section id="tools" aria-labelledby="tools-h">
+    <h2 id="tools-h">Tools</h2>
+    <ul class="index-list">
+      <li><a href="/kmap/">K-Map generator</a><span>Karnaugh map solver for 2 to 6 variables: groups, SOP and POS, truth table, Verilog, VHDL and the circuit.</span></li>
+      <li><a href="/cache/">Cache simulator</a><span>Direct-mapped, set-associative and fully associative caches with LRU, FIFO and random replacement, stepped one access at a time.</span></li>
+      <li><a href="/float/">IEEE 754 converter</a><span>Half, single and double precision. Encode a value, decode a bit pattern, flip bits.</span></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a><span>Bitwise expressions evaluated step by step on 4 to 32-bit values.</span></li>
+      <li><a href="/adders/">Adder architecture visualizer</a><span>Ripple carry, carry lookahead, carry select and carry save, with carries animated and area against delay.</span></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a><span>Shift-and-add, Booth radix-2, array and Wallace tree, with partial product reduction stepped through.</span></li>
+      <li><a href="/circuitgen/">CircuitGen</a><span>Gate-level circuit diagrams from Boolean expressions, exported as SVG.</span></li>
+      <li><a href="/orderbook/">Order book simulator</a><span>A limit order book with price-time priority matching, stepped one operation at a time.</span></li>
+      <li><a href="/learn/">Learn</a><span>Short explanations of the ideas behind the tools.</span></li>
+    </ul>
+  </section>
+
+  <section id="projects" aria-labelledby="projects-h">
+    <h2 id="projects-h">Projects</h2>
+    <ul class="index-list">
+      <li><a href="https://github.com/BlackTechWarrior/cpparser">Calscript</a><span>A C++17 command-line calculator. The parser uses the shunting-yard algorithm.</span></li>
+      <li><a href="/vokun/">Vokun</a><span>A package bundle manager for pacman-based Linux. Bundles are TOML with inheritance, optional packages and post-install hooks.</span></li>
+    </ul>
+    <p class="note">More on <a href="https://github.com/BlackTechWarrior?tab=repositories">GitHub</a>.</p>
+  </section>
+
+  <section id="about" aria-labelledby="about-h">
+    <h2 id="about-h">About</h2>
+    <div class="prose">
+      <p>The tools here started as study aids for my own coursework. When a textbook diagram was not enough, I built the thing and stepped through it.</p>
+      <p>At UTA I am a member of the National Society of Black Engineers and the Association for Computing Machinery. I was part of Freshman Leaders on Campus in my first year and served as a student advocate for the <a href="https://cahsi.utep.edu/">CAHSI</a> chapter.</p>
+      <p>I want to work on hard problems in mathematics and hardware, and I am always looking for chances to learn and to apply what I know.</p>
     </div>
+  </section>
 
-    <div class="quote">
-        <q><i>Pure mathematics is, in its way, the poetry of logical ideas.</i></q>
-        <p class="attribution">- Albert Einstein</p>
-    </div>
+  <section id="contact" aria-labelledby="contact-h">
+    <h2 id="contact-h">Contact</h2>
+    <p class="prose"><span class="email">pxm4277 <span aria-hidden="true">[at]</span><span class="sr-only">@</span> mavs.uta.edu</span></p>
+  </section>
+  </div>
 
-    <div class="links">
-        <a href="https://github.com/BlackTechWarrior">GitHub</a> |
-        <a href="https://linkedin.com/in/petamos">LinkedIn</a>
-    </div>
-
-    <div class="section">
-        <p>I'm a Computer Engineering Undergraduate student at the University of Texas at Arlington with a focus on High Performance Computing and AI/ML.</p>
-
-        <p>Activities and organizations I'm involved in: </p>
-        <ul>
-            <li>UTA's National Society of Black Engineers</li>
-            <li>Association of Computer Machinery at UTA</li>
-        </ul>
-
-        <p><strong>Leadership</strong> I've been involved in:</p>
-        <ul>
-            <li>Freshman Leaders on Campus <i>(FLOC)</i> during my freshman year</li>
-            <li>Being a student advocate for our school's <a href="https://cahsi.utep.edu/">CAHSI</a> chapter whereby my goal was to bring awareness about the organization and its initiatives</li>
-        </ul>
-
-        <p>My long term goal is to use technology and math to solve really hard and fascinating problems and through that, positively impact the world.</p>
-
-        <p>I'm always looking for opportunities to both learn and actively apply my current knowledge.</p>
-    </div>
-
-    <div class="section">
-        <h2>Standalone Projects</h2>
-        <p class="proj1"><a href="https://github.com/BlackTechWarrior/cpparser">Calscript</a></p>
-        <p>This is a high-performance, feature-rich command-line calculator in C++17 capable of evaluating complex, multi-term mathematical expressions.
-            The core of the project is a sophisticated parsing engine built on classic compiler and systems programming principles.
-            Mathematical expressions are evaluated using the Shunting Yard Algorithm.</p>
-
-        <p class="proj1"><a href="/vokun/">Vokun</a></p>
-        <p>A task-oriented package bundle manager for pacman-based Linux distributions. Define, share, and compose your own package bundles in TOML with inheritance, optional packages, and post-install hooks. Ships with 25 curated defaults but is built around making your own.</p>
-
-        <p><i>For my other ongoing work, check out my current repositories on my <a href="https://github.com/BlackTechWarrior?tab=repositories">GitHub</a>.</i></p>
-    </div>
-
-    <div class="section">
-        <h2>Site Tools</h2>
-        <p class="proj1"><a href="/kmap/">K-Map Generator</a></p>
-        <p>An interactive Karnaugh Map solver supporting 2-6 variables with all standard logic gates (AND, OR, NOT, NAND, NOR, XOR, XNOR). Features include don't-care states, SOP/POS minimization, XOR/XNOR pattern detection, minterm/maxterm notation, and manual cell entry mode.</p>
-
-        <p class="proj1"><a href="/bits/">Bit Manipulation Visualizer</a></p>
-        <p>Interactive bit manipulation visualizer with step-by-step expression evaluation, variable bank with multiple format displays, and a quick reference for common bit tricks.</p>
-
-        <p class="proj1"><a href="/cache/">Cache Simulator</a></p>
-        <p>Interactive CPU cache simulator with visual address breakdown into tag, index, and offset bits. Step through access patterns to see hits, misses, and LRU eviction across direct-mapped, set-associative, and fully associative configurations.</p>
-
-        <p class="proj1"><a href="/adders/">Adder Architecture Visualizer</a></p>
-        <p>Compare binary adder architectures (Ripple Carry, Carry Lookahead, Carry Select, Carry Save) side-by-side with animated carry propagation and area-speed tradeoff analysis.</p>
-
-        <p class="proj1"><a href="/multipliers/">Multiplier Architecture Visualizer</a></p>
-        <p>Compare binary multiplier architectures (Shift-and-Add, Booth's Radix-2, Array, Wallace Tree) side-by-side with animated partial product reduction and area-speed tradeoff analysis.</p>
-
-        <p class="proj1"><a href="/circuitgen/">CircuitGen</a></p>
-        <p>Generate interactive gate-level circuit diagrams from boolean expressions with SVG export.</p>
-
-        <p class="proj1"><a href="/orderbook/">Order Book Simulator</a></p>
-        <p>Interactive limit order book with step-by-step matching visualization. Place limit and market orders, walk through price-time priority matching, and explore scenarios like level sweeping, spread collapse, and iceberg orders.</p>
-
-        <p class="proj1"><a href="/float/">IEEE-754 Floating Point</a></p>
-        <p>Convert between decimal (scientific notation supported) and binary inputs and their IEEE-754 representations in 16, 32, and 64-bit formats. See sign, exponent, mantissa, and bias side-by-side, with notes on how each format's bias is chosen.</p>
-
-        <p class="proj1"><a href="/learn/">Learn</a></p>
-        <p>Bite-sized explanations of computer engineering concepts, building blocks, and the theory behind the tools.</p>
-    </div>
-
-    <div class="section">
-        <h2>Publications</h2>
-        <p>Publications and research papers will be listed here once available.</p>
-    </div>
-
-    <div class="section">
-        <h2>Resume</h2>
-        <p><a href="/resume/">View Resume</a> | <a href="/peter_moses_resume.pdf">Download PDF</a></p>
-    </div>
-
-    <div class="section">
-        <h2>Contact</h2>
-        <p><strong>I'm always down for a coffee chat, questions, greetings. Reach me at: </strong></p>
-        <p>pxm4277[at]mavs[dot]uta[dot]edu</p>
-    </div>
-
-    <div class="footer">&copy; 2026 <a href="/">p14m.com</a> &middot; <a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Submit Feedback</a></div>
 </main>
+<footer class="site-footer">
+  <nav aria-label="Footer">
+    <ul class="site-footer-pages">
+      <li><a href="/adders/">Adder architecture visualizer</a></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a></li>
+      <li><a href="/cache/">Cache simulator</a></li>
+      <li><a href="/circuitgen/">CircuitGen</a></li>
+      <li><a href="/float/">IEEE 754 floating-point converter</a></li>
+      <li><a href="/kmap/">K-Map generator</a></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
+      <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/learn/">Learn</a></li>
+    </ul>
+  </nav>
+  <div class="site-footer-line">
+    <span>&copy; 2026 Peter Moses</span>
+    <ul class="site-footer-meta">
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Send feedback</a></li>
+    </ul>
+  </div>
+</footer>
 
-<script>
-    function toggleTheme() {
-        const body = document.body;
-        const themeText = document.getElementById('theme-text');
-
-        if (body.classList.contains('dark')) {
-            body.classList.remove('dark');
-            themeText.innerHTML = '&#9790;';
-            localStorage.setItem('theme', 'light');
-        } else {
-            body.classList.add('dark');
-            themeText.innerHTML = '&#9788;';
-            localStorage.setItem('theme', 'dark');
-        }
-    }
-
-    // Sync theme icon on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        const themeText = document.getElementById('theme-text');
-        if (document.body.classList.contains('dark')) {
-            themeText.innerHTML = '&#9788;';
-        }
-    });
-</script>
-<!-- 🍪 Cookie Easter Egg — drop this anywhere inside <body>, before closing </body> tag -->
-<!-- First-visit only. Self-contained: styles + markup + script. -->
-
+<!-- Cookie easter egg: first visit only. -->
 <div id="cookie-easter-egg"></div>
-
 <style>
-  /* ── Cookie Easter Egg ── */
-  #cookie-easter-egg {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    pointer-events: none;
-    overflow: hidden;
-  }
-
-  .cookie-falling {
-    position: absolute;
-    font-size: 38px;
-    top: -50px;
-    will-change: transform;
-    z-index: 10001;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
-  }
-
-  /* Gentle wobble while falling */
-  @keyframes cookieWobble {
-    0%, 100% { transform: rotate(-8deg); }
-    50%      { transform: rotate(8deg); }
-  }
-
-  /* Crumble particle */
-  .crumb {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    will-change: transform, opacity;
-    z-index: 10001;
-  }
-
-  /* Banner */
+  #cookie-easter-egg { position: fixed; inset: 0; z-index: var(--z-toast); pointer-events: none; overflow: hidden; }
+  .cookie-falling { position: absolute; font-size: 38px; top: -50px; will-change: transform; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+  @keyframes cookieWobble { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+  .crumb { position: absolute; width: 6px; height: 6px; border-radius: 50%; will-change: transform, opacity; }
   .cookie-banner {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0.7);
-    opacity: 0;
-    z-index: 10002;
-    background: #ffffff;
-    border: 2px solid #cccccc;
-    border-radius: 12px;
-    padding: 22px 38px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 18px;
-    font-weight: 600;
-    color: #000000;
-    text-align: center;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-    pointer-events: none;
-    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-    line-height: 1.5;
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.7); opacity: 0;
+    background: var(--surface); border: 2px solid var(--ink);
+    box-shadow: 4px 4px 0 0 var(--ink);
+    border-radius: var(--radius-panel); padding: 20px 32px;
+    font-family: var(--font-sans); font-size: 18px; font-weight: 600; color: var(--ink);
+    text-align: center; pointer-events: none; line-height: 1.5;
+    transition: opacity 0.5s var(--ease-out), transform 0.5s var(--ease-out);
   }
-
-  .cookie-banner.visible {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-
-  .cookie-banner.fade-out {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.95);
-  }
-
-  .cookie-banner .banner-sub {
-    font-size: 13px;
-    font-weight: 400;
-    color: #595959;
-    margin-top: 4px;
-  }
-
-  /* Dark mode */
-  body.dark .cookie-banner {
-    background: #1a1a1a;
-    border-color: #444444;
-    color: #e0e0e0;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  }
-  body.dark .cookie-banner .banner-sub {
-    color: #9a9a9a;
-  }
+  .cookie-banner.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .cookie-banner.fade-out { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  .cookie-banner .banner-sub { font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 4px; }
+  @media (prefers-reduced-motion: reduce) { #cookie-easter-egg { display: none; } }
 </style>
-
 <script>
 (function() {
-  // ── First visit gate ──
-  if (localStorage.getItem('p14m_cookie_seen')) return;
-  localStorage.setItem('p14m_cookie_seen', '1');
-
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  try { if (localStorage.getItem('p14m_cookie_seen')) return; localStorage.setItem('p14m_cookie_seen', '1'); } catch (e) { return; }
   var container = document.getElementById('cookie-easter-egg');
   if (!container) return;
-
-  var COOKIE_COUNT  = 10;
-  var FALL_DURATION_MIN = 2200; // ms
-  var FALL_DURATION_MAX = 3200;
-  var CRUMBS_PER_COOKIE = 8;
-  var BANNER_DELAY  = 600;  // ms after last cookie lands
-  var BANNER_LINGER = 2200; // ms banner stays visible
-  var FADE_OUT_MS   = 500;
-
+  var COOKIE_COUNT = 10, FALL_MIN = 2200, FALL_MAX = 3200, CRUMBS = 8, BANNER_DELAY = 600, BANNER_LINGER = 2200, FADE_OUT = 500;
   var crumbColors = ['#d2691e', '#8b5e3c', '#c4a35a', '#a0522d', '#e8c07a', '#6b3a2a'];
-  var isDark = document.body.classList.contains('dark');
-
-  var landedCount = 0;
-  var totalCookies = COOKIE_COUNT;
-
-  // ── Spawn cookies with staggered delays ──
-  for (var i = 0; i < COOKIE_COUNT; i++) {
-    spawnCookie(i * 220 + Math.random() * 180);
-  }
-
+  var landed = 0;
+  for (var i = 0; i < COOKIE_COUNT; i++) spawnCookie(i * 220 + Math.random() * 180);
   function spawnCookie(delay) {
     setTimeout(function() {
       var el = document.createElement('div');
-      el.className = 'cookie-falling';
-      el.textContent = '🍪';
-
-      // Random horizontal position (10%–90% viewport)
-      var xPct = 10 + Math.random() * 80;
-      el.style.left = xPct + '%';
-
-      // Wobble
+      el.className = 'cookie-falling'; el.textContent = '\uD83C\uDF6A';
+      el.style.left = (10 + Math.random() * 80) + '%';
       el.style.animation = 'cookieWobble ' + (0.4 + Math.random() * 0.3).toFixed(2) + 's ease-in-out infinite';
-
       container.appendChild(el);
-
-      // Fall animation via JS (CSS transition)
-      var fallDur = FALL_DURATION_MIN + Math.random() * (FALL_DURATION_MAX - FALL_DURATION_MIN);
-      var landY = window.innerHeight - 50;
-
-      el.style.transition = 'top ' + (fallDur / 1000).toFixed(2) + 's cubic-bezier(0.25, 0.1, 0.35, 1)';
-
-      // Force reflow then animate
+      var dur = FALL_MIN + Math.random() * (FALL_MAX - FALL_MIN);
+      el.style.transition = 'top ' + (dur / 1000).toFixed(2) + 's cubic-bezier(0.25, 0.1, 0.35, 1)';
       el.getBoundingClientRect();
-      el.style.top = landY + 'px';
-
-      // On landing → crumble
+      el.style.top = (window.innerHeight - 50) + 'px';
       setTimeout(function() {
-        var rect = el.getBoundingClientRect();
-        var cx = rect.left + rect.width / 2;
-        var cy = rect.top + rect.height / 2;
-
-        el.remove();
-        spawnCrumbs(cx, cy);
-
-        landedCount++;
-        if (landedCount >= totalCookies) {
-          setTimeout(showBanner, BANNER_DELAY);
-        }
-      }, fallDur + 30);
-
+        var r = el.getBoundingClientRect(); var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        el.remove(); spawnCrumbs(cx, cy);
+        if (++landed >= COOKIE_COUNT) setTimeout(showBanner, BANNER_DELAY);
+      }, dur + 30);
     }, delay);
   }
-
   function spawnCrumbs(cx, cy) {
-    for (var j = 0; j < CRUMBS_PER_COOKIE; j++) {
-      var crumb = document.createElement('div');
-      crumb.className = 'crumb';
-
+    for (var j = 0; j < CRUMBS; j++) {
+      var c = document.createElement('div'); c.className = 'crumb';
       var size = 4 + Math.random() * 5;
-      crumb.style.width = size + 'px';
-      crumb.style.height = size + 'px';
-      crumb.style.background = crumbColors[Math.floor(Math.random() * crumbColors.length)];
-      crumb.style.left = cx + 'px';
-      crumb.style.top = cy + 'px';
-      crumb.style.opacity = '1';
-
-      container.appendChild(crumb);
-
-      // Animate outward + fade
-      var angle = (Math.PI * 2 * j) / CRUMBS_PER_COOKIE + (Math.random() - 0.5) * 0.8;
-      var dist = 30 + Math.random() * 50;
-      var dx = Math.cos(angle) * dist;
-      var dy = Math.sin(angle) * dist - (20 + Math.random() * 30); // bias upward first
-
-      var dur = 400 + Math.random() * 300;
-
-      crumb.style.transition = 'transform ' + dur + 'ms cubic-bezier(0.25, 0, 0.5, 1), opacity ' + dur + 'ms ease-out';
-
-      crumb.getBoundingClientRect();
-      crumb.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
-      crumb.style.opacity = '0';
-
-      // Cleanup
-      (function(c, d) {
-        setTimeout(function() { c.remove(); }, d + 50);
-      })(crumb, dur);
+      c.style.width = size + 'px'; c.style.height = size + 'px';
+      c.style.background = crumbColors[Math.floor(Math.random() * crumbColors.length)];
+      c.style.left = cx + 'px'; c.style.top = cy + 'px'; c.style.opacity = '1';
+      container.appendChild(c);
+      var a = (Math.PI * 2 * j) / CRUMBS + (Math.random() - 0.5) * 0.8, d = 30 + Math.random() * 50;
+      var dx = Math.cos(a) * d, dy = Math.sin(a) * d - (20 + Math.random() * 30), dur = 400 + Math.random() * 300;
+      c.style.transition = 'transform ' + dur + 'ms cubic-bezier(0.25, 0, 0.5, 1), opacity ' + dur + 'ms ease-out';
+      c.getBoundingClientRect();
+      c.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)'; c.style.opacity = '0';
+      (function(el, t) { setTimeout(function() { el.remove(); }, t + 50); })(c, dur);
     }
   }
-
   function showBanner() {
-    var banner = document.createElement('div');
-    banner.className = 'cookie-banner';
-    banner.innerHTML = '<div>no cookies here 🍪✨</div><div class="banner-sub"><i>those were the last ones</i></div>';
-    container.appendChild(banner);
-
-    // Trigger entrance
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        banner.classList.add('visible');
-      });
-    });
-
-    // Fade out after linger
-    setTimeout(function() {
-      banner.classList.remove('visible');
-      banner.classList.add('fade-out');
-
-      setTimeout(function() {
-        container.remove();
-      }, FADE_OUT_MS + 50);
-    }, BANNER_LINGER);
+    var b = document.createElement('div'); b.className = 'cookie-banner';
+    b.innerHTML = '<div>no cookies here \uD83C\uDF6A</div><div class="banner-sub">those were the last ones</div>';
+    container.appendChild(b);
+    requestAnimationFrame(function() { requestAnimationFrame(function() { b.classList.add('visible'); }); });
+    setTimeout(function() { b.classList.remove('visible'); b.classList.add('fade-out'); setTimeout(function() { container.remove(); }, FADE_OUT + 50); }, BANNER_LINGER);
   }
 })();
 </script>

@@ -1,144 +1,37 @@
-/* ── Index Page Overrides ── */
-body {
-    line-height: 1.5;
-    padding: 15px;
-    font-size: 16px;
+/* ── Front page ──────────────────────────────────────────────── */
+.home { max-width: var(--page-max); }
+.home-body { max-width: 600px; }
+
+.intro { margin: var(--s-6) 0 var(--s-8); max-width: 600px; }
+.portrait { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: block; margin-bottom: var(--s-4); }
+.intro h1 { margin-bottom: var(--s-3); }
+.intro .lede { margin-bottom: var(--s-4); max-width: 54ch; }
+.intro-links { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); font-size: 0.9375rem; font-weight: 500; }
+
+section + section { margin-top: var(--s-7); }
+.home h2 { margin: 0 0 var(--s-4); }
+
+.index-list { list-style: none; margin: 0; padding: 0; }
+.index-list li { display: flex; flex-direction: column; gap: 2px; padding: var(--s-3) 0; border-top: 1px solid var(--border); }
+.index-list li:first-child { border-top: 0; padding-top: 0; }
+.index-list li:last-child { padding-bottom: 0; }
+.index-list a { font-weight: 600; text-decoration: none; }
+.index-list a:hover { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+.index-list span { color: var(--ink-2); font-size: 0.9375rem; max-width: 60ch; }
+
+.note { margin: var(--s-4) 0 0; color: var(--ink-2); font-size: 0.9375rem; }
+.prose { max-width: 60ch; }
+.prose p { margin: 0 0 var(--s-4); }
+.prose p:last-child { margin-bottom: 0; }
+.email { font-weight: 500; }
+
+@media (min-width: 961px) {
+  .home { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 600px); column-gap: var(--s-8); align-items: start; }
+  .intro { position: sticky; top: var(--s-6); margin: var(--s-6) 0 0; }
+  .home-body { margin-top: var(--s-6); }
+  .home-body > section:first-child h2 { margin-top: 0; }
 }
-
-.container {
-    max-width: 700px;
-}
-
-/* ── Header ── */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--rule);
-    padding-bottom: 15px;
-}
-
-.name-section {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.profile-picture {
-    width: 90px;
-    height: 90px;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid var(--rule);
-}
-
-h1 {
-    font-size: 1.6em;
-    margin: 0;
-}
-
-/* ── Quote ── */
-.quote {
-    border: 1px solid var(--rule);
-    padding: 10px 14px;
-    margin: 15px 0;
-    border-radius: 8px;
-    font-family: var(--f-display);
-    font-weight: 400;
-    font-size: 1rem;
-    line-height: 1.55;
-    letter-spacing: -0.003em;
-    opacity: 0.92;
-}
-
-.attribution {
-    text-align: right;
-    margin-top: 10px;
-    margin-bottom: 0;
-}
-
-/* ── Social Links ── */
-.links {
-    text-align: center;
-    margin: 15px 0;
-    padding: 8px;
-    font-size: 13px;
-}
-
-.links a {
-    text-decoration: none;
-    margin: 0 10px;
-    font-weight: 500;
-}
-
-.links a:hover {
-    text-decoration: underline;
-}
-
-/* ── Headings ── */
-h2 {
-    font-family: var(--f-display);
-    font-size: 1.35em;
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--accent);
-}
-
-/* ── Lists ── */
-ul {
-    margin: 10px 0;
-    padding-left: 22px;
-}
-
-li {
-    margin: 6px 0;
-}
-
-/* ── Paragraphs ── */
-p {
-    margin: 10px 0;
-}
-
-/* ── Responsive (index-specific) ── */
-@media (max-width: 600px) {
-    body {
-        padding: 10px;
-        font-size: 15px;
-    }
-
-    .profile-picture {
-        width: 80px;
-        height: 80px;
-    }
-
-    .name-section {
-        gap: 10px;
-    }
-
-    .header {
-        flex-direction: column;
-        gap: 12px;
-        text-align: center;
-    }
-
-    h1 {
-        font-size: 1.4em;
-    }
-
-    h2 {
-        font-size: 1.2em;
-    }
-
-    .container {
-        max-width: 100%;
-    }
-
-    .quote {
-        padding: 15px;
-    }
+@media (max-width: 640px) {
+  .intro { margin: var(--s-4) 0 var(--s-7); }
+  section + section { margin-top: var(--s-6); }
 }

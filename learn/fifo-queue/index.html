@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>FIFO Queues in Hardware: Building Blocks | p14m</title>
+  <meta name="description" content="First-in-first-out buffers: the fundamental building block for pipelining, buffering, and order matching.">
+  <meta name="author" content="Peter Moses">
+  <link rel="canonical" href="https://p14m.com/learn/fifo-queue/">
+  <meta name="theme-color" content="#F4F5F7">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="p14m">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://p14m.com/learn/fifo-queue/">
+  <meta property="og:title" content="FIFO Queues in Hardware: Building Blocks | p14m">
+  <meta property="og:description" content="First-in-first-out buffers: the fundamental building block for pipelining, buffering, and order matching.">
+  <meta property="og:image" content="https://p14m.com/og/learn.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Learn on p14m.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FIFO Queues in Hardware: Building Blocks | p14m">
+  <meta name="twitter:description" content="First-in-first-out buffers: the fundamental building block for pipelining, buffering, and order matching.">
+  <meta name="twitter:image" content="https://p14m.com/og/learn.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" href="/favicon-48.png">
+  <link rel="preload" href="/fonts/mona-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/monaspace-neon-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/shared.css">
+  <link rel="stylesheet" href="/learn/learn.css">
+  <script src="/lib/site.js" defer></script>
+  <script src="/lib/feedback.js" defer></script>
+  <script src="/learn/app.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"LearningResource","name":"FIFO Queues in Hardware","description":"First-in-first-out buffers: the fundamental building block for pipelining, buffering, and order matching.","url":"https://p14m.com/learn/fifo-queue/","educationalLevel":"College","learningResourceType":"Explanation","isAccessibleForFree":true,"inLanguage":"en","image":"https://p14m.com/og/learn.png","about":"Building Blocks","author":{"@type":"Person","name":"Peter Moses","url":"https://p14m.com/"},"isPartOf":{"@type":"CollectionPage","@id":"https://p14m.com/learn/","name":"Learn computer architecture"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"p14m","item":"https://p14m.com/"},{"@type":"ListItem","position":2,"name":"Learn","item":"https://p14m.com/learn/"},{"@type":"ListItem","position":3,"name":"FIFO Queues in Hardware","item":"https://p14m.com/learn/fifo-queue/"}]}]}</script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
+</head>
+<body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+    <nav class="site-links" aria-label="Site">
+      <a href="/#tools">Tools</a>
+      <a href="/learn/" aria-current="page">Learn</a>
+      <a href="/#about">About</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" onclick="toggleTheme()">Dark</button>
+    </nav>
+  </div>
+  <nav class="tool-strip" aria-label="Tools">
+    <a href="/adders/">Adders</a>
+    <a href="/bits/">Bits</a>
+    <a href="/cache/">Cache</a>
+    <a href="/circuitgen/">CircuitGen</a>
+    <a href="/float/">Float</a>
+    <a href="/kmap/">K-Map</a>
+    <a href="/multipliers/">Multipliers</a>
+    <a href="/orderbook/">Order Book</a>
+  </nav>
+</header>
+<main id="main" class="container">
+  <div class="learn-topic">
+<article class="learn-article"><div class="page-head"><h1>FIFO Queues in Hardware</h1><p class="lede">First-in-first-out buffers: the fundamental building block for pipelining, buffering, and order matching.</p></div><div class="topic-meta"><span class="tag">Concept</span><a class="plain" href="/learn/#category/foundations">Building Blocks</a></div><section class="topic-section" id="problem"><h2>Problem</h2><div class="topic-body">How does hardware store a sequence of items and retrieve them in the same order? FIFOs appear everywhere: between pipeline stages, at bus interfaces, in network switches, and in order book matching engines.</div></section><section class="topic-section" id="how-it-works"><h2>How it works</h2><div class="topic-body"><strong>Circular buffer:</strong> the most common FIFO implementation uses a fixed-size memory array with two pointers:<br><br>• <strong>Write pointer (tail)</strong>: points to the next empty slot. Advances on enqueue.<br>• <strong>Read pointer (head)</strong>: points to the oldest item. Advances on dequeue.<br>• Both pointers wrap around when they reach the end of the array.<br><br><strong>Full/empty detection:</strong> the tricky part. If head = tail, is the FIFO empty or full? Common solutions:<br>• <strong>Extra bit:</strong> use (N+1)-bit pointers for an N-slot FIFO. Full when pointers match in low bits but differ in the extra bit. Empty when pointers are exactly equal.<br>• <strong>Counter:</strong> track the number of occupied slots separately.<br>• <strong>Waste a slot:</strong> never fill the last slot; full = (tail+1) mod size == head.<br><br><strong>Synchronous vs asynchronous:</strong> when the producer and consumer run on different clocks (e.g., crossing clock domains), an <em>async FIFO</em> uses Gray code pointers so only one bit transitions per cycle, making single-bit synchronization manageable via multi-stage synchronizers. This is one of the most important and subtle structures in digital design.<br><br><strong>Depth sizing:</strong> FIFO depth is chosen to absorb burst traffic without overflow. Too shallow = data loss under burst. Too deep = wasted area.</div></section><div class="insight" id="key-insight"><strong>Key insight</strong>A FIFO decouples a producer from a consumer: they don’t need to run at the same rate or even the same clock. In order book engines, each price level’s order queue is a FIFO: first order in is the first to be matched (price-time priority).</div><div class="section workbench widget" id="try-it" data-widget="fifo-queue"></div><div class="feedback-box" data-topic="fifo-queue" data-label="Was this useful?"></div></article><aside class="learn-rail" aria-label="Topic navigation"><p><a class="rail-back" href="/learn/">All topics</a></p><div class="rail-onpage"><h2>On this page</h2><ul><li><a href="#problem">Problem</a></li><li><a href="#how-it-works">How it works</a></li><li><a href="#key-insight">Key insight</a></li><li><a href="#try-it">Try it</a></li></ul></div><h2>Related</h2><ul><li><a href="/learn/comparator/">Comparator Circuits</a></li><li><a href="/learn/order-book-mechanics/">Order Book Mechanics</a></li><li><a href="/learn/cache-fundamentals/">Cache Memory</a></li></ul><h2>More in Building Blocks</h2><ul><li><a href="/learn/logic-gates/">Logic Gates</a></li><li><a href="/learn/full-adder/">Full Adder (FA)</a></li><li><a href="/learn/conventions/">Measurement Conventions</a></li><li><a href="/learn/twos-complement/">Two's Complement</a></li><li><a href="/learn/partial-products/">Partial Products</a></li><li><a href="/learn/carry-save/">Carry Save Adder (CSA)</a></li></ul></aside>
+  </div>
+</main>
+<footer class="site-footer">
+  <nav aria-label="Footer">
+    <ul class="site-footer-pages">
+      <li><a href="/adders/">Adder architecture visualizer</a></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a></li>
+      <li><a href="/cache/">Cache simulator</a></li>
+      <li><a href="/circuitgen/">CircuitGen</a></li>
+      <li><a href="/float/">IEEE 754 floating-point converter</a></li>
+      <li><a href="/kmap/">K-Map generator</a></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
+      <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/learn/">Learn</a></li>
+    </ul>
+  </nav>
+  <div class="site-footer-line">
+    <span>&copy; 2026 Peter Moses</span>
+    <ul class="site-footer-meta">
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Send feedback</a></li>
+    </ul>
+  </div>
+</footer>
+</body>
+</html>

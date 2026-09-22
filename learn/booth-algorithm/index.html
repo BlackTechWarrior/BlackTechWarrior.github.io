@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Booth's Algorithm (Radix-2): Multiplier Architectures | p14m</title>
+  <meta name="description" content="Recodes the multiplier to skip runs of 1s and handle signed natively.">
+  <meta name="author" content="Peter Moses">
+  <link rel="canonical" href="https://p14m.com/learn/booth-algorithm/">
+  <meta name="theme-color" content="#F4F5F7">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="p14m">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://p14m.com/learn/booth-algorithm/">
+  <meta property="og:title" content="Booth's Algorithm (Radix-2): Multiplier Architectures | p14m">
+  <meta property="og:description" content="Recodes the multiplier to skip runs of 1s and handle signed natively.">
+  <meta property="og:image" content="https://p14m.com/og/learn.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Learn on p14m.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Booth's Algorithm (Radix-2): Multiplier Architectures | p14m">
+  <meta name="twitter:description" content="Recodes the multiplier to skip runs of 1s and handle signed natively.">
+  <meta name="twitter:image" content="https://p14m.com/og/learn.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" href="/favicon-48.png">
+  <link rel="preload" href="/fonts/mona-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/monaspace-neon-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/shared.css">
+  <link rel="stylesheet" href="/learn/learn.css">
+  <script src="/lib/site.js" defer></script>
+  <script src="/lib/feedback.js" defer></script>
+  <script src="/learn/app.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"LearningResource","name":"Booth's Algorithm (Radix-2)","description":"Recodes the multiplier to skip runs of 1s and handle signed natively.","url":"https://p14m.com/learn/booth-algorithm/","educationalLevel":"College","learningResourceType":"Explanation","isAccessibleForFree":true,"inLanguage":"en","image":"https://p14m.com/og/learn.png","about":"Multiplier Architectures","author":{"@type":"Person","name":"Peter Moses","url":"https://p14m.com/"},"isPartOf":{"@type":"CollectionPage","@id":"https://p14m.com/learn/","name":"Learn computer architecture"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"p14m","item":"https://p14m.com/"},{"@type":"ListItem","position":2,"name":"Learn","item":"https://p14m.com/learn/"},{"@type":"ListItem","position":3,"name":"Booth's Algorithm (Radix-2)","item":"https://p14m.com/learn/booth-algorithm/"}]}]}</script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
+</head>
+<body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+    <nav class="site-links" aria-label="Site">
+      <a href="/#tools">Tools</a>
+      <a href="/learn/" aria-current="page">Learn</a>
+      <a href="/#about">About</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" onclick="toggleTheme()">Dark</button>
+    </nav>
+  </div>
+  <nav class="tool-strip" aria-label="Tools">
+    <a href="/adders/">Adders</a>
+    <a href="/bits/">Bits</a>
+    <a href="/cache/">Cache</a>
+    <a href="/circuitgen/">CircuitGen</a>
+    <a href="/float/">Float</a>
+    <a href="/kmap/">K-Map</a>
+    <a href="/multipliers/">Multipliers</a>
+    <a href="/orderbook/">Order Book</a>
+  </nav>
+</header>
+<main id="main" class="container">
+  <div class="learn-topic">
+<article class="learn-article"><div class="page-head"><h1>Booth's Algorithm (Radix-2)</h1><p class="lede">Recodes the multiplier to skip runs of 1s and handle signed natively.</p></div><div class="topic-meta"><span class="tag">Tool topic</span><a class="tag tag-link" href="/multipliers/">Multipliers</a><a class="plain" href="/learn/#category/multipliers">Multiplier Architectures</a></div><section class="topic-section" id="problem"><h2>Problem</h2><div class="topic-body">How do you reduce additions in sequential multiplication and handle signed operands natively?</div></section><section class="topic-section" id="how-it-works"><h2>How it works</h2><div class="topic-body">Recodes multiplier B from binary {0,1} to signed digits {-1, 0, +1} using d[i] = b[i-1] - b[i] (where b[-1] = 0). Each d[i] means: add A (+1), subtract A (-1), or skip (0). Runs of consecutive 1s collapse: 0111 becomes +1000 -0001 (two operations instead of three).</div></section><div class="insight" id="key-insight"><strong>Key insight</strong>Signed multiplication for free: two’s complement just works because the recoding naturally handles the sign bit.</div><div class="section workbench widget" id="try-it" data-widget="booth-algorithm"></div><section class="topic-section" id="tradeoffs"><h2>Tradeoffs</h2><dl class="tradeoffs"><dt>Area</dt><dd>2n FA-eq (same as S&A)</dd><dt>Delay</dt><dd>2n² gate delays (same worst case)</dd><dd class="tradeoff-best"><strong>Best when:</strong> Signed multiplication, or multipliers with long runs of 1s.</dd></dl></section><div class="topic-actions"><a class="btn-go" href="/multipliers/">Open the tool</a></div><div class="feedback-box" data-topic="booth-algorithm" data-label="Was this useful?"></div></article><aside class="learn-rail" aria-label="Topic navigation"><p><a class="rail-back" href="/learn/">All topics</a></p><div class="rail-onpage"><h2>On this page</h2><ul><li><a href="#problem">Problem</a></li><li><a href="#how-it-works">How it works</a></li><li><a href="#key-insight">Key insight</a></li><li><a href="#try-it">Try it</a></li><li><a href="#tradeoffs">Tradeoffs</a></li></ul></div><h2>Related</h2><ul><li><a href="/learn/shift-and-add/">Shift-and-Add</a></li><li><a href="/learn/array-multiplier/">Array Multiplier</a></li><li><a href="/learn/twos-complement/">Two's Complement</a></li></ul><h2>More in Multiplier Architectures</h2><ul><li><a href="/learn/wallace-tree/">Wallace Tree</a></li></ul></aside>
+  </div>
+</main>
+<footer class="site-footer">
+  <nav aria-label="Footer">
+    <ul class="site-footer-pages">
+      <li><a href="/adders/">Adder architecture visualizer</a></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a></li>
+      <li><a href="/cache/">Cache simulator</a></li>
+      <li><a href="/circuitgen/">CircuitGen</a></li>
+      <li><a href="/float/">IEEE 754 floating-point converter</a></li>
+      <li><a href="/kmap/">K-Map generator</a></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
+      <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/learn/">Learn</a></li>
+    </ul>
+  </nav>
+  <div class="site-footer-line">
+    <span>&copy; 2026 Peter Moses</span>
+    <ul class="site-footer-meta">
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Send feedback</a></li>
+    </ul>
+  </div>
+</footer>
+</body>
+</html>

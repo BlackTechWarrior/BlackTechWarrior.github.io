@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Cache Memory: Memory Hierarchy | p14m</title>
+  <meta name="description" content="How CPU caches map addresses to fast local storage using tag, index, and offset bits.">
+  <meta name="author" content="Peter Moses">
+  <link rel="canonical" href="https://p14m.com/learn/cache-fundamentals/">
+  <meta name="theme-color" content="#F4F5F7">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="p14m">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://p14m.com/learn/cache-fundamentals/">
+  <meta property="og:title" content="Cache Memory: Memory Hierarchy | p14m">
+  <meta property="og:description" content="How CPU caches map addresses to fast local storage using tag, index, and offset bits.">
+  <meta property="og:image" content="https://p14m.com/og/learn.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Learn on p14m.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cache Memory: Memory Hierarchy | p14m">
+  <meta name="twitter:description" content="How CPU caches map addresses to fast local storage using tag, index, and offset bits.">
+  <meta name="twitter:image" content="https://p14m.com/og/learn.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" href="/favicon-48.png">
+  <link rel="preload" href="/fonts/mona-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/monaspace-neon-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/shared.css">
+  <link rel="stylesheet" href="/learn/learn.css">
+  <script src="/lib/site.js" defer></script>
+  <script src="/lib/feedback.js" defer></script>
+  <script src="/learn/app.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"LearningResource","name":"Cache Memory","description":"How CPU caches map addresses to fast local storage using tag, index, and offset bits.","url":"https://p14m.com/learn/cache-fundamentals/","educationalLevel":"College","learningResourceType":"Explanation","isAccessibleForFree":true,"inLanguage":"en","image":"https://p14m.com/og/learn.png","about":"Memory Hierarchy","author":{"@type":"Person","name":"Peter Moses","url":"https://p14m.com/"},"isPartOf":{"@type":"CollectionPage","@id":"https://p14m.com/learn/","name":"Learn computer architecture"}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"p14m","item":"https://p14m.com/"},{"@type":"ListItem","position":2,"name":"Learn","item":"https://p14m.com/learn/"},{"@type":"ListItem","position":3,"name":"Cache Memory","item":"https://p14m.com/learn/cache-fundamentals/"}]}]}</script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
+</head>
+<body>
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+    <nav class="site-links" aria-label="Site">
+      <a href="/#tools">Tools</a>
+      <a href="/learn/" aria-current="page">Learn</a>
+      <a href="/#about">About</a>
+      <button class="theme-toggle" type="button" aria-pressed="false" onclick="toggleTheme()">Dark</button>
+    </nav>
+  </div>
+  <nav class="tool-strip" aria-label="Tools">
+    <a href="/adders/">Adders</a>
+    <a href="/bits/">Bits</a>
+    <a href="/cache/">Cache</a>
+    <a href="/circuitgen/">CircuitGen</a>
+    <a href="/float/">Float</a>
+    <a href="/kmap/">K-Map</a>
+    <a href="/multipliers/">Multipliers</a>
+    <a href="/orderbook/">Order Book</a>
+  </nav>
+</header>
+<main id="main" class="container">
+  <div class="learn-topic">
+<article class="learn-article"><div class="page-head"><h1>Cache Memory</h1><p class="lede">How CPU caches map addresses to fast local storage using tag, index, and offset bits.</p></div><div class="topic-meta"><span class="tag">Concept</span><a class="plain" href="/learn/#category/memory">Memory Hierarchy</a></div><section class="topic-section" id="problem"><h2>Problem</h2><div class="topic-body">A modern CPU can execute an instruction every ~0.3ns, but reading from main memory (DRAM) takes ~50–100ns: a 200× gap. Without a fast intermediary, the processor stalls waiting for data on almost every load. How does hardware bridge this speed gap?</div></section><section class="topic-section" id="how-it-works"><h2>How it works</h2><div class="topic-body"><strong>The cache</strong> is a small, fast SRAM buffer between the CPU and main memory. When the processor reads address A, it checks the cache first. If the data is there (a <strong>hit</strong>), it returns in 1–4 cycles. If not (a <strong>miss</strong>), it fetches a whole <strong>block</strong> of data from memory and stores it in the cache for next time.<br><br><strong>Address breakdown:</strong> Every memory address is split into three fields: <strong style="color:var(--d1)">tag</strong> | <strong style="color:var(--success)">index</strong> | <strong style="color:var(--mant)">offset</strong>. The <strong>index</strong> bits select which <strong>set</strong> (row) in the cache to check. The <strong>tag</strong> bits identify which memory block is stored there. The <strong>offset</strong> bits select the byte within the block. This is the core of cache lookup: it's just bit slicing.<br><br><strong>Direct-mapped:</strong> Each address maps to exactly one cache line (1 way per set). Simple and fast, but two addresses that map to the same set evict each other: this is a <strong>conflict miss</strong>.<br><br><strong>Set-associative:</strong> Each set has multiple <strong>ways</strong> (slots). A 2-way cache checks 2 tags per lookup. More ways = fewer conflict misses, but more comparators and slower lookup. <strong>Fully associative</strong> (1 set, N ways) eliminates all conflict misses but requires checking every tag in parallel.<br><br><strong>Replacement:</strong> When all ways in a set are occupied, the cache must evict one. <strong>LRU (Least Recently Used)</strong> evicts the way that hasn't been accessed the longest: betting that recently used data will be used again soon.<br><br><strong>Locality:</strong> Caches exploit two patterns: <strong>spatial locality</strong> (if you accessed address A, you'll likely access A+1 soon: that's why blocks are bigger than 1 byte) and <strong>temporal locality</strong> (if you accessed A recently, you'll likely access it again: that's why eviction picks the least-recently-used entry).</div></section><div class="insight" id="key-insight"><strong>Key insight</strong>A cache is just a hardware hash table. The index bits are the hash, the tag bits are the key, and associativity is the number of slots per bucket. Thrashing: when two addresses keep evicting each other from the same set: is the cache equivalent of a hash collision with no room to resolve it. Understanding this mapping is how you write code that runs 10× faster without changing the algorithm.</div><div class="topic-actions"><a class="btn-go" href="/cache/">Open the tool</a></div><div class="feedback-box" data-topic="cache-fundamentals" data-label="Was this useful?"></div></article><aside class="learn-rail" aria-label="Topic navigation"><p><a class="rail-back" href="/learn/">All topics</a></p><div class="rail-onpage"><h2>On this page</h2><ul><li><a href="#problem">Problem</a></li><li><a href="#how-it-works">How it works</a></li><li><a href="#key-insight">Key insight</a></li></ul></div><h2>Related</h2><ul><li><a href="/learn/fifo-queue/">FIFO Queues in Hardware</a></li><li><a href="/learn/area-vs-speed/">Area vs Speed Tradeoffs</a></li></ul><h2>More in Memory Hierarchy</h2><ul><li><a href="/learn/write-policies/">Write Policies</a></li><li><a href="/learn/replacement-policies/">Cache Replacement Policies</a></li></ul></aside>
+  </div>
+</main>
+<footer class="site-footer">
+  <nav aria-label="Footer">
+    <ul class="site-footer-pages">
+      <li><a href="/adders/">Adder architecture visualizer</a></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a></li>
+      <li><a href="/cache/">Cache simulator</a></li>
+      <li><a href="/circuitgen/">CircuitGen</a></li>
+      <li><a href="/float/">IEEE 754 floating-point converter</a></li>
+      <li><a href="/kmap/">K-Map generator</a></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
+      <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/learn/">Learn</a></li>
+    </ul>
+  </nav>
+  <div class="site-footer-line">
+    <span>&copy; 2026 Peter Moses</span>
+    <ul class="site-footer-meta">
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Send feedback</a></li>
+    </ul>
+  </div>
+</footer>
+</body>
+</html>
