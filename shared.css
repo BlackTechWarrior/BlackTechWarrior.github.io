@@ -393,7 +393,6 @@ strong, b { font-weight: 600; }
   transition: background var(--dur-quick) var(--ease-out), color var(--dur-quick) var(--ease-out), border-color var(--dur-quick) var(--ease-out);
 }
 .theme-toggle:hover { border-color: var(--border-strong); color: var(--ink); }
-.theme-toggle[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .theme-toggle:active { transform: translateY(1px); }
 
 /* Tool strip: the nine tools, current one marked */
