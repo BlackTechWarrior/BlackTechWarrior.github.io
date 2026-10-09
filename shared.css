@@ -716,6 +716,22 @@ select.inp, .select {
 .chip:hover { border-color: var(--border-strong); color: var(--ink); }
 .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
+/* "New" pill on a recently added control (see data-new-until in lib/site.js) */
+.new-pill {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.5;
+  vertical-align: 1px;
+}
+.on > .new-pill { background: var(--accent); color: var(--on-accent); }
+
 /* Inline tag (a category or a form label on a value) */
 .tag {
   display: inline-block;

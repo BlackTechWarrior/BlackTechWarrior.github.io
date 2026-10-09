@@ -311,7 +311,7 @@
           <button class="btn-t" id="truthBtn">Truth table</button>
           <button class="btn-t" id="verilogBtn">Verilog</button>
           <button class="btn-t" id="vhdlBtn">VHDL</button>
-          <button class="btn-t" id="stepsBtn">Steps</button>
+          <button class="btn-t" id="stepsBtn" data-new-until="2026-10-21">Steps</button>
           <button class="btn-t" id="circuitBtn">Circuit</button>
         </div>
       </div>
@@ -629,110 +629,106 @@ function buildKmapGrid(truthTable, varNames) {
 
 /* ────────── K-map grouping ────────── */
 
-function isValidImplicant(cells, rowCodes, colCodes, rowVarCount) {
-  // A valid K-map group must have exactly log2(size) "free" variables
-  // (variables that take both 0 and 1 across the cells).
-  const totalVars = (rowCodes[0] ? rowCodes[0].length : 0) + (colCodes[0] ? colCodes[0].length : 0);
-  const expectedFree = Math.log2(cells.length);
-  if (!Number.isInteger(expectedFree)) return false;
-
-  let freeCount = 0;
-  for (let vi = 0; vi < totalVars; vi++) {
-    const vals = new Set();
-    for (const [r, c] of cells) {
-      const code = vi < rowVarCount ? rowCodes[r][vi] : colCodes[c][vi - rowVarCount];
-      vals.add(code);
-    }
-    if (vals.size === 2) freeCount++;
-  }
-  return freeCount === expectedFree;
-}
+// A group is an implicant (cube): the variables in `mask` are fixed to the bits in `value`,
+// the rest are free. Its cells need not be side by side: on 5 and 6 variable maps,
+// cells that differ in one variable can sit in mirrored blocks.
+function popcount(x) { let n = 0; while (x) { n += x & 1; x >>= 1; } return n; }
 
 function findKmapGroups(grid, rowCodes, colCodes, targetValue = 1) {
   const rows = grid.length;
   const cols = grid[0].length;
-  const targets = [];
-  const targetsOrDc = [];
+  const n = rowCodes[0].length + colCodes[0].length;
+  const size = 1 << n;
+  const full = size - 1;
 
+  // Minterm index of each cell: row bits then column bits
+  const cellOf = new Array(size);
+  const on = [], allowed = new Array(size).fill(false);
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      if (grid[r][c] === targetValue) targets.push([r, c]);
-      if (grid[r][c] === targetValue || grid[r][c] === "X") targetsOrDc.push([r, c]);
+      const m = parseInt(rowCodes[r] + colCodes[c], 2);
+      cellOf[m] = [r, c];
+      if (grid[r][c] === targetValue) on.push(m);
+      if (grid[r][c] === targetValue || grid[r][c] === "X") allowed[m] = true;
+    }
+  }
+  if (on.length === 0) return [];
+
+  const covers = (cube, m) => (m & cube.mask) === cube.value;
+  const mintermsOf = (cube) => {
+    const out = [];
+    for (let m = 0; m < size; m++) if (covers(cube, m)) out.push(m);
+    return out;
+  };
+
+  // Every cube made only of target and don't-care cells
+  const valid = [];
+  for (let mask = 0; mask <= full; mask++) {
+    for (let value = mask; ; value = (value - 1) & mask) {
+      const cube = { mask, value };
+      if (mintermsOf(cube).every(m => allowed[m])) valid.push(cube);
+      if (value === 0) break;
     }
   }
 
-  if (targets.length === 0) return [];
+  // Prime implicants: valid cubes inside no larger valid cube, covering at least one target cell
+  const onSet = new Set(on);
+  const primes = valid.filter(p =>
+    mintermsOf(p).some(m => onSet.has(m)) &&
+    !valid.some(q => q.mask !== p.mask && (q.mask & p.mask) === q.mask && (p.value & q.mask) === q.value)
+  );
+  primes.forEach(p => { p.covered = mintermsOf(p).filter(m => onSet.has(m)); });
+  // Larger groups first, then map order, so ties resolve the same way every time
+  primes.sort((a, b) => popcount(a.mask) - popcount(b.mask) || a.covered[0] - b.covered[0]);
 
-  const allCovered = targetsOrDc.length === rows * cols;
-  if (allCovered && targets.length > 0) return [{ cells: targetsOrDc, rStart: 0, cStart: 0, rSize: rows, cSize: cols }];
+  // Exact minimum cover: fewest groups, then fewest literals
+  const coverers = {};
+  on.forEach(m => { coverers[m] = primes.filter(p => covers(p, m)); });
+  let best = null, bestCost = [Infinity, Infinity], budget = 200000;
+  const better = (a, b) => a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]);
 
-  const groups = [];
-  const covered = new Set();
-  const cellKey = (r, c) => `${r},${c}`;
-  const targetKeys = new Set(targets.map(([r,c]) => cellKey(r,c)));
-
-  const sizes = [];
-  for (let rSize = rows; rSize >= 1; rSize = rSize / 2) {
-    for (let cSize = cols; cSize >= 1; cSize = cSize / 2) {
-      if (rSize * cSize > 0 && Number.isInteger(Math.log2(rSize * cSize))) {
-        sizes.push([rSize, cSize]);
-      }
+  function search(chosen, uncovered, lits) {
+    if (--budget < 0 && best) return;
+    if (uncovered.size === 0) {
+      const cost = [chosen.length, lits];
+      if (better(cost, bestCost)) { best = chosen.slice(); bestCost = cost; }
+      return;
+    }
+    if (chosen.length + 1 > bestCost[0]) return;
+    // Branch on the uncovered cell with the fewest options
+    let pick = null;
+    for (const m of uncovered) {
+      if (!pick || coverers[m].length < coverers[pick].length) pick = m;
+    }
+    for (const p of coverers[pick]) {
+      const next = new Set(uncovered);
+      p.covered.forEach(m => next.delete(m));
+      chosen.push(p);
+      search(chosen, next, lits + popcount(p.mask));
+      chosen.pop();
     }
   }
-  sizes.sort((a, b) => b[0] * b[1] - a[0] * a[1]);
+  search([], new Set(on), 0);
 
-  for (const [rSize, cSize] of sizes) {
-    for (let rStart = 0; rStart < rows; rStart++) {
-      for (let cStart = 0; cStart < cols; cStart++) {
-        const cells = [];
-        let allValid = true;
-        let hasUncoveredTarget = false;
+  return best
+    .slice()
+    .sort((a, b) => popcount(a.mask) - popcount(b.mask) || a.covered[0] - b.covered[0])
+    .map(p => ({
+      cells: mintermsOf(p).map(m => cellOf[m]).sort((x, y) => x[0] - y[0] || x[1] - y[1]),
+      mask: p.mask,
+      value: p.value,
+    }));
+}
 
-        for (let dr = 0; dr < rSize && allValid; dr++) {
-          for (let dc = 0; dc < cSize && allValid; dc++) {
-            const r = (rStart + dr) % rows;
-            const c = (cStart + dc) % cols;
-            if (grid[r][c] !== targetValue && grid[r][c] !== "X") { allValid = false; break; }
-            cells.push([r, c]);
-            if (grid[r][c] === targetValue && !covered.has(cellKey(r, c))) hasUncoveredTarget = true;
-          }
-        }
-
-        if (allValid && hasUncoveredTarget && cells.length > 0 &&
-            isValidImplicant(cells, rowCodes, colCodes, rowCodes[0] ? rowCodes[0].length : 0)) {
-          groups.push({ cells, rStart, cStart, rSize, cSize });
-          cells.forEach(([r, c]) => {
-            if (targetKeys.has(cellKey(r, c))) covered.add(cellKey(r, c));
-          });
-        }
-      }
-    }
+// How a group's span along one axis lies on the map: 'run', 'wrap' or 'split'
+function axisSpan(indices, length) {
+  const set = [...new Set(indices)].sort((a, b) => a - b);
+  if (set.length === 1 || set.length === length) return 'run';
+  if (set[set.length - 1] - set[0] === set.length - 1) return 'run';
+  for (let start = 0; start < length; start++) {
+    if (set.every(i => ((i - start + length) % length) < set.length) && set.includes(start)) return 'wrap';
   }
-
-  targets.forEach(([r, c]) => {
-    if (!covered.has(cellKey(r, c))) {
-      groups.push({ cells: [[r, c]], rStart: r, cStart: c, rSize: 1, cSize: 1 });
-      covered.add(cellKey(r, c));
-    }
-  });
-
-  // Greedy picks can leave a group whose cells later groups cover; drop those, smallest first
-  const coverCount = {};
-  groups.forEach(g => g.cells.forEach(([r, c]) => {
-    const k = cellKey(r, c);
-    if (targetKeys.has(k)) coverCount[k] = (coverCount[k] || 0) + 1;
-  }));
-  const bySize = groups.map((g, i) => i).sort((a, b) => groups[a].cells.length - groups[b].cells.length);
-  const dropped = new Set();
-  for (const gi of bySize) {
-    const keys = groups[gi].cells.map(([r, c]) => cellKey(r, c)).filter(k => targetKeys.has(k));
-    if (keys.every(k => coverCount[k] > 1)) {
-      keys.forEach(k => coverCount[k]--);
-      dropped.add(gi);
-    }
-  }
-
-  return groups.filter((g, i) => !dropped.has(i));
+  return 'split';
 }
 
 /* ────────── minterm helper ────────── */
@@ -1595,15 +1591,13 @@ function generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetect
     const size = group.cells.length;
 
     // Determine adjacency / wraparound info
-    const wraps = [];
-    if (group.rSize > 1) {
-      const rEnd = (group.rStart + group.rSize - 1) % rows;
-      if (group.rStart + group.rSize > rows) wraps.push('rows (top to bottom)');
-    }
-    if (group.cSize > 1) {
-      const cEnd = (group.cStart + group.cSize - 1) % cols;
-      if (group.cStart + group.cSize > cols) wraps.push('columns (left to right)');
-    }
+    const wraps = [], splits = [];
+    const rowSpan = axisSpan(group.cells.map(([r]) => r), rows);
+    const colSpan = axisSpan(group.cells.map(([, c]) => c), cols);
+    if (rowSpan === 'wrap') wraps.push('rows (top to bottom)');
+    if (colSpan === 'wrap') wraps.push('columns (left to right)');
+    if (rowSpan === 'split') splits.push('rows');
+    if (colSpan === 'split') splits.push('columns');
 
     // Find which variables are eliminated vs kept
     const kept = [], eliminated = [];
@@ -1627,6 +1621,7 @@ function generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetect
     let b = '<ul>';
     b += '<li><strong>Cells covered:</strong> ' + gCells.join(', ') + ' (group of ' + size + ')</li>';
     if (wraps.length > 0) b += '<li><strong>Wraparound:</strong> wraps across ' + wraps.join(' and ') + '</li>';
+    if (splits.length > 0) b += '<li><strong>Split group:</strong> the ' + splits.join(' and ') + ' are not side by side. On a 5 or 6 variable map, rows or columns whose labels differ in one variable are adjacent, so they still group</li>';
     if (eliminated.length > 0) b += '<li><strong>Eliminated:</strong> ' + eliminated.join(', ') + ' (changes 0 to 1 within group)</li>';
     b += '<li><strong>Kept literals:</strong> ' + (kept.length > 0 ? kept.map(k => k.literal + ' (' + k.var + '=' + k.val + ')').join(', ') : 'none (tautology)') + '</li>';
     b += '<li><strong>Product term:</strong> <code>' + term + '</code></li>';
@@ -1933,7 +1928,7 @@ function render() {
       <div class="result-label">Steps</div>
       <div class="mode-selector" role="group" aria-label="Steps view">
         <button class="mode-btn${view === 'kmap' ? ' on' : ''}" data-steps-view="kmap" aria-pressed="${view === 'kmap'}">K-map</button>
-        <button class="mode-btn${view === 'algebra' ? ' on' : ''}" data-steps-view="algebra" aria-pressed="${view === 'algebra'}">Algebra</button>
+        <button class="mode-btn${view === 'algebra' ? ' on' : ''}" data-steps-view="algebra" aria-pressed="${view === 'algebra'}" data-new-until="2026-10-21">Algebra</button>
       </div>
     </div>`;
     sHtml += '<div class="steps-box">';
@@ -1947,6 +1942,7 @@ function render() {
     }
     sHtml += '</div>';
     stepsPanel.innerHTML = sHtml;
+    if (window.p14mMarkNew) p14mMarkNew(stepsPanel);
     stepsPanel.querySelectorAll('[data-steps-view]').forEach(btn => {
       btn.addEventListener('click', () => {
         state.stepsView = btn.dataset.stepsView;
