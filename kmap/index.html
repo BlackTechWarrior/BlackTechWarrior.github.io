@@ -164,6 +164,38 @@
     .alg-end { margin: 16px 0 0; font-size: 13px; color: var(--muted); }
     .alg-end code { font-family: var(--f-mono); color: var(--ink); }
 
+    /* Wrong cells from Check my answer */
+    .km-cell.km-wrong { outline: 3px dashed var(--error); outline-offset: -7px; }
+    .km-cell.km-wrong span { color: var(--error); }
+    .check-row { display: flex; gap: 8px; align-items: stretch; }
+    .check-row .inp { flex: 1; min-width: 0; }
+    .check-result { margin-top: 12px; font-size: 0.875rem; line-height: 1.55; }
+    .check-result .check-verdict { font-weight: 600; }
+    .check-result .check-verdict.ok { color: var(--success); }
+    .check-result .check-verdict.bad { color: var(--error); }
+    .check-result .check-verdict.warn { color: var(--warn); }
+    .check-result ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); }
+    .check-result code { font-family: var(--f-mono); }
+
+    /* Quine-McCluskey tables */
+    .qm-cols { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 4px; }
+    .qm-col { flex-shrink: 0; }
+    .qm-col-title { font-size: 0.8125rem; font-weight: 600; color: var(--ink-2); margin-bottom: 6px; }
+    .qm-tbl { border-collapse: collapse; font-family: var(--f-mono); font-size: 12px; }
+    .qm-tbl td, .qm-tbl th { padding: 3px 8px; text-align: left; white-space: nowrap; }
+    .qm-tbl th { font-family: var(--font-sans); font-weight: 500; color: var(--muted); }
+    .qm-tbl tr.qm-group-start td { border-top: 1px solid var(--border); }
+    .qm-tbl .qm-used { color: var(--muted); }
+    .qm-tbl .qm-prime { color: var(--ink); font-weight: 600; }
+    .qm-chart { border-collapse: collapse; font-family: var(--f-mono); font-size: 12px; }
+    .qm-chart th, .qm-chart td { padding: 3px 6px; text-align: center; border-bottom: 1px solid var(--border); }
+    .qm-chart thead th:first-child { font-family: var(--font-sans); font-weight: 500; color: var(--muted); }
+    .qm-chart th:first-child, .qm-chart td:first-child { text-align: left; white-space: nowrap; }
+    .qm-chart tr.qm-chosen td { background: var(--accent-wash); }
+    .qm-chart .qm-x-ess { font-weight: 700; color: var(--ink); }
+    .qm-chart .qm-x { color: var(--ink-2); }
+    .qm-note { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+
     .group-legend {
       margin-top: 15px;
       display: flex;
@@ -259,7 +291,9 @@
           <li>Switch to <strong>Minterms/Maxterms</strong> mode to enter indices directly (e.g. <code>1, 3, 5, 7</code>).</li>
           <li>Click any cell in the K-map to toggle between <strong>0, 1, and X</strong> (don't-care). This works in <strong>all modes</strong>. Click <strong>Revert to input</strong> or re-click Generate to restore the original values.</li>
           <li>Toggle <strong>POS</strong>, <strong>Verilog</strong>, <strong>VHDL</strong>, and <strong>Steps</strong> with the buttons below Generate.</li>
-          <li><strong>Steps</strong> has two views. <strong>K-map</strong> shows how each group is read off the map. <strong>Algebra</strong> rewrites your expression into the minimized SOP one Boolean law at a time, naming each law it uses.</li>
+          <li><strong>Steps</strong> has three views. <strong>K-map</strong> shows how each group is read off the map. <strong>Algebra</strong> rewrites your expression into the minimized SOP one Boolean law at a time, naming each law it uses. <strong>Quine-McCluskey</strong> shows the tabular method: combining columns, the prime implicant chart and the chosen cover.</li>
+          <li><strong>Check my answer</strong> tells you whether your own SOP or POS equals the map, outlines the cells it gets wrong, and says whether it is minimal.</li>
+          <li>The map updates as you type, and the address bar always links to what is on screen. <strong>Copy link</strong> copies it to share.</li>
           <li>XOR/XNOR patterns are <strong>auto-detected</strong> when the SOP can be simplified using XOR gates.</li>
         </ul>
       </div>
@@ -338,6 +372,17 @@
     <!-- K-Map Panel -->
     <div id="kmapPanel" class="section" style="display: none;"></div>
 
+    <!-- Check my answer -->
+    <div id="checkPanel" class="section" style="display: none;">
+      <label class="result-label" for="checkInput" style="margin-top:0;display:block;"><span data-new-until="2026-10-21">Check my answer</span></label>
+      <p class="qm-note" style="margin:4px 0 10px;">Type your simplified expression. It is checked against this map, ignoring don't-cares.</p>
+      <div class="check-row">
+        <input class="inp" id="checkInput" placeholder="A'C + AB" spellcheck="false" autocomplete="off">
+        <button class="btn-t" id="checkBtn">Check</button>
+      </div>
+      <div id="checkResult" class="check-result" aria-live="polite"></div>
+    </div>
+
     <!-- Truth Table Panel -->
     <div id="truthPanel" class="section" style="display: none;"></div>
 
@@ -382,6 +427,7 @@
   <div id="toast" class="toast" style="display: none;"></div>
 
 <script src="/lib/circuit.js"></script>
+<script src="/lib/logicmin.js"></script>
 <script src="/lib/boolalg.js"></script>
 <script>
 /* ───────────────────────── helpers ───────────────────────── */
@@ -656,95 +702,24 @@ function buildKmapGrid(truthTable, varNames) {
 
 /* ────────── K-map grouping ────────── */
 
-// A group is an implicant (cube): the variables in `mask` are fixed to the bits in `value`,
-// the rest are free. Its cells need not be side by side: on 5 and 6 variable maps,
-// cells that differ in one variable can sit in mirrored blocks.
-function popcount(x) { let n = 0; while (x) { n += x & 1; x >>= 1; } return n; }
-
+// A group is an implicant (cube) from lib/logicmin.js: the variables in `mask` are fixed to the
+// bits in `value`, the rest are free. Its cells need not be side by side: on 5 and 6 variable
+// maps, cells that differ in one variable can sit in mirrored blocks.
 function findKmapGroups(grid, rowCodes, colCodes, targetValue = 1) {
-  const rows = grid.length;
-  const cols = grid[0].length;
   const n = rowCodes[0].length + colCodes[0].length;
-  const size = 1 << n;
-  const full = size - 1;
-
-  // Minterm index of each cell: row bits then column bits
-  const cellOf = new Array(size);
-  const on = [], allowed = new Array(size).fill(false);
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const m = parseInt(rowCodes[r] + colCodes[c], 2);
-      cellOf[m] = [r, c];
-      if (grid[r][c] === targetValue) on.push(m);
-      if (grid[r][c] === targetValue || grid[r][c] === "X") allowed[m] = true;
-    }
-  }
-  if (on.length === 0) return [];
-
-  const covers = (cube, m) => (m & cube.mask) === cube.value;
-  const mintermsOf = (cube) => {
-    const out = [];
-    for (let m = 0; m < size; m++) if (covers(cube, m)) out.push(m);
-    return out;
-  };
-
-  // Every cube made only of target and don't-care cells
-  const valid = [];
-  for (let mask = 0; mask <= full; mask++) {
-    for (let value = mask; ; value = (value - 1) & mask) {
-      const cube = { mask, value };
-      if (mintermsOf(cube).every(m => allowed[m])) valid.push(cube);
-      if (value === 0) break;
-    }
-  }
-
-  // Prime implicants: valid cubes inside no larger valid cube, covering at least one target cell
-  const onSet = new Set(on);
-  const primes = valid.filter(p =>
-    mintermsOf(p).some(m => onSet.has(m)) &&
-    !valid.some(q => q.mask !== p.mask && (q.mask & p.mask) === q.mask && (p.value & q.mask) === q.value)
-  );
-  primes.forEach(p => { p.covered = mintermsOf(p).filter(m => onSet.has(m)); });
-  // Larger groups first, then map order, so ties resolve the same way every time
-  primes.sort((a, b) => popcount(a.mask) - popcount(b.mask) || a.covered[0] - b.covered[0]);
-
-  // Exact minimum cover: fewest groups, then fewest literals
-  const coverers = {};
-  on.forEach(m => { coverers[m] = primes.filter(p => covers(p, m)); });
-  let best = null, bestCost = [Infinity, Infinity], budget = 200000;
-  const better = (a, b) => a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]);
-
-  function search(chosen, uncovered, lits) {
-    if (--budget < 0 && best) return;
-    if (uncovered.size === 0) {
-      const cost = [chosen.length, lits];
-      if (better(cost, bestCost)) { best = chosen.slice(); bestCost = cost; }
-      return;
-    }
-    if (chosen.length + 1 > bestCost[0]) return;
-    // Branch on the uncovered cell with the fewest options
-    let pick = null;
-    for (const m of uncovered) {
-      if (!pick || coverers[m].length < coverers[pick].length) pick = m;
-    }
-    for (const p of coverers[pick]) {
-      const next = new Set(uncovered);
-      p.covered.forEach(m => next.delete(m));
-      chosen.push(p);
-      search(chosen, next, lits + popcount(p.mask));
-      chosen.pop();
-    }
-  }
-  search([], new Set(on), 0);
-
-  return best
-    .slice()
-    .sort((a, b) => popcount(a.mask) - popcount(b.mask) || a.covered[0] - b.covered[0])
-    .map(p => ({
-      cells: mintermsOf(p).map(m => cellOf[m]).sort((x, y) => x[0] - y[0] || x[1] - y[1]),
-      mask: p.mask,
-      value: p.value,
-    }));
+  const cellOf = {};
+  const on = [], dcs = [];
+  grid.forEach((row, r) => row.forEach((v, c) => {
+    const m = parseInt(rowCodes[r] + colCodes[c], 2);
+    cellOf[m] = [r, c];
+    if (v === targetValue) on.push(m);
+    else if (v === "X") dcs.push(m);
+  }));
+  return LogicMin.minimize(n, on, dcs).cover.map(p => ({
+    cells: p.minterms.map(m => cellOf[m]).sort((x, y) => x[0] - y[0] || x[1] - y[1]),
+    mask: p.mask,
+    value: p.value,
+  }));
 }
 
 // How a group's span along one axis lies on the map: 'run', 'wrap' or 'split'
@@ -790,7 +765,8 @@ let state = {
   showVerilog: false,
   showVHDL: false,
   showSteps: false,
-  stepsView: 'kmap', // 'kmap' or 'algebra'
+  stepsView: 'kmap', // 'kmap', 'algebra' or 'qm'
+  checkWrong: new Set(), // "r,c" cells the checked answer gets wrong
   showCircuit: false,
   manualOverrides: {},
   manualMode: false,
@@ -1408,6 +1384,9 @@ function generate() {
   hideError();
   state.result = null;
   state.manualOverrides = {};
+  state.checkWrong = new Set();
+  const checkOut = document.getElementById('checkResult');
+  if (checkOut) checkOut.innerHTML = '';
   kmapPanel.style.display = 'none';
 
   try {
@@ -1577,7 +1556,9 @@ function handleCellClick(r, c) {
     const next = cur === 0 ? 1 : cur === 1 ? "X" : 0;
     if (next === state.result.truthTable[ttIdx].result) delete state.manualOverrides[ttIdx];
     else state.manualOverrides[ttIdx] = next;
-    render();
+    // A checked answer is re-checked against the edited map
+    if (document.getElementById('checkInput').value.trim()) checkAnswer();
+    else render();
   }
 }
 
@@ -1694,6 +1675,226 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/* ────────── Quine-McCluskey view ────────── */
+
+function renderQMSteps(result, sopExpr) {
+  const { varNames, truthTable } = result;
+  const n = varNames.length;
+  const ones = [], dcs = [];
+  truthTable.forEach((row, i) => {
+    if (row.result === 1) ones.push(i);
+    else if (row.result === 'X') dcs.push(i);
+  });
+  if (!ones.length) return '<p class="alg-end" style="margin-top:0;">There are no 1-cells, so F = 0 and there is nothing to combine.</p>';
+
+  const pat = (c) => LogicMin.cubeToPattern(c, n);
+  const term = (c) => LogicMin.cubeToTerm(c, varNames);
+  const dcSet = new Set(dcs);
+  const mlist = (ms) => ms.map(m => dcSet.has(m) ? '(' + m + ')' : m).join(',');
+  const columns = LogicMin.qmColumns(n, ones, dcs);
+  const { primes, essential, cover } = LogicMin.minimize(n, ones, dcs);
+  const key = (c) => c.mask + ':' + c.value;
+  const essKeys = new Set(essential.map(key)), coverKeys = new Set(cover.map(key)), primeKeys = new Set(primes.map(key));
+
+  let h = `<div class="alg-law"><span class="step-num">1.</span> List the minterms and don't-cares by number of 1 bits</div>`;
+  h += `<p class="qm-note" style="margin:2px 0 10px 20px;">Variables in order ${varNames.join(', ')}. Don't-cares are in parentheses. Two entries combine when they differ in exactly one bit; the bit becomes a dash.</p>`;
+  h += '<div class="alg-law"><span class="step-num">2.</span> Combine until nothing changes</div>';
+  h += '<div class="qm-cols" style="margin:8px 0 0 20px;">';
+  columns.forEach((col, k) => {
+    h += `<div class="qm-col"><div class="qm-col-title">${k === 0 ? 'Minterms' : 'Groups of ' + (1 << k)}</div><table class="qm-tbl"><tbody>`;
+    let lastOnes = -1;
+    col.slice().sort((a, b) => LogicMin.popcount(a.value) - LogicMin.popcount(b.value) || a.minterms[0] - b.minterms[0]).forEach(c => {
+      const g = LogicMin.popcount(c.value);
+      const cls = c.used ? 'qm-used' : (primeKeys.has(key(c)) ? 'qm-prime' : 'qm-used');
+      const mark = c.used ? '✓' : (primeKeys.has(key(c)) ? 'prime' : 'only X');
+      h += `<tr class="${g !== lastOnes && lastOnes !== -1 ? 'qm-group-start' : ''}"><td class="${cls}">${mlist(c.minterms)}</td><td class="${cls}">${pat(c)}</td><td class="${cls}">${mark}</td></tr>`;
+      lastOnes = g;
+    });
+    h += '</tbody></table></div>';
+  });
+  h += '</div>';
+  h += `<p class="qm-note" style="margin-left:20px;">✓ means the entry combined into a larger group. Entries that never combine are prime implicants. One made only of don't-cares is not needed.</p>`;
+
+  h += '<div class="alg-step"><div class="alg-law"><span class="step-num">3.</span> Prime implicant chart</div>';
+  h += '<div style="overflow-x:auto;margin:8px 0 0 20px;"><table class="qm-chart"><thead><tr><th>Prime implicant</th>';
+  ones.forEach(m => { h += `<th>m${m}</th>`; });
+  h += '</tr></thead><tbody>';
+  primes.forEach(p => {
+    const chosen = coverKeys.has(key(p)), ess = essKeys.has(key(p));
+    h += `<tr class="${chosen ? 'qm-chosen' : ''}"><td>${term(p)} <span style="color:var(--muted)">${pat(p)}</span>${ess ? ' <span class="tag">essential</span>' : ''}</td>`;
+    ones.forEach(m => {
+      const covers = (m & p.mask) === p.value;
+      const only = covers && primes.filter(q => (m & q.mask) === q.value).length === 1;
+      h += `<td class="${only ? 'qm-x-ess' : 'qm-x'}">${covers ? (only ? '⊗' : '×') : ''}</td>`;
+    });
+    h += '</tr>';
+  });
+  h += '</tbody></table></div>';
+  h += `<p class="qm-note" style="margin-left:20px;">⊗ marks a minterm that only one prime covers, which makes that prime essential. Shaded rows are the chosen cover.</p></div>`;
+
+  const rest = cover.filter(c => !essKeys.has(key(c)));
+  h += '<div class="alg-step"><div class="alg-law"><span class="step-num">4.</span> Choose the cover</div><ul class="alg-details" style="font-family:var(--font-sans);font-size:13px;color:var(--ink-2);">';
+  h += `<li>Essential primes: ${essential.length ? essential.map(c => '<code>' + term(c) + '</code>').join(', ') : 'none'}.</li>`;
+  const left = ones.filter(m => !essential.some(c => (m & c.mask) === c.value));
+  if (left.length) {
+    h += `<li>Still uncovered: ${left.map(m => 'm' + m).join(', ')}. The fewest extra primes that cover them${rest.length ? ': ' + rest.map(c => '<code>' + term(c) + '</code>').join(', ') : ''}.</li>`;
+  } else {
+    h += '<li>The essential primes cover every minterm.</li>';
+  }
+  h += '</ul></div>';
+  h += `<p class="alg-end">F = <code>${escapeHtml(sopExpr)}</code>, the same cover as the K-map groups.</p>`;
+  return h;
+}
+
+/* ────────── Check my answer ────────── */
+
+function astIsLiteral(n) { return n.op === 'VAR' || (n.op === 'NOT' && n.operand.op === 'VAR'); }
+function flatten(n, op) { return n.op === op ? [...flatten(n.left, op), ...flatten(n.right, op)] : [n]; }
+// SOP: OR of ANDs of literals. POS: AND of ORs of literals. Returns the terms as literal lists.
+function astForm(ast, outer, inner) {
+  const terms = flatten(ast, outer).map(t => flatten(t, inner));
+  return terms.every(t => t.every(astIsLiteral)) ? terms : null;
+}
+
+function checkAnswer() {
+  const out = document.getElementById('checkResult');
+  const text = document.getElementById('checkInput').value.trim();
+  state.checkWrong = new Set();
+  const result = getEffectiveResult();
+  if (!text || !result) { out.innerHTML = ''; render(); return; }
+
+  const { varNames, truthTable, kmap } = result;
+  let ast;
+  try {
+    ast = parse(tokenize(text, varNames));
+  } catch (e) {
+    out.innerHTML = `<span class="check-verdict bad">Can't read that.</span> ${escapeHtml(e.message)}`;
+    render();
+    return;
+  }
+
+  // Compare on every care cell
+  const extra = [], missing = [];
+  truthTable.forEach((row, i) => {
+    if (row.result === 'X') return;
+    const v = evaluate(ast, row.env);
+    if (v === 1 && row.result === 0) extra.push(i);
+    if (v === 0 && row.result === 1) missing.push(i);
+  });
+  const cellOfMinterm = (m) => {
+    const bits = m.toString(2).padStart(varNames.length, '0');
+    const rv = kmap.rowVars.length;
+    return kmap.rowCodes.indexOf(bits.slice(0, rv)) + ',' + kmap.colCodes.indexOf(bits.slice(rv));
+  };
+
+  if (extra.length || missing.length) {
+    [...extra, ...missing].forEach(m => state.checkWrong.add(cellOfMinterm(m)));
+    let h = '<span class="check-verdict bad">Not equal to F.</span> The outlined cells are wrong.<ul>';
+    if (missing.length) h += `<li>Yours is 0 where F is 1: ${missing.map(m => 'm' + m).join(', ')}</li>`;
+    if (extra.length) h += `<li>Yours is 1 where F is 0: ${extra.map(m => 'm' + m).join(', ')}</li>`;
+    out.innerHTML = h + '</ul>';
+    render();
+    return;
+  }
+
+  const n = varNames.length;
+  const ones = [], zeros = [], dcs = [];
+  truthTable.forEach((row, i) => (row.result === 1 ? ones : row.result === 0 ? zeros : dcs).push(i));
+  const sop = astForm(ast, 'OR', 'AND');
+  const pos = sop ? null : astForm(ast, 'AND', 'OR');
+  const count = (terms) => ({ terms: terms.length, lits: terms.reduce((s, t) => s + t.length, 0) });
+  const plural = (k, w) => k + ' ' + w + (k === 1 ? '' : 's');
+
+  if (!sop && !pos) {
+    out.innerHTML = '<span class="check-verdict ok">Correct.</span> It matches F on every care cell. It is not written as a sum of products or a product of sums, so minimality is not checked.';
+    render();
+    return;
+  }
+
+  const form = sop ? 'SOP' : 'POS';
+  const terms = sop || pos;
+  const best = LogicMin.minimize(n, sop ? ones : zeros, dcs).cover;
+  const mine = count(terms);
+  const min = { terms: best.length, lits: best.reduce((s, c) => s + LogicMin.popcount(c.mask), 0) };
+  const minExpr = sop
+    ? (best.map(c => LogicMin.cubeToTerm(c, varNames)).join(' + ') || '0')
+    : (best.map(c => LogicMin.cubeToSum(c, varNames)).join(' · ') || '1');
+
+  if (mine.terms <= min.terms && mine.lits <= min.lits) {
+    out.innerHTML = `<span class="check-verdict ok">Correct and minimal.</span> A minimum ${form} has ${plural(min.terms, 'term')} and ${plural(min.lits, 'literal')}, and so does yours.`;
+    render();
+    return;
+  }
+
+  // Name what can be removed: whole terms, or literals inside a term
+  const evalTerms = (ts, env) => sop
+    ? ts.some(t => t.every(l => evaluate(l, env)))
+    : ts.every(t => t.some(l => evaluate(l, env)));
+  const sameOnCare = (ts) => truthTable.every(row => row.result === 'X' || (evalTerms(ts, row.env) ? 1 : 0) === row.result);
+  const show = (t) => sop ? t.map(astToText).join('·') : '(' + t.map(astToText).join(' + ') + ')';
+  const hints = [];
+  terms.forEach((t, i) => {
+    const without = terms.filter((_, j) => j !== i);
+    if (without.length && sameOnCare(without)) { hints.push(`<code>${show(t)}</code> can be removed: the other terms already cover it.`); return; }
+    t.forEach((l, k) => {
+      if (t.length < 2) return;
+      const shorter = terms.map((u, j) => j === i ? u.filter((_, x) => x !== k) : u);
+      if (sameOnCare(shorter)) hints.push(`In <code>${show(t)}</code>, <code>${astToText(l)}</code> is not needed.`);
+    });
+  });
+  let h = `<span class="check-verdict warn">Correct, but not minimal.</span> Yours has ${plural(mine.terms, 'term')} and ${plural(mine.lits, 'literal')}; a minimum ${form} has ${plural(min.terms, 'term')} and ${plural(min.lits, 'literal')}, for example <code>${escapeHtml(minExpr)}</code>.`;
+  if (hints.length) h += '<ul>' + hints.slice(0, 6).map(x => `<li>${x}</li>`).join('') + '</ul>';
+  out.innerHTML = h;
+  render();
+}
+
+function astToText(n) {
+  if (n.op === 'VAR') return n.name;
+  if (n.op === 'NOT' && n.operand.op === 'VAR') return n.operand.name + "'";
+  return '?';
+}
+
+/* ────────── Share links ────────── */
+
+function listOrRange(nums) { return nums.join(','); }
+
+// The address bar always holds a link to what is on screen
+function shareQuery() {
+  const parts = [];
+  const add = (k, v) => parts.push(k + '=' + encodeURIComponent(v).replace(/%2C/g, ','));
+  const result = getEffectiveResult();
+  const vars = result ? result.varNames : varInput.value.split(/[,\s]+/).filter(Boolean);
+  add('vars', vars.join(','));
+  const edited = Object.keys(state.manualOverrides).length > 0;
+  if (result && (edited || state.manualMode)) {
+    // Edited maps are shared as their cells
+    const ones = [], dcs = [];
+    result.truthTable.forEach((row, i) => { if (row.result === 1) ones.push(i); else if (row.result === 'X') dcs.push(i); });
+    add('m', listOrRange(ones));
+    if (dcs.length) add('d', listOrRange(dcs));
+  } else {
+    if (state.inputMode === 'expression' && exprInput.value.trim()) add('expr', exprInput.value.trim());
+    if (state.inputMode === 'minterms') add('m', mintermsInput.value.trim());
+    if (state.inputMode === 'maxterms') add('max', maxtermsInput.value.trim());
+    if (dcInput.value.trim()) add('d', dcInput.value.trim());
+  }
+  const show = [];
+  if (!state.showGroups) show.push('nogroups');
+  if (state.showPOS) show.push('pos');
+  if (state.showTruth) show.push('truth');
+  if (state.showVerilog) show.push('verilog');
+  if (state.showVHDL) show.push('vhdl');
+  if (state.showSteps) show.push('steps');
+  if (state.showCircuit) show.push('circuit');
+  if (show.length) add('show', show.join(','));
+  if (state.showSteps && state.stepsView !== 'kmap') add('view', state.stepsView);
+  return parts.join('&');
+}
+
+function syncUrl() {
+  try { history.replaceState(null, '', location.pathname + '?' + shareQuery()); } catch (e) {}
+}
+
 function renderAlgebraSteps(result, sopExpr, xorDetected) {
   const { varNames, truthTable } = result;
   const edited = Object.keys(state.manualOverrides).length > 0;
@@ -1744,6 +1945,7 @@ function render() {
     truthPanel.style.display = 'none';
     stepsPanel.style.display = 'none';
     circuitPanel.style.display = 'none';
+    document.getElementById('checkPanel').style.display = 'none';
     if (emptyState) emptyState.style.display = '';
     return;
   }
@@ -1768,7 +1970,7 @@ function render() {
   });
 
   let html = `<div class="kmap-header">
-    <div class="result-label" style="margin: 0;">Karnaugh map</div>
+    <div class="result-label" style="margin: 0;">Karnaugh map <button class="btn-copy" id="copyLinkBtn" style="margin-left:8px;">Copy link</button></div>
     ${state.manualMode ? '<span class="manual-indicator">Manual mode: click a cell to cycle 0, 1, X</span>' : ''}
     ${!state.manualMode && Object.keys(state.manualOverrides).length > 0 ? '<span class="manual-indicator">Edited: click a cell to cycle 0, 1, X &nbsp; <button class="btn-copy" onclick="state.manualOverrides={};render();">Revert to input</button></span>' : ''}
   </div>`;
@@ -1819,7 +2021,7 @@ function render() {
       const cls = val === 1 ? 'v1' : val === 'X' ? 'vx' : 'v0';
       const borderStyle = border ? `border: ${border};` : '';
 
-      html += `<td class="km-cell ${cls} click" data-r="${ri}" data-c="${ci}"${extra2Attr}${extra1}${extra2Var}background: ${bg}; ${borderStyle}">
+      html += `<td class="km-cell ${cls} click${state.checkWrong.has(key) ? ' km-wrong' : ''}" data-r="${ri}" data-c="${ci}"${extra2Attr}${extra1}${extra2Var}background: ${bg}; ${borderStyle}">
         <span>${val === 'X' ? 'X' : val}</span>
       </td>`;
     });
@@ -1929,6 +2131,12 @@ function render() {
 
   kmapPanel.innerHTML = html;
   kmapPanel.style.display = 'block';
+  document.getElementById('checkPanel').style.display = 'block';
+  document.getElementById('copyLinkBtn').addEventListener('click', () => {
+    syncUrl();
+    copyText(location.href, 'link');
+  });
+  syncUrl();
 
   kmapPanel.querySelectorAll('.km-cell.click').forEach(cell => {
     cell.addEventListener('click', () => {
@@ -1967,11 +2175,14 @@ function render() {
       <div class="mode-selector" role="group" aria-label="Steps view">
         <button class="mode-btn${view === 'kmap' ? ' on' : ''}" data-steps-view="kmap" aria-pressed="${view === 'kmap'}">K-map</button>
         <button class="mode-btn${view === 'algebra' ? ' on' : ''}" data-steps-view="algebra" aria-pressed="${view === 'algebra'}" data-new-until="2026-10-21">Algebra</button>
+        <button class="mode-btn${view === 'qm' ? ' on' : ''}" data-steps-view="qm" aria-pressed="${view === 'qm'}" data-new-until="2026-10-21">Quine-McCluskey</button>
       </div>
     </div>`;
     sHtml += '<div class="steps-box">';
     if (view === 'algebra') {
       sHtml += renderAlgebraSteps(effectiveResult, sopExpr, xorDetected);
+    } else if (view === 'qm') {
+      sHtml += renderQMSteps(effectiveResult, sopExpr);
     } else {
       const steps = generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetected);
       steps.forEach((s, i) => {
@@ -2067,10 +2278,36 @@ circuitBtn.addEventListener('click', () => {
   render();
 });
 
-// Pre-fill from URL params (e.g. from CircuitGen's "Simplify with K-Map" link)
+// Live update: regenerate shortly after typing stops
+let liveTimer = null;
+[varInput, exprInput, mintermsInput, maxtermsInput, dcInput].forEach(el => {
+  el.addEventListener('input', () => {
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(generate, 350);
+  });
+});
+
+document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+document.getElementById('checkInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkAnswer(); });
+
+// Pre-fill from URL params: vars, expr | m | max, d, show, view
 const urlParams = new URLSearchParams(location.search.replace(/\+/g, '%2B'));
 if (urlParams.get('vars')) varInput.value = urlParams.get('vars');
 if (urlParams.get('expr')) exprInput.value = urlParams.get('expr');
+if (urlParams.has('m')) { mintermsInput.value = urlParams.get('m'); setInputMode('minterms'); }
+else if (urlParams.has('max')) { maxtermsInput.value = urlParams.get('max'); setInputMode('maxterms'); }
+if (urlParams.get('d')) dcInput.value = urlParams.get('d');
+if (urlParams.get('show')) {
+  const show = new Set(urlParams.get('show').split(','));
+  const toggles = [['nogroups', 'showGroups', groupsBtn, false], ['pos', 'showPOS', posBtn, true], ['truth', 'showTruth', truthBtn, true],
+    ['verilog', 'showVerilog', verilogBtn, true], ['vhdl', 'showVHDL', vhdlBtn, true], ['steps', 'showSteps', stepsBtn, true], ['circuit', 'showCircuit', circuitBtn, true]];
+  toggles.forEach(([name, prop, btn, on]) => {
+    if (!show.has(name)) return;
+    state[prop] = on;
+    btn.classList.toggle('on', on);
+  });
+}
+if (['algebra', 'qm'].includes(urlParams.get('view'))) state.stepsView = urlParams.get('view');
 
 generate();
 </script>
