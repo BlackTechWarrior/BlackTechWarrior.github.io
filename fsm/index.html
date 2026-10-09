@@ -93,8 +93,43 @@
     .fsm-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
     .fsm-head .result-label { margin-bottom: var(--s-3); }
 
-    .fsm-diagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
-    .fsm-node { fill: var(--surface); stroke: var(--ink); stroke-width: 1.5; }
+    .fsm-tools { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-3); }
+    .fsm-canvas { position: relative; }
+    .fsm-diagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+    .fsm-diagram text { pointer-events: none; }
+    .fsm-hint { margin: var(--s-3) 0 var(--s-1); color: var(--ink-2); }
+    .fsm-node { fill: var(--surface); stroke: var(--ink); stroke-width: 1.5; cursor: grab; }
+
+    /* Diagram editing: drag a state, drag from its ring, click a label */
+    .fsm-state, .fsm-elabel { touch-action: none; }
+    .fsm-state:hover .fsm-node, .fsm-target .fsm-node { fill: var(--well); }
+    .fsm-selected .fsm-node, .fsm-selected:hover .fsm-node { fill: var(--select); }
+    .fsm-sel-ring { fill: none; stroke: var(--ink); stroke-width: 2; pointer-events: none; }
+    .fsm-ring { fill: none; stroke: transparent; pointer-events: stroke; cursor: crosshair; }
+    .fsm-ring:hover, .fsm-target .fsm-ring { stroke: var(--hover); }
+    .fsm-elabel { cursor: pointer; }
+    .fsm-elabel:hover .fsm-label-bg { fill: var(--well); }
+    .fsm-preview { fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 5 4; pointer-events: none; }
+    .fsm-dragging, .fsm-dragging * { cursor: grabbing; }
+    .fsm-linking, .fsm-linking * { cursor: crosshair; }
+
+    /* Transition popover: a small card over the diagram */
+    .fsm-pop {
+      position: absolute; z-index: var(--z-sticky); width: min(21rem, calc(100vw - 32px));
+      padding: var(--s-4); background: var(--surface); border-radius: 16px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+    body.dark .fsm-pop { background: var(--well); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4); }
+    .fsm-pop[hidden] { display: none; }
+    .fsm-pop:focus { outline: none; }
+    .fsm-pop-h { margin: 0 0 var(--s-3); }
+    .fsm-pop-chips { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-4); }
+    .fsm-pop-chips .btn-t { font-family: var(--font-mono); font-size: 0.8125rem; }
+    .fsm-pop .fsm-pop-seg { display: inline-flex; width: auto; max-width: 100%; margin-bottom: var(--s-4); }
+    .fsm-pop-seg .mode-btn { flex: 1 1 0; min-width: 2.75em; font-family: var(--font-mono); }
+    .fsm-pop-note { margin: 0 0 var(--s-3); }
+    .fsm-pop-note[hidden] { display: none; }
+    .fsm-pop-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
     .fsm-node-name { fill: var(--ink); font-family: var(--font-mono); font-size: 13px; font-weight: 600; text-anchor: middle; }
     .fsm-node-out { fill: var(--ink-2); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
     .fsm-node-rule { stroke: var(--border-strong); stroke-width: 1; }
@@ -296,9 +331,17 @@
       <section class="section" aria-labelledby="fsm-diagram-h">
         <div class="fsm-head">
           <h2 class="result-label" id="fsm-diagram-h">State diagram</h2>
-          <button class="btn-copy" type="button" id="fsm-link">Copy link</button>
+          <div class="fsm-tools">
+            <button class="btn-copy" type="button" id="fsm-del" hidden>Remove state</button>
+            <button class="btn-copy" type="button" id="fsm-relayout" hidden>Reset layout</button>
+            <button class="btn-copy" type="button" id="fsm-link">Copy link</button>
+          </div>
         </div>
-        <div class="fsm-diagram" id="fsm-diagram"></div>
+        <div class="fsm-canvas" id="fsm-canvas">
+          <div class="fsm-diagram" id="fsm-diagram"></div>
+          <div class="fsm-pop" id="fsm-pop" role="dialog" aria-labelledby="fsm-pop-h" tabindex="-1" hidden></div>
+        </div>
+        <p class="t-meta fsm-hint" id="fsm-hint">Drag a state to move it. Drag from its edge to another state to add a transition. Double-click empty space to add a state.</p>
         <p class="t-meta" id="fsm-diagram-key"></p>
       </section>
 
@@ -883,6 +926,182 @@
     return errs;
   }
 
+  // ── Diagram layout ──
+  // Positions are in diagram units (one unit is one CSS pixel at full size), centred on 0, 0.
+  var NODE_R = 27, POS_LIMIT = 400;
+  var RING_R = [0, 0, 105, 110, 125, 140, 150, 165, 175];
+
+  // The automatic layout: states on a circle. `a` is each state's angle from the centre.
+  function circleLayout(n) {
+    var R = RING_R[n] || RING_R[8];
+    var start = n === 2 ? Math.PI : n === 4 ? -3 * Math.PI / 4 : -Math.PI / 2;
+    var pos = [];
+    for (var i = 0; i < n; i++) {
+      var a = start + 2 * Math.PI * i / n;
+      pos.push({ x: R * Math.cos(a), y: R * Math.sin(a), a: a });
+    }
+    return pos;
+  }
+  function roundPos(p) { return { x: Math.round(p.x), y: Math.round(p.y) }; }
+  function clampNum(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+  // The area the diagram always shows: room around the circle for n states, grown to
+  // take in any moved state
+  function frame(n, pos) {
+    var R = RING_R[n] || RING_R[8], hw = R + NODE_R + 56, hh = R + NODE_R + 36;
+    var b = { x0: -hw, y0: -hh, x1: hw, y1: hh }, m = NODE_R + 12;
+    (pos || []).forEach(function (p) {
+      b.x0 = Math.min(b.x0, p.x - m); b.x1 = Math.max(b.x1, p.x + m);
+      b.y0 = Math.min(b.y0, p.y - m); b.y1 = Math.max(b.y1, p.y + m);
+    });
+    return b;
+  }
+
+  // A state centre kept inside a box (x0, y0, x1, y1), inset so the circle stays inside
+  function clampPos(p, box) {
+    var m = NODE_R + 4;
+    var x0 = Math.max(-POS_LIMIT, box.x0 + m), x1 = Math.min(POS_LIMIT, box.x1 - m);
+    var y0 = Math.max(-POS_LIMIT, box.y0 + m), y1 = Math.min(POS_LIMIT, box.y1 - m);
+    return roundPos({ x: x1 < x0 ? (x0 + x1) / 2 : clampNum(p.x, x0, x1), y: y1 < y0 ? (y0 + y1) / 2 : clampNum(p.y, y0, y1) });
+  }
+
+  // The free spot furthest from every state (ties go to the one nearest the centre)
+  function freeSpot(pos) {
+    var b = frame(pos.length + 1, pos), m = NODE_R + 12, best = null, bestD = -1, bestC = 0;
+    for (var y = b.y0 + m; y <= b.y1 - m; y += 10) {
+      for (var x = b.x0 + m; x <= b.x1 - m; x += 10) {
+        var d = Infinity;
+        pos.forEach(function (p) { d = Math.min(d, Math.hypot(p.x - x, p.y - y)); });
+        var c = Math.hypot(x, y);
+        if (d > bestD + 1e-9 || (Math.abs(d - bestD) <= 1e-9 && c < bestC)) { best = { x: x, y: y }; bestD = d; bestC = c; }
+      }
+    }
+    return roundPos(best || { x: 0, y: 0 });
+  }
+
+  // ── Editing ──
+  // Every edit, from the table or the diagram, goes through these. An editor state is
+  //   st = { machine, reset (state index), custom: { k, strs }, pos: null or [{ x, y }] }
+  // pos is null while the states sit on the automatic circle.
+
+  // The table's naming rule: S<n>, counting up past names already taken
+  function newStateName(states) {
+    var k = states.length, name = 'S' + k;
+    while (states.indexOf(name) !== -1) name = 'S' + (++k);
+    return name;
+  }
+
+  // Binary codes at width k (clamped to what the number of states allows)
+  function resetCodes(n, k) {
+    var r = codeRange(n);
+    if (!(k >= r.min)) k = r.min;
+    if (k > r.max) k = r.max;
+    return { k: k, strs: binaryCodes(n, k) };
+  }
+
+  // A state was added at the end: keep the codes, widen if needed, give it the lowest free code
+  function growCodes(custom, states) {
+    var n = states.length, r = codeRange(n);
+    if (checkCodes(custom.strs, states.slice(0, n - 1), custom.k).error) return resetCodes(n, custom.k);
+    var k = Math.min(Math.max(custom.k, r.min), r.max);
+    var strs = custom.strs.map(function (c) { return '0'.repeat(k - custom.k) + c; });
+    for (var c = 0; ; c++) {
+      var b = bitsOf(c, k);
+      if (strs.indexOf(b) < 0) { strs.push(b); break; }
+    }
+    return { k: k, strs: strs };
+  }
+
+  // State idx of oldStates was removed: keep the other codes, narrowing if the width is now above n
+  function shrinkCodes(custom, oldStates, idx) {
+    var n = oldStates.length - 1, r = codeRange(n);
+    var valid = !checkCodes(custom.strs, oldStates, custom.k).error;
+    var strs = custom.strs.filter(function (_, i) { return i !== idx; }), k = custom.k;
+    if (!valid) return resetCodes(n, Math.min(k, r.max));
+    while (k > r.max) {
+      if (strs.some(function (c) { return c[0] !== '0'; })) return resetCodes(n, r.max);
+      strs = strs.map(function (c) { return c.slice(1); });
+      k--;
+    }
+    return { k: k, strs: strs };
+  }
+
+  // Pin every state where it is drawn now, so one can move without the others shifting
+  function freezeLayout(st) {
+    if (!st.pos) st.pos = circleLayout(st.machine.states.length).map(roundPos);
+    return st.pos;
+  }
+
+  // Add a state that stays where it is until a transition is set. With `at`, it goes there
+  // (and the other states are pinned); otherwise on the circle, or at a free spot once
+  // states have been moved. Returns the new index, or -1 at 8 states.
+  function addState(st, at, box) {
+    var m = st.machine, n = m.states.length;
+    if (n >= 8) return -1;
+    var nc = 1 << m.inputs.length;
+    if (at) freezeLayout(st);
+    m.states.push(newStateName(m.states));
+    var row = [];
+    for (var c = 0; c < nc; c++) row.push(n);
+    m.next.push(row);
+    var zeros = m.outputs.map(function () { return 0; });
+    m.out.push(m.type === 'moore' ? zeros : row.map(function () { return zeros.slice(); }));
+    st.custom = growCodes(st.custom, m.states);
+    if (at) st.pos.push(clampPos(at, box || frame(n + 1, st.pos)));
+    else if (st.pos) st.pos.push(freeSpot(st.pos));
+    return n;
+  }
+
+  // Remove any state. Transitions into it become x, later indices shift down, and the reset
+  // state, custom codes and positions follow. Returns null below 3 states.
+  function removeState(st, idx) {
+    var m = st.machine, n = m.states.length;
+    if (n <= 2 || !(idx >= 0 && idx < n)) return null;
+    var oldStates = m.states.slice(), name = m.states[idx], hit = false;
+    m.states.splice(idx, 1); m.next.splice(idx, 1); m.out.splice(idx, 1);
+    m.next.forEach(function (row) {
+      row.forEach(function (t, c) {
+        if (t === idx) { row[c] = -1; hit = true; } else if (t > idx) row[c] = t - 1;
+      });
+    });
+    if (st.reset === idx || !(st.reset >= 0 && st.reset < n)) st.reset = 0;
+    else if (st.reset > idx) st.reset--;
+    st.custom = shrinkCodes(st.custom, oldStates, idx);
+    if (st.pos) st.pos.splice(idx, 1);
+    return { name: name, hit: hit };
+  }
+
+  // Move state s to p, kept inside box
+  function moveState(st, s, p, box) {
+    freezeLayout(st)[s] = clampPos(p, box || frame(st.machine.states.length, st.pos));
+  }
+
+  // The input combinations that take `from` to `to`
+  function edgeCombos(m, from, to) {
+    var list = [];
+    m.next[from].forEach(function (t, c) { if (t === to) list.push(c); });
+    return list;
+  }
+
+  // Point combinations `combos` of state `from` at `to`, replacing their next state. Mealy:
+  // outs[o] is 0, 1 or null (x) for each output, or undefined to keep that output as it is.
+  function setTransition(m, from, to, combos, outs) {
+    combos.forEach(function (c) {
+      m.next[from][c] = to;
+      if (m.type === 'mealy' && outs) {
+        outs.forEach(function (v, o) { if (v !== undefined) m.out[from][c][o] = v; });
+      }
+    });
+  }
+
+  // Make combinations `combos` of state `from` don't-cares (and their Mealy outputs)
+  function clearTransition(m, from, combos) {
+    combos.forEach(function (c) {
+      m.next[from][c] = -1;
+      if (m.type === 'mealy') m.out[from][c] = m.out[from][c].map(function () { return null; });
+    });
+  }
+
   // ── Share links ──
   // The query recreates everything on screen. Parameters:
   //   t  machine type: moore or mealy
@@ -899,7 +1118,11 @@
   //   f  flip-flop type: D, T or JK
   //   q  simulation input sequence as bits, no separators (2 bits per step with 2 inputs)
   //   r  reset state index
+  //   p  state positions in the diagram, one x_y pair of whole numbers per state,
+  //      comma-separated, each from -400 to 400 (only once a state has been moved or
+  //      placed by hand; without it the states sit on a circle)
   // Example: ?t=mealy&i=X&o=Z&s=S0,S1,S2&n=01,21,01&z=00,00,01&a=binary&f=D&q=0110101&r=0
+  //          &p=0_-110,95_55,-95_55
 
   // A sequence as bare bits, or null if it is not a whole number of steps up to 64
   function seqBits(str, ni) {
@@ -911,7 +1134,23 @@
     return ni === 1 ? bits : (bits.match(/../g) || []).join(' ');
   }
 
-  // st = { machine, enc, ff, codes (strings, custom only), seq (bits), reset }
+  // Positions as written in a link, or null if they do not fit n states
+  function readPositions(str, n) {
+    if (typeof str !== 'string' || str.length > 8 * 20) return null;
+    var parts = str.split(',');
+    if (parts.length !== n) return null;
+    var pos = [];
+    for (var i = 0; i < n; i++) {
+      var mm = /^(-?\d{1,3})_(-?\d{1,3})$/.exec(parts[i]);
+      if (!mm) return null;
+      var x = +mm[1], y = +mm[2];
+      if (Math.abs(x) > POS_LIMIT || Math.abs(y) > POS_LIMIT) return null;
+      pos.push({ x: x === 0 ? 0 : x, y: y === 0 ? 0 : y });   // no -0
+    }
+    return pos;
+  }
+
+  // st = { machine, enc, ff, codes (strings, custom only), seq (bits), reset, pos (or null) }
   function shareQuery(st) {
     var m = st.machine, moore = m.type === 'moore';
     var ch = function (v) { return v === null ? 'x' : String(v); };
@@ -930,6 +1169,7 @@
     add('f', st.ff);
     add('q', st.seq);
     add('r', String(st.reset));
+    if (st.pos) add('p', st.pos.map(function (p) { return p.x + '_' + p.y; }).join(','));
     return parts.join('&');
   }
 
@@ -937,11 +1177,11 @@
   // or to the default setting, and is named in `bad`. Never throws.
   function parseShare(search, fallback) {
     var res = { found: false, machine: fallback, fromLink: false, enc: null, ff: null,
-                codes: null, seq: null, reset: null, bad: [] };
+                codes: null, seq: null, reset: null, pos: null, bad: [] };
     var str = String(search || '').replace(/^\?/, '');
     if (!str) return res;
     var p = Object.create(null);
-    var KEYS = ['t', 'i', 'o', 's', 'n', 'z', 'a', 'c', 'f', 'q', 'r'];
+    var KEYS = ['t', 'i', 'o', 's', 'n', 'z', 'a', 'c', 'f', 'q', 'r', 'p'];
     if (str.length > 4000) { res.found = true; res.bad.push('state table'); return res; }
     str.split('&').forEach(function (kv) {
       var at = kv.indexOf('='), key = at < 0 ? kv : kv.slice(0, at), val = at < 0 ? '' : kv.slice(at + 1);
@@ -984,6 +1224,11 @@
     if ('r' in p) {
       if (/^[0-7]$/.test(p.r) && +p.r < n) res.reset = +p.r;
       else res.bad.push('reset state');
+    }
+    if ('p' in p) {
+      var pos = readPositions(p.p, n);
+      if (pos) res.pos = pos;
+      else res.bad.push('state positions');
     }
     return res;
   }
@@ -1057,7 +1302,12 @@
     minimize: minimize, minimizeSparse: minimizeSparse,
     evalCubes: evalCubes, design: design, step: step, verify: verify, simulate: simulate,
     parseSequence: parseSequence, edges: edges, validate: validate, preset: preset, kmapUrl: kmapUrl,
-    shareQuery: shareQuery, parseShare: parseShare, seqBits: seqBits, formatSeq: formatSeq
+    shareQuery: shareQuery, parseShare: parseShare, seqBits: seqBits, formatSeq: formatSeq,
+    NODE_R: NODE_R, POS_LIMIT: POS_LIMIT, circleLayout: circleLayout, frame: frame, clampPos: clampPos,
+    freeSpot: freeSpot, readPositions: readPositions,
+    newStateName: newStateName, resetCodes: resetCodes, growCodes: growCodes, shrinkCodes: shrinkCodes,
+    freezeLayout: freezeLayout, addState: addState, removeState: removeState, moveState: moveState,
+    edgeCombos: edgeCombos, setTransition: setTransition, clearTransition: clearTransition
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -1082,6 +1332,8 @@
   var custom = { k: 1, strs: [] };   // custom codes as typed, k bits each
   var designOk = false;              // the results show the machine as edited
   var lastSeqBits = '';
+  var layout = null;     // null: states on a circle; otherwise [{ x, y }] per state
+  var selected = -1;     // state selected in the diagram
 
   function loadPreset(name) {
     var p = F.preset(name);
@@ -1089,6 +1341,9 @@
     delete p.seq;
     M = p;
     resetState = 0;
+    layout = null;
+    selected = -1;
+    closePop();
     resetCustom();
     syncControls();
     renderTable();
@@ -1096,38 +1351,35 @@
   }
 
   // Binary codes at width k (clamped to what the number of states allows)
-  function resetCustom(k) {
-    var n = M.states.length, r = F.codeRange(n);
-    if (!(k >= r.min)) k = r.min;
-    if (k > r.max) k = r.max;
-    custom = { k: k, strs: F.binaryCodes(n, k) };
+  function resetCustom(k) { custom = F.resetCodes(M.states.length, k); }
+
+  // Table and diagram edits share these: the edit runs on the editor state, then
+  // everything is redrawn from it
+  function editState() { return { machine: M, reset: resetState, custom: custom, pos: layout }; }
+  function commit(st) {
+    M = st.machine; resetState = st.reset; custom = st.custom; layout = st.pos;
+    if (selected >= M.states.length) selected = -1;
+    $('fsm-link-err').hidden = true;
+    syncControls();
+    renderTable();
+    update();
   }
 
-  // A state was added: keep the codes, widen if needed, give the new state the lowest free code
-  function growCustom() {
-    var n = M.states.length, r = F.codeRange(n);
-    if (F.checkCodes(custom.strs, M.states.slice(0, n - 1), custom.k).error) return resetCustom(custom.k);
-    var k = Math.min(Math.max(custom.k, r.min), r.max);
-    var strs = custom.strs.map(function (c) { return '0'.repeat(k - custom.k) + c; });
-    for (var c = 0; ; c++) {
-      var b = F.bitsOf(c, k);
-      if (strs.indexOf(b) < 0) { strs.push(b); break; }
-    }
-    custom = { k: k, strs: strs };
+  function addStateAt(at, box) {
+    if (M.states.length >= 8) { toast('A machine can have up to 8 states.'); return -1; }
+    var st = editState(), i = F.addState(st, at, box);
+    commit(st);
+    return i;
   }
 
-  // The last state was removed: keep the other codes, narrowing if the width is now above n
-  function shrinkCustom() {
-    var n = M.states.length, r = F.codeRange(n);
-    var valid = !F.checkCodes(custom.strs, M.states.concat(['']), custom.k).error;
-    var strs = custom.strs.slice(0, n), k = custom.k;
-    if (!valid) return resetCustom(Math.min(k, r.max));
-    while (k > r.max) {
-      if (strs.some(function (c) { return c[0] !== '0'; })) return resetCustom(r.max);
-      strs = strs.map(function (c) { return c.slice(1); });
-      k--;
-    }
-    custom = { k: k, strs: strs };
+  function removeStateAt(idx) {
+    if (M.states.length <= 2) { toast('A machine needs at least 2 states.'); return; }
+    var st = editState(), r = F.removeState(st, idx);
+    if (!r) return;
+    selected = -1;
+    closePop();
+    commit(st);
+    toast(r.hit ? 'Transitions into ' + r.name + ' are now x. Pick their next states.' : 'Removed ' + r.name);
   }
 
   function defaultNames(prefix, count) { return count === 1 ? [prefix] : [prefix + '1', prefix + '0']; }
@@ -1343,35 +1595,16 @@
   });
 
   $('fsm-add').addEventListener('click', function () {
-    if (M.states.length >= 8) return;
-    var i = M.states.length, nc = 1 << M.inputs.length;
-    var name = 'S' + i, k = i;
-    while (M.states.indexOf(name) !== -1) name = 'S' + (++k);
-    M.states.push(name);
-    var row = [];
-    for (var c = 0; c < nc; c++) row.push(i);
-    M.next.push(row);
-    var zeros = M.outputs.map(function () { return 0; });
-    M.out.push(M.type === 'moore' ? zeros : row.map(function () { return zeros.slice(); }));
-    growCustom();
-    syncControls();
-    renderTable();
-    update();
+    if (M.states.length < 8) addStateAt(null);
   });
 
   $('fsm-remove').addEventListener('click', function () {
     if (M.states.length <= 2) return;
-    var gone = M.states.length - 1, name = M.states[gone], hit = false;
-    M.states.pop(); M.next.pop(); M.out.pop();
-    M.next.forEach(function (row) {
-      row.forEach(function (t, c) { if (t === gone) { row[c] = -1; hit = true; } });
-    });
-    if (resetState >= M.states.length) resetState = 0;
-    shrinkCustom();
-    syncControls();
-    renderTable();
-    update();
-    if (hit) toast('Transitions into ' + name + ' are now x. Pick their next states.');
+    var st = editState(), r = F.removeState(st, M.states.length - 1);
+    if (selected === M.states.length) selected = -1;
+    closePop();
+    commit(st);
+    if (r.hit) toast('Transitions into ' + r.name + ' are now x. Pick their next states.');
   });
 
   document.querySelector('.fsm-examples').addEventListener('click', function (e) {
@@ -1416,6 +1649,7 @@
   }
 
   function update() {
+    closePop();
     var names = document.querySelectorAll('#fsm-table .fsm-name');
     for (var i = 0; i < names.length; i++) {
       setInvalid(names[i], !F.NAME_RE.test(M.states[i]) || M.states.indexOf(M.states[i]) !== i);
@@ -1451,7 +1685,7 @@
   }
 
   function shareQuery() {
-    return F.shareQuery({ machine: M, enc: enc, ff: ff, codes: custom.strs, seq: currentSeqBits(), reset: resetState });
+    return F.shareQuery({ machine: M, enc: enc, ff: ff, codes: custom.strs, seq: currentSeqBits(), reset: resetState, pos: layout });
   }
 
   // The address bar always holds a link to what is on screen
@@ -1477,6 +1711,7 @@
     enc = res.enc || 'binary';
     ff = res.ff || 'D';
     resetState = res.reset !== null ? res.reset : 0;
+    layout = res.pos;
     var ni = M.inputs.length;
     var seq = res.seq !== null ? res.seq : ni === 1 ? '0110101' : '00011110';
     $('fsm-seq').value = F.formatSeq(seq, ni);
@@ -1496,15 +1731,64 @@
   }
 
   // ── Diagram ──
-  function renderDiagram(d) {
-    var n = M.states.length, mealy = M.type === 'mealy';
-    var R = [0, 0, 105, 110, 125, 140, 150, 165, 175][n];
-    var r = 27;
-    var start = n === 2 ? Math.PI : n === 4 ? -3 * Math.PI / 4 : -Math.PI / 2;
-    var pos = M.states.map(function (_, i) {
-      var a = start + 2 * Math.PI * i / n;
-      return { x: R * Math.cos(a), y: R * Math.sin(a), a: a };
+  var NODE_R = F.NODE_R;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  var lastPos = [];      // where each state is drawn, in diagram units
+  var lastView = null;   // the diagram's viewBox { x, y, w, h }
+  var lastFrame = null;  // the area it covered before padding, while states are placed by hand
+
+  // Where each state is drawn: on the circle, or where it was put. `a` is the direction
+  // away from the middle of the drawing, used for self-loops and the reset arrow.
+  function statePositions() {
+    var n = M.states.length;
+    if (layout && layout.length !== n) layout = null;
+    if (!layout) return F.circleLayout(n);
+    var cx = 0, cy = 0;
+    layout.forEach(function (p) { cx += p.x / n; cy += p.y / n; });
+    return layout.map(function (p) {
+      var dx = p.x - cx, dy = p.y - cy;
+      return { x: p.x, y: p.y, a: Math.hypot(dx, dy) < 1 ? -Math.PI / 2 : Math.atan2(dy, dx) };
     });
+  }
+
+  // Angular distance between two directions
+  function angDist(a, b) { return Math.abs(((a - b) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI); }
+
+  // A moved state's self-loop points into the widest gap between its other edges
+  function loopAngle(pos, i, es) {
+    var dirs = [];
+    es.forEach(function (e) {
+      var j = e.from === i ? e.to : e.to === i ? e.from : -1;
+      if (j >= 0 && j !== i) dirs.push(Math.atan2(pos[j].y - pos[i].y, pos[j].x - pos[i].x));
+    });
+    if (!dirs.length) return pos[i].a;
+    var best = pos[i].a, bestGap = -1;
+    for (var k = 0; k < 72; k++) {
+      var cand = pos[i].a + k * Math.PI / 36;
+      var gap = Math.min.apply(null, dirs.map(function (u) { return angDist(cand, u); }));
+      if (gap > bestGap + 1e-9) { bestGap = gap; best = cand; }
+    }
+    return best;
+  }
+
+  // Self-loop on a state at A, pointing in direction a
+  function loopPath(A, a) {
+    var r = NODE_R, spread = 0.42, reach = 2.9 * r;
+    var p1 = { x: A.x + r * Math.cos(a - spread), y: A.y + r * Math.sin(a - spread) };
+    var p2 = { x: A.x + r * Math.cos(a + spread), y: A.y + r * Math.sin(a + spread) };
+    var c1 = { x: A.x + reach * Math.cos(a - 0.75), y: A.y + reach * Math.sin(a - 0.75) };
+    var c2 = { x: A.x + reach * Math.cos(a + 0.75), y: A.y + reach * Math.sin(a + 0.75) };
+    return 'M' + p1.x.toFixed(1) + ' ' + p1.y.toFixed(1) + ' C' + c1.x.toFixed(1) + ' ' + c1.y.toFixed(1) + ' ' +
+      c2.x.toFixed(1) + ' ' + c2.y.toFixed(1) + ' ' + p2.x.toFixed(1) + ' ' + p2.y.toFixed(1);
+  }
+
+  // `view` keeps the viewBox fixed while a state is dragged
+  function renderDiagram(d, view) {
+    var n = M.states.length, mealy = M.type === 'mealy';
+    var r = NODE_R;
+    if (selected >= n) selected = -1;
+    var pos = statePositions();
     var es = F.edges(M);
     var pair = {};
     es.forEach(function (e) { pair[e.from + ':' + e.to] = true; });
@@ -1519,22 +1803,25 @@
     var hits = function (b) {
       return boxes.some(function (o) { return b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y; });
     };
-    var addLabel = function (text, x, y) {
-      var w = labelW(text);
+    // Each label is a target: clicking it edits that transition
+    var addLabel = function (e, x, y) {
+      var text = e.label, w = labelW(text);
       boxes.push({ x: x - w / 2, y: y - lh / 2, w: w, h: lh });
-      labels.push('<rect class="fsm-label-bg" x="' + (x - w / 2).toFixed(1) + '" y="' + (y - lh / 2).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + lh + '" rx="3"/>' +
-        '<text class="fsm-label" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '">' + esc(text) + '</text>');
+      labels.push('<g class="fsm-elabel" data-from="' + e.from + '" data-to="' + e.to + '" role="img" aria-label="' +
+        esc(M.states[e.from] + ' to ' + M.states[e.to] + ' on ' + text) + '">' +
+        '<rect class="fsm-label-bg" x="' + (x - w / 2).toFixed(1) + '" y="' + (y - lh / 2).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + lh + '" rx="3"/>' +
+        '<text class="fsm-label" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '">' + esc(text) + '</text></g>');
       grow(x - w / 2, y - lh / 2); grow(x + w / 2, y + lh / 2);
     };
     // Put a label on the first free spot along an edge, middle first
-    var placeOnEdge = function (text, at) {
-      var w = labelW(text), ts = [0.5, 0.4, 0.6, 0.32, 0.68, 0.25, 0.75];
+    var placeOnEdge = function (e, at) {
+      var w = labelW(e.label), ts = [0.5, 0.4, 0.6, 0.32, 0.68, 0.25, 0.75];
       for (var i = 0; i < ts.length; i++) {
         var p = at(ts[i]);
-        if (!hits({ x: p.x - w / 2, y: p.y - lh / 2, w: w, h: lh })) return addLabel(text, p.x, p.y);
+        if (!hits({ x: p.x - w / 2, y: p.y - lh / 2, w: w, h: lh })) return addLabel(e, p.x, p.y);
       }
       var m = at(0.5);
-      addLabel(text, m.x, m.y);
+      addLabel(e, m.x, m.y);
     };
 
     // Self-loops first: their label spots are fixed
@@ -1546,22 +1833,18 @@
       var A = pos[e.from], B = pos[e.to];
       if (e.from === e.to) {
         // Self-loop pointing away from the centre
-        var a = A.a, spread = 0.42, reach = 2.9 * r;
-        var p1 = { x: A.x + r * Math.cos(a - spread), y: A.y + r * Math.sin(a - spread) };
-        var p2 = { x: A.x + r * Math.cos(a + spread), y: A.y + r * Math.sin(a + spread) };
-        var c1 = { x: A.x + reach * Math.cos(a - 0.75), y: A.y + reach * Math.sin(a - 0.75) };
-        var c2 = { x: A.x + reach * Math.cos(a + 0.75), y: A.y + reach * Math.sin(a + 0.75) };
-        parts.push('<path class="fsm-edge" marker-end="url(#fsm-arrow)" d="M' + p1.x.toFixed(1) + ' ' + p1.y.toFixed(1) +
-          ' C' + c1.x.toFixed(1) + ' ' + c1.y.toFixed(1) + ' ' + c2.x.toFixed(1) + ' ' + c2.y.toFixed(1) + ' ' + p2.x.toFixed(1) + ' ' + p2.y.toFixed(1) + '"/>');
+        var a = layout ? loopAngle(pos, e.from, es) : A.a;
+        parts.push('<path class="fsm-edge" marker-end="url(#fsm-arrow)" d="' + loopPath(A, a) + '"/>');
         // The loop's far point is about 1.82 r from the centre of the state
         var ca = Math.cos(a), sn = Math.sin(a);
         var dist = 1.82 * r + 5 + Math.abs(ca) * labelW(e.label) / 2 + Math.abs(sn) * lh / 2;
         grow(A.x + 1.85 * r * ca, A.y + 1.85 * r * sn);
         touch[e.from].push(a, a - 0.6, a + 0.6, a - 1.15, a + 1.15);
-        addLabel(e.label, A.x + dist * ca, A.y + dist * sn);
+        addLabel(e, A.x + dist * ca, A.y + dist * sn);
         return;
       }
       var dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy);
+      if (len < 1e-6) { dx = 1; dy = 0; len = 1; }   // two states on the same spot
       var ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
       var bend = pair[e.to + ':' + e.from] ? 26 : 0;
       // Curved edges leave and enter on the side they bulge toward (+n),
@@ -1579,14 +1862,14 @@
         dir(e.from, C); dir(e.to, C);
         parts.push('<path class="fsm-edge" marker-end="url(#fsm-arrow)" d="M' + P.x.toFixed(1) + ' ' + P.y.toFixed(1) +
           ' Q' + C.x.toFixed(1) + ' ' + C.y.toFixed(1) + ' ' + Q.x.toFixed(1) + ' ' + Q.y.toFixed(1) + '"/>');
-        later.push([e.label, function (t) {
+        later.push([e, function (t) {
           var u = 1 - t;
           return { x: u * u * P.x + 2 * u * t * C.x + t * t * Q.x, y: u * u * P.y + 2 * u * t * C.y + t * t * Q.y };
         }]);
       } else {
         parts.push('<path class="fsm-edge" marker-end="url(#fsm-arrow)" d="M' + P.x.toFixed(1) + ' ' + P.y.toFixed(1) +
           ' L' + Q.x.toFixed(1) + ' ' + Q.y.toFixed(1) + '"/>');
-        later.push([e.label, function (t) { return { x: P.x + (Q.x - P.x) * t, y: P.y + (Q.y - P.y) * t }; }]);
+        later.push([e, function (t) { return { x: P.x + (Q.x - P.x) * t, y: P.y + (Q.y - P.y) * t }; }]);
       }
     });
     later.forEach(function (l) { placeOnEdge(l[0], l[1]); });
@@ -1598,10 +1881,7 @@
     var best = rs.a, bestGap = -1;
     for (var step = 0; step < 72; step++) {
       var cand = rs.a + step * Math.PI / 36;
-      var gap = Math.min.apply(null, used.map(function (u) {
-        var dd = Math.abs(((cand - u) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
-        return dd;
-      }));
+      var gap = Math.min.apply(null, used.map(function (u) { return angDist(cand, u); }));
       if (gap > bestGap + 1e-9) { bestGap = gap; best = cand; }
     }
     var sa = { x: Math.cos(best), y: Math.sin(best) };
@@ -1610,32 +1890,55 @@
     parts.push('<path class="fsm-edge" marker-end="url(#fsm-arrow)" d="M' + tail.x.toFixed(1) + ' ' + tail.y.toFixed(1) + ' L' + tip.x.toFixed(1) + ' ' + tip.y.toFixed(1) + '"/>');
     var rtx = rs.x + (r + 36) * sa.x, rty = rs.y + (r + 36) * sa.y + (sa.y > 0.5 ? 6 : sa.y < -0.5 ? -6 : 0);
     var anchor = sa.x < -0.3 ? 'end' : sa.x > 0.3 ? 'start' : 'middle';
-    parts.push('<text class="fsm-start" text-anchor="' + anchor + '" x="' + rtx.toFixed(1) + '" y="' + rty.toFixed(1) + '">reset</text>');
+    parts.push('<text class="fsm-start" aria-hidden="true" text-anchor="' + anchor + '" x="' + rtx.toFixed(1) + '" y="' + rty.toFixed(1) + '">reset</text>');
     grow(rtx + (anchor === 'end' ? -36 : anchor === 'start' ? 36 : -18), rty - 8);
     grow(rtx + (anchor === 'end' ? 0 : anchor === 'start' ? 0 : 18), rty + 8);
 
+    // States. The ring is an invisible band around the edge: dragging from it draws a transition.
+    var ringR = coarse ? r + 8 : r + 3, ringW = coarse ? 26 : 18;
     var nodes = '';
     pos.forEach(function (p, i) {
       grow(p.x - r, p.y - r); grow(p.x + r, p.y + r);
-      nodes += '<g><circle class="fsm-node" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '"/>';
+      var x = p.x.toFixed(1), y = p.y.toFixed(1);
+      var name = 'State ' + M.states[i] + (mealy ? '' : ', output ' + M.out[i].map(bitText).join('')) +
+        (i === ri ? ', reset state' : '') + (i === selected ? ', selected' : '');
+      nodes += '<g class="fsm-state' + (i === selected ? ' fsm-selected' : '') + '" data-s="' + i + '" role="img" aria-label="' + esc(name) + '">';
+      if (i === selected) nodes += '<circle class="fsm-sel-ring" cx="' + x + '" cy="' + y + '" r="' + (r + 6) + '"/>';
+      nodes += '<circle class="fsm-node" cx="' + x + '" cy="' + y + '" r="' + r + '"/>';
       if (mealy) {
-        nodes += '<text class="fsm-node-name" x="' + p.x.toFixed(1) + '" y="' + (p.y + 4.5).toFixed(1) + '">' + esc(M.states[i]) + '</text>';
+        nodes += '<text class="fsm-node-name" x="' + x + '" y="' + (p.y + 4.5).toFixed(1) + '">' + esc(M.states[i]) + '</text>';
       } else {
-        nodes += '<text class="fsm-node-name" x="' + p.x.toFixed(1) + '" y="' + (p.y - 3).toFixed(1) + '">' + esc(M.states[i]) + '</text>' +
+        nodes += '<text class="fsm-node-name" x="' + x + '" y="' + (p.y - 3).toFixed(1) + '">' + esc(M.states[i]) + '</text>' +
           '<line class="fsm-node-rule" x1="' + (p.x - 15).toFixed(1) + '" x2="' + (p.x + 15).toFixed(1) + '" y1="' + (p.y + 2).toFixed(1) + '" y2="' + (p.y + 2).toFixed(1) + '"/>' +
-          '<text class="fsm-node-out" x="' + p.x.toFixed(1) + '" y="' + (p.y + 15).toFixed(1) + '">' + M.out[i].map(bitText).join('') + '</text>';
+          '<text class="fsm-node-out" x="' + x + '" y="' + (p.y + 15).toFixed(1) + '">' + M.out[i].map(bitText).join('') + '</text>';
       }
+      nodes += '<circle class="fsm-ring" data-s="' + i + '" cx="' + x + '" cy="' + y + '" r="' + ringR + '" stroke-width="' + ringW + '"/>';
       nodes += '</g>';
     });
 
-    var pad = 12;
-    var vx = minX - pad, vy = minY - pad, vw = maxX - minX + 2 * pad, vh = maxY - minY + 2 * pad;
-    var desc = M.states.length + ' states. ' + es.map(function (e) { return M.states[e.from] + ' to ' + M.states[e.to] + ' on ' + e.label; }).join('; ') + '.';
+    var vx, vy, vw, vh;
+    if (view) { vx = view.x; vy = view.y; vw = view.w; vh = view.h; }
+    else {
+      // Always leave room around the states to drag them and to add more. While states
+      // are placed by hand the area only grows, so the drawing never jumps under the pointer.
+      var fr = layout && lastFrame ? lastFrame : F.frame(n, layout);
+      grow(fr.x0, fr.y0); grow(fr.x1, fr.y1);
+      lastFrame = layout ? { x0: minX, y0: minY, x1: maxX, y1: maxY } : null;
+      var pad = 12;
+      vx = minX - pad; vy = minY - pad; vw = maxX - minX + 2 * pad; vh = maxY - minY + 2 * pad;
+    }
+    lastPos = pos;
+    lastView = { x: vx, y: vy, w: vw, h: vh };
     $('fsm-diagram').innerHTML =
-      '<svg viewBox="' + [vx, vy, vw, vh].map(function (v) { return v.toFixed(1); }).join(' ') + '" width="' + Math.round(vw) + '" height="' + Math.round(vh) + '" role="img" aria-label="' + esc('State diagram. ' + desc) + '">' +
+      '<svg viewBox="' + [vx, vy, vw, vh].map(function (v) { return v.toFixed(1); }).join(' ') + '" width="' + Math.round(vw) + '" height="' + Math.round(vh) + '" role="group" aria-label="' + esc('State diagram, ' + n + ' states') + '">' +
       '<defs><marker id="fsm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
       '<path class="fsm-arrowhead" d="M0 0 L10 5 L0 10 z"/></marker></defs>' +
       parts.join('') + nodes + labels.join('') + '</svg>';
+
+    var del = $('fsm-del');
+    del.hidden = selected < 0;
+    if (selected >= 0) del.textContent = 'Remove ' + M.states[selected];
+    $('fsm-relayout').hidden = !layout;
 
     var inNames = M.inputs.join('');
     var key = mealy
@@ -1645,6 +1948,312 @@
     if (M.next.some(function (row) { return row.indexOf(-1) !== -1; })) key += ' Next states of x are not drawn.';
     $('fsm-diagram-key').textContent = key;
   }
+
+  // ── Diagram editing ──
+  // Pointer events cover mouse, pen and touch. Every edit goes through the editor state
+  // functions in FSMCore and then commit(), like a table edit.
+  var dia = $('fsm-diagram'), pop = $('fsm-pop');
+  var drag = null;       // the gesture in progress
+  var lastTap = null;    // for double-click and double-tap on empty space
+  var popState = null;   // the open transition popover
+
+  if (coarse) $('fsm-hint').textContent = $('fsm-hint').textContent.replace('Double-click', 'Double-tap');
+
+  function svgEl() { return dia.querySelector('svg'); }
+  function toDiagram(e) {
+    var svg = svgEl(), m = svg && svg.getScreenCTM();
+    if (!m) return null;
+    var p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+    return { x: p.x, y: p.y };
+  }
+  function viewBox(v) { return { x0: v.x, y0: v.y, x1: v.x + v.w, y1: v.y + v.h }; }
+  // The state under a point (within `slack` units of its circle), nearest first
+  function stateAt(p, slack) {
+    var best = -1, bestD = Infinity;
+    lastPos.forEach(function (q, i) {
+      var dd = Math.hypot(p.x - q.x, p.y - q.y);
+      if (dd <= NODE_R + slack && dd < bestD) { best = i; bestD = dd; }
+    });
+    return best;
+  }
+  function editable(el) {
+    return !!el && (/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName) || el.isContentEditable);
+  }
+
+  function select(s) {
+    selected = selected === s ? -1 : s;
+    if (editable(document.activeElement)) document.activeElement.blur();
+    renderDiagram(lastDesign);
+  }
+
+  dia.addEventListener('pointerdown', function (e) {
+    if (drag || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (!designOk || !lastView) { toast('Fix the state table, then edit the diagram.'); return; }
+    var p = toDiagram(e);
+    if (!p) return;
+    var t = e.target, ring = t.closest('.fsm-ring'), node = t.closest('.fsm-state'), lab = t.closest('.fsm-elabel');
+    var g = { id: e.pointerId, cx: e.clientX, cy: e.clientY, moved: false, left: false };
+    if (lab) { g.kind = 'label'; g.from = +lab.getAttribute('data-from'); g.to = +lab.getAttribute('data-to'); }
+    else if (ring) { g.kind = 'link'; g.s = +ring.getAttribute('data-s'); }
+    else if (node) {
+      g.kind = 'move'; g.s = +node.getAttribute('data-s');
+      g.off = { x: p.x - lastPos[g.s].x, y: p.y - lastPos[g.s].y };
+    } else g.kind = 'empty';
+    drag = g;
+    // Touch on empty space may still scroll the page
+    if (g.kind !== 'empty' || e.pointerType === 'mouse') e.preventDefault();
+    try { dia.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+
+  // Stop the page from scrolling under a finger that is dragging a state
+  dia.addEventListener('touchstart', function (e) {
+    if (e.target.closest && e.target.closest('.fsm-state, .fsm-elabel')) e.preventDefault();
+  }, { passive: false });
+
+  dia.addEventListener('pointermove', function (e) {
+    var g = drag;
+    if (!g || e.pointerId !== g.id) return;
+    if (!g.moved) {
+      if (Math.hypot(e.clientX - g.cx, e.clientY - g.cy) < 4) return;
+      g.moved = true;
+      g.view = lastView;
+      if (g.kind === 'move') dia.classList.add('fsm-dragging');
+      if (g.kind === 'link') dia.classList.add('fsm-linking');
+    }
+    var p = toDiagram(e);
+    if (!p) return;
+    if (g.kind === 'move') {
+      var st = editState();
+      F.moveState(st, g.s, { x: p.x - g.off.x, y: p.y - g.off.y }, viewBox(g.view));
+      layout = st.pos;
+      renderDiagram(lastDesign, g.view);
+    } else if (g.kind === 'link') {
+      drawPreview(g, p);
+    }
+  });
+
+  function endGesture(e, cancel) {
+    var g = drag;
+    if (!g || e.pointerId !== g.id) return;
+    drag = null;
+    dia.classList.remove('fsm-dragging', 'fsm-linking');
+    try { if (dia.hasPointerCapture(e.pointerId)) dia.releasePointerCapture(e.pointerId); } catch (err) {}
+    var p = toDiagram(e);
+    if (g.kind === 'move') {
+      if (g.moved) { $('fsm-link-err').hidden = true; update(); }   // redraw at full size and update the link
+      else if (!cancel) select(g.s);
+    } else if (g.kind === 'link') {
+      clearPreview();
+      if (cancel) return;
+      if (!g.moved) { select(g.s); return; }
+      var t = p ? stateAt(p, 10) : -1;
+      if (t >= 0 && (t !== g.s || g.left)) openPop(g.s, t, false);
+    } else if (g.kind === 'label') {
+      if (!g.moved && !cancel) openPop(g.from, g.to, true);
+    } else if (!g.moved && !cancel && p) {
+      var now = e.timeStamp;
+      if (lastTap && now - lastTap.t < 450 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 24) {
+        lastTap = null;
+        addStateAt(p, viewBox(lastView));
+      } else {
+        lastTap = { t: now, x: e.clientX, y: e.clientY };
+        if (selected >= 0) { selected = -1; renderDiagram(lastDesign); }
+      }
+    }
+  }
+  dia.addEventListener('pointerup', function (e) { endGesture(e, false); });
+  dia.addEventListener('pointercancel', function (e) { endGesture(e, true); });
+  dia.addEventListener('lostpointercapture', function (e) { endGesture(e, true); });
+
+  // Dashed line from the source state to the pointer, or a dashed loop back onto it
+  function drawPreview(g, p) {
+    var svg = svgEl();
+    if (!svg) return;
+    var path = svg.querySelector('.fsm-preview');
+    if (!path) {
+      path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('class', 'fsm-preview');
+      path.setAttribute('marker-end', 'url(#fsm-arrow)');
+      svg.appendChild(path);
+    }
+    var A = lastPos[g.s], t = stateAt(p, 10);
+    if (t !== g.s) g.left = true;
+    var target = t >= 0 && (t !== g.s || g.left) ? t : -1;
+    var on = svg.querySelectorAll('.fsm-target');
+    for (var i = 0; i < on.length; i++) on[i].classList.remove('fsm-target');
+    if (target >= 0) svg.querySelector('.fsm-state[data-s="' + target + '"]').classList.add('fsm-target');
+    var d;
+    if (target === g.s) {
+      d = loopPath(A, Math.atan2(p.y - A.y, p.x - A.x) || -Math.PI / 2);
+    } else {
+      var B = target >= 0 ? lastPos[target] : p;
+      var dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+      var end = target >= 0 ? { x: B.x - (NODE_R + 1) * ux, y: B.y - (NODE_R + 1) * uy } : p;
+      d = 'M' + (A.x + NODE_R * ux).toFixed(1) + ' ' + (A.y + NODE_R * uy).toFixed(1) + ' L' + end.x.toFixed(1) + ' ' + end.y.toFixed(1);
+    }
+    path.setAttribute('d', d);
+  }
+  function clearPreview() {
+    var svg = svgEl();
+    if (!svg) return;
+    var path = svg.querySelector('.fsm-preview');
+    if (path) path.parentNode.removeChild(path);
+    var on = svg.querySelectorAll('.fsm-target');
+    for (var i = 0; i < on.length; i++) on[i].classList.remove('fsm-target');
+  }
+
+  // ── Transition popover ──
+  function comboChip(c) { return comboText(c); }
+
+  function openPop(from, to, edit) {
+    var combos = F.edgeCombos(M, from, to);
+    popState = { from: from, to: to, edit: edit, edge: combos, sel: combos.slice(), outs: [], touched: [] };
+    prefillOuts();
+    var ni = M.inputs.length, nc = 1 << ni, mealy = M.type === 'mealy';
+    var h = '<h3 class="fsm-pop-h" id="fsm-pop-h">' + esc(M.states[from]) + ' to ' + esc(M.states[to]) + '</h3>' +
+      '<span class="lbl" id="fsm-pop-in">On input</span><div class="fsm-pop-chips" role="group" aria-labelledby="fsm-pop-in">';
+    for (var c = 0; c < nc; c++) {
+      var now = M.next[from][c];
+      h += '<button class="btn-t" type="button" data-c="' + c + '" title="' + esc('Now goes to ' + (now < 0 ? 'x' : M.states[now])) + '">' + esc(comboChip(c)) + '</button>';
+    }
+    h += '</div>';
+    if (mealy) M.outputs.forEach(function (name, o) {
+      h += '<span class="lbl" id="fsm-pop-o' + o + '">Output ' + esc(name) + '</span>' +
+        '<div class="mode-selector fsm-pop-seg" role="group" aria-labelledby="fsm-pop-o' + o + '" data-o="' + o + '">' +
+        ['0', '1', 'x'].map(function (v) { return '<button class="mode-btn" type="button" data-v="' + v + '">' + v + '</button>'; }).join('') + '</div>';
+    });
+    h += '<p class="t-meta fsm-pop-note" id="fsm-pop-note" hidden></p>' +
+      '<div class="fsm-pop-actions"><button class="btn-go" type="button" id="fsm-pop-set">Set transition</button>' +
+      (edit ? '<button class="btn-t" type="button" id="fsm-pop-remove">Remove</button>' : '') + '</div>';
+    pop.innerHTML = h;
+    syncPop();
+    pop.hidden = false;
+    placePop(to);
+    pop.focus({ preventScroll: true });   // Tab moves on to the chips; Esc closes
+  }
+
+  // Mealy outputs start at the value the chosen inputs share; blank (keep) when they differ
+  function prefillOuts() {
+    var ps = popState;
+    if (M.type !== 'mealy') return;
+    M.outputs.forEach(function (_, o) {
+      if (ps.touched[o]) return;
+      var vals = ps.sel.map(function (c) { return M.out[ps.from][c][o]; });
+      ps.outs[o] = vals.length && vals.every(function (v) { return v === vals[0]; }) ? vals[0] : undefined;
+    });
+  }
+
+  function syncPop() {
+    var ps = popState;
+    var chips = pop.querySelectorAll('.fsm-pop-chips .btn-t');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].setAttribute('aria-pressed', ps.sel.indexOf(+chips[i].getAttribute('data-c')) >= 0 ? 'true' : 'false');
+    }
+    var segs = pop.querySelectorAll('.fsm-pop-seg');
+    for (var j = 0; j < segs.length; j++) {
+      var v = ps.outs[+segs[j].getAttribute('data-o')];
+      var want = v === undefined ? '' : bitText(v);
+      var btns = segs[j].querySelectorAll('.mode-btn');
+      for (var k = 0; k < btns.length; k++) {
+        var on = btns[k].getAttribute('data-v') === want;
+        btns[k].classList.toggle('on', on);
+        btns[k].setAttribute('aria-pressed', on ? 'true' : 'false');
+      }
+    }
+    $('fsm-pop-set').disabled = !ps.sel.length;
+    var rm = $('fsm-pop-remove');
+    if (rm) rm.disabled = !removable().length;
+    var note = $('fsm-pop-note'), msg = '';
+    if (!ps.sel.length) msg = 'Pick at least one input.';
+    else if (ps.outs.some(function (v) { return v === undefined; })) msg = 'An output with no value picked keeps its current values.';
+    note.textContent = msg;
+    note.hidden = !msg;
+  }
+
+  // The chosen inputs that this transition uses now
+  function removable() {
+    var ps = popState;
+    return ps.sel.filter(function (c) { return ps.edge.indexOf(c) >= 0; });
+  }
+
+  // Beside the target state if there is room, otherwise below it. It may reach past the
+  // diagram (a narrow column) but stays 16px inside the window.
+  function placePop(s) {
+    var svg = svgEl(), m = svg && svg.getScreenCTM();
+    if (!m) return;
+    var box = $('fsm-canvas').getBoundingClientRect();
+    var c = new DOMPoint(lastPos[s].x, lastPos[s].y).matrixTransform(m);
+    var rr = (NODE_R + 6) * m.a, x = c.x - box.left, y = c.y - box.top, gap = 8;
+    pop.style.left = '0px';
+    pop.style.top = '0px';
+    var pw = pop.offsetWidth, left, top;
+    var lo = 16 - box.left, hi = document.documentElement.clientWidth - 16 - box.left - pw;
+    if (x + rr + gap <= hi) { left = x + rr + gap; top = y - rr; }
+    else if (x - rr - gap - pw >= lo) { left = x - rr - gap - pw; top = y - rr; }
+    else { left = x - pw / 2; top = y + rr + gap; }
+    left = Math.max(Math.min(left, hi), Math.min(lo, hi));
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.top = Math.round(Math.max(0, top)) + 'px';
+  }
+
+  function closePop() {
+    if (!popState) return;
+    popState = null;
+    pop.hidden = true;
+    pop.innerHTML = '';
+  }
+
+  pop.addEventListener('click', function (e) {
+    var ps = popState;
+    if (!ps) return;
+    var chip = e.target.closest('.fsm-pop-chips .btn-t'), seg = e.target.closest('.fsm-pop-seg .mode-btn');
+    if (chip) {
+      var c = +chip.getAttribute('data-c'), at = ps.sel.indexOf(c);
+      if (at >= 0) ps.sel.splice(at, 1); else ps.sel.push(c);
+      ps.sel.sort(function (a, b) { return a - b; });
+      prefillOuts();
+      syncPop();
+    } else if (seg) {
+      var o = +seg.parentNode.getAttribute('data-o'), v = seg.getAttribute('data-v');
+      ps.outs[o] = v === 'x' ? null : +v;
+      ps.touched[o] = true;
+      syncPop();
+    } else if (e.target.closest('#fsm-pop-set')) {
+      if (!ps.sel.length) return;
+      F.setTransition(M, ps.from, ps.to, ps.sel, M.type === 'mealy' ? ps.outs : null);
+      closePop();
+      commit(editState());
+    } else if (e.target.closest('#fsm-pop-remove')) {
+      var gone = removable();
+      if (!gone.length) return;
+      F.clearTransition(M, ps.from, gone);
+      closePop();
+      commit(editState());
+    }
+  });
+
+  // Esc or a press outside cancels
+  document.addEventListener('pointerdown', function (e) {
+    if (popState && !pop.contains(e.target)) closePop();
+  }, true);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (popState) { closePop(); e.preventDefault(); }
+      else if (selected >= 0 && !editable(e.target)) { selected = -1; renderDiagram(lastDesign); }
+      return;
+    }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selected >= 0 && !popState && !editable(e.target)) {
+      e.preventDefault();
+      removeStateAt(selected);
+    }
+  });
+
+  $('fsm-del').addEventListener('click', function () { if (selected >= 0) removeStateAt(selected); });
+  $('fsm-relayout').addEventListener('click', function () {
+    layout = null;
+    closePop();
+    update();
+  });
 
   function rotate(x, y, a) {
     var c = Math.cos(a), s = Math.sin(a);
