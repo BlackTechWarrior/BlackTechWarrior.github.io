@@ -398,7 +398,7 @@ const MULTIPLIERS = {
     name: "Booth radix-2",
     short: 'Booth',
     area: n => 2 * n,
-    delay: n => 2 * n * n,
+    delay: n => 2 * n * boothDigitCount(n),
     areaFormula: '2n',
     delayFormula: '2n\u00B2',
   },
@@ -411,7 +411,7 @@ const MULTIPLIERS = {
       return 1 + 2 * wl + cpaDelay(ft || 'rca', 2 * n);
     },
     areaFormula: 'n\u00B2',
-    delayFormula: '2+2L+CPA(2n)',
+    delayFormula: '1+2L+CPA(2n)',
   },
 };
 
@@ -433,19 +433,27 @@ let state = {
 
 /* ═══════════════════════ Helpers ═══════════════════════ */
 
-function parseValue(str, n, signed) {
-  str = str.trim();
+// Parse an operand. Throws with a message when the text is not a number in one
+// base or does not fit in n bits. Returns the n-bit pattern.
+function parseValue(str, n, signed, label) {
+  str = str.trim().replace(/_/g, '');
   if (str === '') return 0;
-  let val;
-  if (/^-?0x/i.test(str)) val = parseInt(str, 16);
-  else if (/^-?0b/i.test(str)) { val = parseInt(str.replace(/^-?0b/i, ''), 2); if (str[0] === '-') val = -val; }
-  else if (/^-?0o/i.test(str)) { val = parseInt(str.replace(/^-?0o/i, ''), 8); if (str[0] === '-') val = -val; }
-  else val = parseInt(str, 10);
-  if (isNaN(val)) return NaN;
-  if (signed && val < 0) {
-    return fromSigned(val, n);
+  const m = /^(-?)(?:0x([0-9a-f]+)|0b([01]+)|0o([0-7]+)|(\d+))$/i.exec(str);
+  if (!m) throw new Error(`Operand ${label} ("${str}") is not a valid decimal, 0x hex, 0b binary or 0o octal number.`);
+  const neg = m[1] === '-';
+  const mag = m[2] ? parseInt(m[2], 16) : m[3] ? parseInt(m[3], 2) : m[4] ? parseInt(m[4], 8) : parseInt(m[5], 10);
+  const val = neg ? -mag : mag;
+  const max = Math.pow(2, n);
+  if (m[5] !== undefined && signed) {
+    // Decimal in signed mode is a value
+    if (val < -max / 2 || val > max / 2 - 1) throw new Error(`Operand ${label} (${val}) is out of ${n}-bit signed range [${-max / 2}, ${max / 2 - 1}].`);
+  } else if (neg && !signed) {
+    throw new Error(`Operand ${label} is negative. Turn on Signed to enter negative values.`);
+  } else if (mag > max - 1 || (neg && mag > max / 2)) {
+    // Hex, binary and octal give a bit pattern
+    throw new Error(`Operand ${label} (${str}) does not fit in ${n} bits.`);
   }
-  return clamp(val, n);
+  return fromSigned(val, n);
 }
 
 function mask(n) {
@@ -506,19 +514,19 @@ function toSigned2n(val, nbits) {
 }
 
 function fromSigned(val, n) {
-  if (val < 0) {
-    if (n >= 32) return ((1 << n) + val) >>> 0;
-    return clamp((1 << n) + val, n);
-  }
-  return clamp(val, n);
+  return clamp(val, n); // & wraps negatives to two's complement
 }
 
+// Product as a 2n-bit pattern (n <= 16, so it fits exactly in a double)
 function multiply(a, b, n) {
-  // Unsigned multiplication, result fits in 2n bits
-  // Use standard JS for n <= 16 (result max 32 bits)
-  if (n <= 16) return a * b;
-  // Fallback for safety
-  return a * b;
+  if (!state.signed) return a * b;
+  const p = toSigned(a, n) * toSigned(b, n);
+  return p < 0 ? p + Math.pow(2, 2 * n) : p;
+}
+
+function completeText(a, b, n, result) {
+  if (!state.signed) return `Complete: ${a} \u00D7 ${b} = ${result}`;
+  return `Complete: ${toSigned(a, n)} \u00D7 ${toSigned(b, n)} = ${toSigned2n(result, 2 * n)}`;
 }
 
 /* ═══════════════════════ Simulation ═══════════════════════ */
@@ -606,7 +614,7 @@ function simulateSAA(a, b, n) {
   }
   steps.push({
     time: totalDelay,
-    desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
+    desc: completeText(a, b, n, result),
     ppState: ppFinal,
     resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
   });
@@ -614,12 +622,17 @@ function simulateSAA(a, b, n) {
   return { steps, result, pp };
 }
 
+function boothDigitCount(n) {
+  // Unsigned B is zero-extended to n+1 bits so its top bit is not read as a sign
+  return state.signed ? n : n + 1;
+}
+
 function boothEncode(b, n) {
-  // Radix-2 Booth encoding: digit[i] = b[i-1] - b[i], where b[-1] = 0
+  // Radix-2 Booth encoding: digit[i] = b[i-1] - b[i], where b[-1] = 0 (and b[n] = 0 when unsigned)
   const digits = [];
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < boothDigitCount(n); i++) {
     const prev = i === 0 ? 0 : bitAt(b, i - 1);
-    const curr = bitAt(b, i);
+    const curr = i < n ? bitAt(b, i) : 0;
     digits.push(prev - curr); // -1, 0, or +1
   }
   return digits;
@@ -628,13 +641,13 @@ function boothEncode(b, n) {
 function generateBoothPP(a, b, n) {
   const digits = boothEncode(b, n);
   const pp = [];
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < digits.length; i++) {
     const row = [];
     if (digits[i] === 1) {
       // +A
       for (let j = 0; j < n; j++) row.push(bitAt(a, j));
     } else if (digits[i] === -1) {
-      // -A (two's complement bits shown as inverted)
+      // -A: A's bits, marked with a minus sign and subtracted
       for (let j = 0; j < n; j++) row.push(bitAt(a, j));
     } else {
       // 0
@@ -648,14 +661,15 @@ function generateBoothPP(a, b, n) {
 function simulateBooth(a, b, n) {
   const steps = [];
   const { pp, digits } = generateBoothPP(a, b, n);
+  const rows = digits.length;
   const resultWidth = 2 * n;
   const result = multiply(a, b, n);
-  const totalDelay = MULTIPLIERS.booth.delay(n); // 2n²
+  const totalDelay = MULTIPLIERS.booth.delay(n); // 2n per digit
   const delayPerRow = 2 * n; // each digit processing takes 2n gate delays
 
   // Step 0: show Booth encoding (time 0)
   const ppState0 = {};
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < rows; i++) {
     ppState0[i] = {};
     for (let j = 0; j < n; j++) ppState0[i][j] = 'idle';
   }
@@ -669,7 +683,8 @@ function simulateBooth(a, b, n) {
 
   // Each iteration: process one Booth digit
   let accumulator = 0;
-  for (let i = 0; i < n; i++) {
+  const aVal = state.signed ? toSigned(a, n) : a;
+  for (let i = 0; i < rows; i++) {
     const ppS = JSON.parse(JSON.stringify(ppState0));
     for (let r = 0; r < i; r++) {
       for (let j = 0; j < n; j++) ppS[r][j] = digits[r] < 0 ? 'neg-done' : 'done';
@@ -678,15 +693,15 @@ function simulateBooth(a, b, n) {
 
     // Compute accumulator
     if (digits[i] === 1) {
-      accumulator += a * Math.pow(2, i);
+      accumulator += aVal * Math.pow(2, i);
     } else if (digits[i] === -1) {
-      accumulator -= a * Math.pow(2, i);
+      accumulator -= aVal * Math.pow(2, i);
     }
 
     const action = digits[i] === 1 ? 'ADD (+A)' : digits[i] === -1 ? 'SUB (\u2212A)' : 'SKIP (0)';
 
     const rBits = {};
-    if (i < n - 1) {
+    if (i < rows - 1) {
       for (let b2 = 0; b2 <= i; b2++) rBits[b2] = true;
     } else {
       for (let b2 = 0; b2 < resultWidth; b2++) rBits[b2] = true;
@@ -703,13 +718,13 @@ function simulateBooth(a, b, n) {
 
   // Final step
   const ppFinal = {};
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < rows; i++) {
     ppFinal[i] = {};
     for (let j = 0; j < n; j++) ppFinal[i][j] = digits[i] < 0 ? 'neg-done' : 'done';
   }
   steps.push({
     time: totalDelay,
-    desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
+    desc: completeText(a, b, n, result),
     ppState: ppFinal,
     resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
     boothDigits: digits,
@@ -774,7 +789,7 @@ function simulateArray(a, b, n) {
   }
   steps.push({
     time: totalDelay,
-    desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
+    desc: completeText(a, b, n, result),
     ppState: ppFinal,
     resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
   });
@@ -848,7 +863,7 @@ function simulateWallace(a, b, n, finalType) {
   // Done
   steps.push({
     time: totalDelay,
-    desc: `Complete: ${a} \u00D7 ${b} = ${result}`,
+    desc: completeText(a, b, n, result),
     ppState: ppCPA,
     resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
   });
@@ -864,7 +879,7 @@ function renderPPMatrix(pp, n, resultWidth, boothDigits) {
   // Show Booth encoding if applicable
   if (boothDigits) {
     html += '<div class="booth-encoding">Booth encoding: ';
-    for (let i = n - 1; i >= 0; i--) {
+    for (let i = boothDigits.length - 1; i >= 0; i--) {
       const d = boothDigits[i];
       if (d === -1) html += '<span class="booth-neg">\u20131</span> ';
       else if (d === 1) html += '<span class="booth-pos">+1</span> ';
@@ -876,7 +891,7 @@ function renderPPMatrix(pp, n, resultWidth, boothDigits) {
   html += '<div class="pp-matrix">';
 
   // Each row is shifted by its index (row i starts at column i)
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < pp.length; i++) {
     html += '<div class="pp-row">';
     // Spacers for result-width alignment: total columns = resultWidth
     // Row i occupies columns i..i+n-1, so (resultWidth - n - i) spacers at left
@@ -1040,9 +1055,10 @@ function updateSummaryTable() {
     const label = key === 'wallace' ? info.name + ' + ' + state.wtFinal.toUpperCase() : info.name;
     const areaF = info.areaFormula;
     let delayF = info.delayFormula;
+    if (key === 'booth' && !state.signed) delayF = '2n(n+1)';
     if (key === 'wallace') {
       const wl = wallaceLevels(n);
-      delayF = `2+2\u00D7${wl}+${state.wtFinal.toUpperCase()}(${2*n})`;
+      delayF = `1+2\u00D7${wl}+${state.wtFinal.toUpperCase()}(${2*n})`;
     }
     rows.push({ key, label, area, delay, ad, areaF, delayF });
   }
@@ -1122,38 +1138,20 @@ function animReset() {
 function compute() {
   const n = state.bitWidth;
   const signed = state.signed;
-  const a = parseValue(document.getElementById('inputA').value, n, signed);
-  const b = parseValue(document.getElementById('inputB').value, n, signed);
+  let a, b;
+  try {
+    a = parseValue(document.getElementById('inputA').value, n, signed, 'A');
+    b = parseValue(document.getElementById('inputB').value, n, signed, 'B');
+  } catch (e) {
+    showError(e.message);
+    return;
+  }
   state.a = a;
   state.b = b;
 
   if (state.selected.length === 0) {
     showError('Select at least one architecture.');
     return;
-  }
-  if (isNaN(a) || isNaN(b)) {
-    showError('Invalid operand values.');
-    return;
-  }
-  if (signed) {
-    const minVal = -(1 << (n - 1));
-    const maxVal = (1 << (n - 1)) - 1;
-    const aStr = document.getElementById('inputA').value.trim();
-    const bStr = document.getElementById('inputB').value.trim();
-    if (/^-?\d+$/.test(aStr)) {
-      const aInput = parseInt(aStr, 10);
-      if (aInput < minVal || aInput > maxVal) {
-        showError(`Operand A (${aInput}) is out of ${n}-bit signed range [${minVal}, ${maxVal}].`);
-        return;
-      }
-    }
-    if (/^-?\d+$/.test(bStr)) {
-      const bInput = parseInt(bStr, 10);
-      if (bInput < minVal || bInput > maxVal) {
-        showError(`Operand B (${bInput}) is out of ${n}-bit signed range [${minVal}, ${maxVal}].`);
-        return;
-      }
-    }
   }
   hideError();
 
