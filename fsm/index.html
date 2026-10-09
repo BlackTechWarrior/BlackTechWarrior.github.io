@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>State Machine Designer: FSM to Flip-Flop Equations | p14m</title>
+  <meta name="description" content="Design a Moore or Mealy state machine from its state table. Get the state diagram, state assignment, D, T or JK flip-flop equations and a simulation check.">
+  <meta name="author" content="Peter Moses">
+  <link rel="canonical" href="https://p14m.com/fsm/">
+  <meta name="theme-color" content="#F4F5F7">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="p14m">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://p14m.com/fsm/">
+  <meta property="og:title" content="State Machine Designer: FSM to Flip-Flop Equations | p14m">
+  <meta property="og:description" content="Design a Moore or Mealy state machine from its state table. Get the state diagram, state assignment, D, T or JK flip-flop equations and a simulation check.">
+  <meta property="og:image" content="https://p14m.com/og/fsm.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="State machine designer on p14m.com">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="State Machine Designer: FSM to Flip-Flop Equations | p14m">
+  <meta name="twitter:description" content="Design a Moore or Mealy state machine from its state table. Get the state diagram, state assignment, D, T or JK flip-flop equations and a simulation check.">
+  <meta name="twitter:image" content="https://p14m.com/og/fsm.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png">
+  <link rel="apple-touch-icon" href="/favicon-48.png">
+  <link rel="preload" href="/fonts/mona-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/monaspace-neon-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/shared.css">
+  <script src="/lib/site.js" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"State machine designer","url":"https://p14m.com/fsm/","description":"Design a Moore or Mealy state machine from its state table. Get the state diagram, state assignment, D, T or JK flip-flop equations and a simulation check.","applicationCategory":"EducationalApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Peter Moses","url":"https://p14m.com/"},"inLanguage":"en","image":"https://p14m.com/og/fsm.png"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"p14m","item":"https://p14m.com/"},{"@type":"ListItem","position":2,"name":"State machine designer","item":"https://p14m.com/fsm/"}]}]}</script>
+  <script src="/lib/feedback.js" defer></script>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
+  <style>
+    /* Wider controls column: the state table lives there */
+    .fsm-page { grid-template-columns: minmax(320px, 440px) minmax(0, 1fr); }
+    @media (max-width: 960px) { .fsm-page { grid-template-columns: 1fr; } }
+    /* The workbench is taller than a screen with 8 states: let it scroll with the page */
+    .fsm-page .tool-controls { position: static; max-height: none; overflow: visible; }
+
+    /* ── Workbench ── */
+    .fsm-field { margin-bottom: var(--s-4); }
+    .fsm-examples { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+    .fsm-io { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--s-3); align-items: end; }
+    .tool-controls .fsm-io .mode-selector { width: auto; margin-bottom: 0; }
+    .fsm-io .inp { padding-top: 7px; padding-bottom: 7px; }
+    .fsm-split { border-top: 1px solid var(--border-soft); margin-top: var(--s-4); padding-top: var(--s-4); }
+
+    .fsm-table-wrap { overflow-x: auto; margin: 0 calc(-1 * var(--s-1)); }
+    .fsm-table { border-collapse: collapse; font-size: 0.8125rem; }
+    .fsm-table th { font-weight: 500; font-size: 0.75rem; color: var(--muted); padding: 2px 4px 4px; text-align: center; white-space: nowrap; }
+    .fsm-table th:first-child { text-align: left; }
+    .fsm-table th .t-data { color: var(--ink-2); }
+    .fsm-table td { padding: 4px; border-top: 1px solid var(--border-soft); text-align: center; vertical-align: middle; }
+    .fsm-table td:first-child { text-align: left; }
+    .fsm-table .fsm-out-col { border-left: 1px solid var(--border-soft); padding-left: 8px; }
+    .fsm-cell { display: inline-flex; align-items: center; gap: 3px; }
+    .fsm-stack .fsm-cell { flex-direction: column; gap: 3px; }
+    .fsm-name { width: 5.25em; padding: 5px 7px; font-size: 0.8125rem; }
+    select.inp.fsm-sel {
+      width: auto; padding: 5px 20px 5px 7px; font-family: var(--font-mono); font-size: 0.8125rem;
+      background-position: calc(100% - 11px) 50%, calc(100% - 6px) 50%;
+    }
+    .fsm-bits { display: inline-flex; gap: 2px; }
+    .btn-t.fsm-bit { width: 26px; height: 26px; padding: 0; font-family: var(--font-mono); font-size: 0.8125rem; color: var(--ink); }
+    .btn-t.fsm-bit[data-v="x"] { color: var(--muted); }
+    .fsm-slash { color: var(--muted); font-family: var(--font-mono); }
+
+    /* ── Results ── */
+    .fsm-group + .fsm-group { margin-top: var(--s-5); padding-top: var(--s-5); border-top: 1px solid var(--border); }
+    .fsm-note { font-size: 0.875rem; color: var(--ink-2); margin: 0 0 var(--s-3); max-width: 68ch; }
+    .fsm-note:last-child { margin-bottom: 0; }
+    .fsm-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+    .fsm-head .result-label { margin-bottom: var(--s-3); }
+
+    .fsm-diagram svg { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+    .fsm-node { fill: var(--surface); stroke: var(--ink); stroke-width: 1.5; }
+    .fsm-node-name { fill: var(--ink); font-family: var(--font-mono); font-size: 13px; font-weight: 600; text-anchor: middle; }
+    .fsm-node-out { fill: var(--ink-2); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; }
+    .fsm-node-rule { stroke: var(--border-strong); stroke-width: 1; }
+    .fsm-edge { fill: none; stroke: var(--ink-2); stroke-width: 1.3; }
+    .fsm-arrowhead { fill: var(--ink-2); }
+    .fsm-label-bg { fill: var(--surface); }
+    .fsm-label { fill: var(--ink); font-family: var(--font-mono); font-size: 12px; text-anchor: middle; dominant-baseline: central; }
+    .fsm-start { fill: var(--muted); font-family: var(--font-sans); font-size: 12px; dominant-baseline: central; }
+
+    .fsm-tables { display: flex; gap: var(--s-5) var(--s-6); flex-wrap: wrap; align-items: flex-start; }
+    .fsm-tables > div { min-width: 0; }
+    .data-table.fsm-small { width: auto; }
+    .data-table .fsm-x { color: var(--muted); }
+    .data-table .fsm-sep { border-left: 1px solid var(--border); }
+    .data-table tr.fsm-unused td { color: var(--muted); }
+    .data-table th.fsm-grp { text-align: center; background: transparent; border-bottom: 0; padding-bottom: 0; }
+    .fsm-trans td, .fsm-trans th { text-align: center; }
+
+    .fsm-eqs { margin: 0; padding: 0; list-style: none; }
+    .fsm-eq { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); padding: 10px 0; border-top: 1px solid var(--border-soft); flex-wrap: wrap; }
+    .fsm-eq:first-child { border-top: 0; padding-top: 0; }
+    .fsm-eq-main { min-width: 0; flex: 1 1 260px; }
+    .fsm-eq-expr { font-family: var(--font-mono); font-size: 0.9375rem; font-variant-numeric: tabular-nums; color: var(--ink); overflow-wrap: anywhere; }
+    .fsm-eq-meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+    .fsm-eq-sub { font-family: var(--font-sans); font-size: 0.8125rem; font-weight: 500; color: var(--ink-2); margin: var(--s-4) 0 var(--s-2); }
+    .fsm-eq-sub:first-of-type { margin-top: 0; }
+
+    /* Wraps when the column is narrow or the text is large */
+    .fsm-sim-row { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: flex-end; margin-bottom: var(--s-3); }
+    .fsm-sim-row > :first-child { flex: 1 1 12em; min-width: 0; }
+    .fsm-sim-row select.inp { width: auto; }
+    .fsm-verdict { font-size: 0.875rem; margin: 0 0 var(--s-3); }
+    .fsm-ok { color: var(--success); }
+    .fsm-bad { color: var(--error); }
+    .data-table tr.fsm-mismatch td { color: var(--error); }
+    .fsm-sim-table td { white-space: nowrap; }
+    .empty-state { color: var(--muted); font-size: 0.9375rem; padding: var(--s-6) 0; }
+
+    @media (max-width: 640px) {
+      .fsm-sim-row > :first-child { flex-basis: 100%; }
+      .fsm-sim-row .btn-go { width: 100%; }
+      .fsm-sim-row select.inp { width: 100%; }
+    }
+  </style>
+</head>
+<body class="app">
+<script>
+(function() {
+  var saved = localStorage.getItem('theme');
+  if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.body.classList.add('dark');
+  }
+})();
+</script>
+  <a class="skip-link" href="#main">Skip to content</a>
+<aside class="app-nav" id="appNav" aria-label="Site">
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+  <nav aria-label="Tools">
+    <div class="nav-group" role="group" aria-labelledby="nav-logic">
+      <div class="nav-group-label" id="nav-logic">Logic</div>
+      <a class="nav-item" href="/kmap/">K-Map generator</a>
+      <a class="nav-item" href="/circuitgen/">CircuitGen</a>
+      <a class="nav-item" href="/fsm/" aria-current="page" data-new-until="2026-10-21">State machines</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-arithmetic">
+      <div class="nav-group-label" id="nav-arithmetic">Arithmetic</div>
+      <a class="nav-item" href="/adders/">Adders</a>
+      <a class="nav-item" href="/multipliers/">Multipliers</a>
+      <a class="nav-item" href="/bits/">Bits</a>
+      <a class="nav-item" href="/float/">Floating point</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-memory">
+      <div class="nav-group-label" id="nav-memory">Memory</div>
+      <a class="nav-item" href="/cache/">Cache simulator</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-markets">
+      <div class="nav-group-label" id="nav-markets">Markets</div>
+      <a class="nav-item" href="/orderbook/">Order book</a>
+    </div>
+  </nav>
+  <div class="nav-foot">
+    <a class="nav-item" href="/learn/">Learn</a>
+    <a class="nav-item" href="/#about">About</a>
+    <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
+  </div>
+</aside>
+<div class="nav-scrim"></div>
+<div class="app-main">
+<div class="top-bar">
+  <button class="nav-toggle" type="button" aria-controls="appNav" aria-expanded="false"><span class="nav-toggle-icon" aria-hidden="true"></span>Menu</button>
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+</div>
+<main id="main" class="container">
+
+  <div class="page-head">
+    <h1>State machine designer</h1>
+    <p class="lede">Enter a Moore or Mealy state table and get the state diagram, state assignment, transition table and minimized flip-flop equations, checked by simulation.</p>
+  </div>
+
+  <details class="how-to">
+    <summary>How it works</summary>
+    <div class="how-to-body">
+      <p>The page follows the sequential circuit design procedure: state table, state diagram, state assignment, transition table, flip-flop input and output equations, then a check.</p>
+      <ul>
+        <li><strong>Moore or Mealy.</strong> A Moore output depends only on the present state, so it is written once per state and shown inside the circle. A Mealy output also depends on the input, so it is written per transition as <code>input/output</code>.</li>
+        <li><strong>State table.</strong> For each present state and input value, pick the next state. Click an output to cycle it through 0, 1 and x. An x is a don't-care, and so is a next state of x.</li>
+        <li><strong>State assignment.</strong> Binary and Gray codes use &lceil;log<sub>2</sub> n&rceil; flip-flops, and any unused code becomes a don't-care. One-hot uses one flip-flop per state, and each next-state equation ORs the transitions into that state: Q<sub>i</sub> times the input condition for each incoming edge.</li>
+        <li><strong>Excitation.</strong> Each row of the transition table turns a change from Q to Q+ into flip-flop inputs: D = Q+, T = Q &oplus; Q+, and for JK one of the two inputs is a don't-care on every row.</li>
+        <li><strong>Equations</strong> are exact minimum sums of products. Open in K-map shows the same function, with its don't-cares, on a Karnaugh map.</li>
+        <li><strong>Check.</strong> The simulation runs your input sequence through the equations and compares every step with the state table. A wrong equation shows up as a mismatch.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="tool-layout fsm-page">
+    <div class="tool-controls">
+      <div class="section workbench">
+        <div class="fsm-field">
+          <span class="lbl" id="fsm-ex-lbl">Examples</span>
+          <div class="fsm-examples" role="group" aria-labelledby="fsm-ex-lbl">
+            <button class="btn-t" type="button" data-preset="detector">101 detector</button>
+            <button class="btn-t" type="button" data-preset="counter">Up/down counter</button>
+            <button class="btn-t" type="button" data-preset="traffic">Traffic light</button>
+          </div>
+        </div>
+
+        <div class="fsm-field">
+          <span class="lbl" id="fsm-type-lbl">Machine type</span>
+          <div class="mode-selector" role="group" aria-labelledby="fsm-type-lbl" id="fsm-type">
+            <button class="mode-btn" type="button" data-v="mealy">Mealy</button>
+            <button class="mode-btn" type="button" data-v="moore">Moore</button>
+          </div>
+        </div>
+
+        <div class="fsm-field fsm-io">
+          <span class="lbl" id="fsm-ni-lbl">Input bits</span>
+          <label class="lbl" for="fsm-in-names">Input names</label>
+          <div class="mode-selector" role="group" aria-labelledby="fsm-ni-lbl" id="fsm-ni">
+            <button class="mode-btn" type="button" data-v="1">1</button>
+            <button class="mode-btn" type="button" data-v="2">2</button>
+          </div>
+          <input class="inp" id="fsm-in-names" spellcheck="false" autocomplete="off">
+        </div>
+
+        <div class="fsm-field fsm-io">
+          <span class="lbl" id="fsm-no-lbl">Output bits</span>
+          <label class="lbl" for="fsm-out-names">Output names</label>
+          <div class="mode-selector" role="group" aria-labelledby="fsm-no-lbl" id="fsm-no">
+            <button class="mode-btn" type="button" data-v="1">1</button>
+            <button class="mode-btn" type="button" data-v="2">2</button>
+          </div>
+          <input class="inp" id="fsm-out-names" spellcheck="false" autocomplete="off">
+        </div>
+
+        <span class="lbl" id="fsm-table-lbl">State table <span class="lbl-hint">(click an output to cycle 0, 1, x)</span></span>
+        <div class="fsm-table-wrap">
+          <table class="fsm-table" id="fsm-table" aria-labelledby="fsm-table-lbl"></table>
+        </div>
+        <div class="btn-row">
+          <button class="btn-t" type="button" id="fsm-add">Add state</button>
+          <button class="btn-t" type="button" id="fsm-remove">Remove last state</button>
+        </div>
+        <div id="fsm-err" class="err" role="alert" hidden></div>
+
+        <div class="fsm-split">
+          <div class="fsm-field">
+            <span class="lbl" id="fsm-enc-lbl">State assignment</span>
+            <div class="mode-selector" role="group" aria-labelledby="fsm-enc-lbl" id="fsm-enc">
+              <button class="mode-btn" type="button" data-v="binary">Binary</button>
+              <button class="mode-btn" type="button" data-v="gray">Gray</button>
+              <button class="mode-btn" type="button" data-v="onehot">One-hot</button>
+            </div>
+          </div>
+          <div>
+            <span class="lbl" id="fsm-ff-lbl">Flip-flops</span>
+            <div class="mode-selector" role="group" aria-labelledby="fsm-ff-lbl" id="fsm-ff">
+              <button class="mode-btn" type="button" data-v="D">D</button>
+              <button class="mode-btn" type="button" data-v="T">T</button>
+              <button class="mode-btn" type="button" data-v="JK">JK</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-results" id="fsm-results">
+      <section class="section" aria-labelledby="fsm-diagram-h">
+        <h2 class="result-label" id="fsm-diagram-h">State diagram</h2>
+        <div class="fsm-diagram" id="fsm-diagram"></div>
+        <p class="t-meta" id="fsm-diagram-key"></p>
+      </section>
+
+      <section class="section">
+        <div class="fsm-group">
+          <h2 class="result-label">State assignment</h2>
+          <p class="fsm-note" id="fsm-assign-note"></p>
+          <div class="fsm-tables">
+            <div class="data-table-wrap" id="fsm-assign"></div>
+            <div class="data-table-wrap" id="fsm-excite"></div>
+          </div>
+        </div>
+        <div class="fsm-group">
+          <h2 class="result-label">Transition table</h2>
+          <p class="fsm-note" id="fsm-trans-note"></p>
+          <div class="data-table-wrap" id="fsm-trans"></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="fsm-group">
+          <div class="fsm-head">
+            <h2 class="result-label">Equations</h2>
+            <button class="btn-t" type="button" id="fsm-copy">Copy equations</button>
+          </div>
+          <p class="fsm-note" id="fsm-eq-note"></p>
+          <div id="fsm-eqs"></div>
+        </div>
+        <div class="fsm-group">
+          <h2 class="result-label">Check by simulation</h2>
+          <p class="fsm-note">Each step is computed from the equations above and compared with the state table.</p>
+          <div class="fsm-sim-row">
+            <div>
+              <label class="lbl" for="fsm-seq" id="fsm-seq-lbl">Input sequence</label>
+              <input class="inp" id="fsm-seq" spellcheck="false" autocomplete="off" inputmode="numeric">
+            </div>
+            <div>
+              <label class="lbl" for="fsm-reset">Reset state</label>
+              <select class="inp" id="fsm-reset"></select>
+            </div>
+            <button class="btn-go" type="button" id="fsm-run">Simulate</button>
+          </div>
+          <p class="fsm-verdict" id="fsm-verdict" role="status"></p>
+          <div class="data-table-wrap" id="fsm-sim"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <div class="feedback-box" data-topic="tool-fsm" data-label="Was this tool useful?"></div>
+</main>
+<footer class="site-footer">
+  <nav aria-label="Footer">
+    <ul class="site-footer-pages">
+      <li><a href="/adders/">Adder architecture visualizer</a></li>
+      <li><a href="/bits/">Bit manipulation visualizer</a></li>
+      <li><a href="/cache/">Cache simulator</a></li>
+      <li><a href="/circuitgen/">CircuitGen</a></li>
+      <li><a href="/float/">IEEE 754 floating-point converter</a></li>
+      <li><a href="/kmap/">K-Map generator</a></li>
+      <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
+      <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/fsm/">State machine designer</a></li>
+      <li><a href="/learn/">Learn</a></li>
+    </ul>
+  </nav>
+  <div class="site-footer-line">
+    <span>&copy; 2026 Peter Moses</span>
+    <ul class="site-footer-meta">
+      <li><a href="/resume/">Resume</a></li>
+      <li><a href="https://github.com/BlackTechWarrior" rel="me">GitHub</a></li>
+      <li><a href="https://linkedin.com/in/petamos" rel="me">LinkedIn</a></li>
+      <li><a href="https://forms.gle/o4SRUF6Td7EcbGat5" target="_blank" rel="noopener">Send feedback</a></li>
+    </ul>
+  </div>
+</footer>
+</div>
+
+  <div id="toast" class="toast" style="display: none;" role="status"></div>
+
+<script src="/lib/logicmin.js"></script>
+<script id="fsm-core">
+/* Pure state machine design logic (no DOM). Exposed as FSMCore.
+
+   machine = {
+     type:    'moore' | 'mealy',
+     inputs:  ['X'] or ['X1', 'X0']        (first name is the MSB of the input combo)
+     outputs: ['Z'] or ['Z1', 'Z0'],
+     states:  ['S0', 'S1', ...],            2 to 8 names
+     next:    next[s][c] = state index, or -1 for don't-care
+     out:     Moore out[s][o], Mealy out[s][c][o]: 0, 1 or null (don't-care)
+   }
+   Input combo c has input i (0 = first) at bit (ni - 1 - i).
+   Minterm m = (code << ni) | c, so present-state bits come first, MSB first,
+   which matches LogicMin's variable order: Q1, Q0, ..., then the inputs. */
+(function (global) {
+  'use strict';
+  var LM = global.LogicMin;
+
+  var NAME_RE = /^[A-Za-z_][A-Za-z0-9_]{0,5}$/;
+  var RESERVED_RE = /^[QDTJK][0-9]+$/i;
+  var FF_KINDS = { D: ['D'], T: ['T'], JK: ['J', 'K'] };
+  var EXCITATION = {
+    D:  [[0, 0, { D: 0 }], [0, 1, { D: 1 }], [1, 0, { D: 0 }], [1, 1, { D: 1 }]],
+    T:  [[0, 0, { T: 0 }], [0, 1, { T: 1 }], [1, 0, { T: 1 }], [1, 1, { T: 0 }]],
+    JK: [[0, 0, { J: 0, K: null }], [0, 1, { J: 1, K: null }], [1, 0, { J: null, K: 1 }], [1, 1, { J: null, K: 0 }]]
+  };
+
+  function bitsOf(v, w) {
+    var s = '';
+    for (var i = w - 1; i >= 0; i--) s += (v >> i) & 1;
+    return s;
+  }
+  function range(n) { var a = []; for (var i = 0; i < n; i++) a.push(i); return a; }
+
+  // Flip-flop inputs that take one bit from q to qn
+  function excite(ff, q, qn) {
+    if (ff === 'D') return { D: qn };
+    if (ff === 'T') return { T: q ^ qn };
+    return q === 0 ? { J: qn, K: null } : { J: null, K: qn ? 0 : 1 };
+  }
+  // Next value of one flip-flop given its present value and its inputs
+  function applyFF(ff, q, inp) {
+    if (ff === 'D') return inp.D;
+    if (ff === 'T') return q ^ inp.T;
+    return q ? (inp.K ? 0 : 1) : (inp.J ? 1 : 0);   // Q+ = J·Q' + K'·Q
+  }
+
+  function ffCount(n, enc) {
+    return enc === 'onehot' ? n : Math.max(1, Math.ceil(Math.log2(n)));
+  }
+
+  function assign(m, enc) {
+    var n = m.states.length, k = ffCount(n, enc);
+    var codes = m.states.map(function (_, i) {
+      return enc === 'onehot' ? (1 << i) : enc === 'gray' ? (i ^ (i >> 1)) : i;
+    });
+    var byCode = {};
+    codes.forEach(function (c, i) { byCode[c] = i; });
+    var qNames = [];
+    for (var b = k - 1; b >= 0; b--) qNames.push('Q' + b);
+    var unused = [];
+    if (enc !== 'onehot') for (var c = 0; c < (1 << k); c++) if (!(c in byCode)) unused.push(c);
+    return { enc: enc, k: k, codes: codes, byCode: byCode, qNames: qNames, unused: unused };
+  }
+
+  function evalCubes(cubes, mt) {
+    for (var i = 0; i < cubes.length; i++) if ((mt & cubes[i].mask) === cubes[i].value) return 1;
+    return 0;
+  }
+
+  function exprOf(cubes, vars) {
+    if (!cubes.length) return '0';
+    if (cubes.some(function (c) { return c.mask === 0; })) return '1';
+    return cubes.map(function (c) { return LM.cubeToTerm(c, vars); }).join(' + ');
+  }
+
+  function kmapUrl(vars, ones, dcs) {
+    if (vars.length < 2 || vars.length > 6) return null;
+    var url = '/kmap/?vars=' + encodeURIComponent(vars.join(',')) + '&m=' + encodeURIComponent(ones.join(','));
+    if (dcs.length) url += '&d=' + encodeURIComponent(dcs.join(','));
+    return url;
+  }
+
+  function sopEq(name, vars, ones, dcs, extra) {
+    var r = LM.minimize(vars.length, ones, dcs);
+    var cubes = r.cover.map(function (c) { return { mask: c.mask, value: c.value }; });
+    var eq = { name: name, vars: vars, ones: ones, dcs: dcs, cubes: cubes,
+               expr: exprOf(cubes, vars), kmap: kmapUrl(vars, ones, dcs), onehot: false };
+    for (var key in extra) eq[key] = extra[key];
+    return eq;
+  }
+
+  // Minimized input condition (cubes over the ni input bits)
+  function condCubes(ni, ones, dcs) {
+    if (!ones.length) return [];
+    return LM.minimize(ni, ones, dcs).cover.map(function (c) { return { mask: c.mask, value: c.value }; });
+  }
+
+  function design(m, enc, ff) {
+    var a = assign(m, enc);
+    var ni = m.inputs.length, nc = 1 << ni, n = m.states.length, k = a.k;
+    var moore = m.type === 'moore';
+    var kinds = FF_KINDS[ff];
+    var vars = a.qNames.concat(m.inputs);
+
+    // Transition table rows, in minterm order. One-hot lists only the state codes.
+    var codeList = enc === 'onehot' ? a.codes.slice().sort(function (x, y) { return x - y; }) : range(1 << k);
+    var rows = [];
+    codeList.forEach(function (q) {
+      for (var c = 0; c < nc; c++) {
+        var s = (q in a.byCode) ? a.byCode[q] : -1;
+        var row = { m: (q << ni) | c, q: q, c: c, s: s, ns: -1, qn: null, ffIn: [], out: [] };
+        if (s >= 0) {
+          row.ns = m.next[s][c];
+          if (row.ns >= 0) row.qn = a.codes[row.ns];
+          row.out = (moore ? m.out[s] : m.out[s][c]).slice();
+        } else {
+          row.out = m.outputs.map(function () { return null; });
+        }
+        for (var b = 0; b < k; b++) {
+          if (s < 0 || row.ns < 0) {
+            var e = {};
+            kinds.forEach(function (kd) { e[kd] = null; });
+            row.ffIn[b] = e;
+          } else {
+            row.ffIn[b] = excite(ff, (q >> b) & 1, (row.qn >> b) & 1);
+          }
+        }
+        rows.push(row);
+      }
+    });
+
+    var ffEqs = [], outEqs = [];
+    var outVars = moore ? a.qNames.slice() : vars;
+
+    if (enc !== 'onehot') {
+      // rows[mt] is minterm mt: every code appears, in order
+      for (var b = k - 1; b >= 0; b--) {
+        var set = {};
+        kinds.forEach(function (kd) {
+          var ones = [], dcs = [];
+          rows.forEach(function (r) {
+            var v = r.ffIn[b][kd];
+            if (v === null) dcs.push(r.m); else if (v === 1) ones.push(r.m);
+          });
+          set[kd] = sopEq(kd + b, vars, ones, dcs, { role: 'ff', bit: b, kind: kd });
+        });
+        ffEqs[b] = set;
+      }
+      m.outputs.forEach(function (name, o) {
+        var ones = [], dcs = [];
+        if (moore) {
+          for (var q = 0; q < (1 << k); q++) {
+            var s = (q in a.byCode) ? a.byCode[q] : -1;
+            var v = s < 0 ? null : m.out[s][o];
+            if (v === null) dcs.push(q); else if (v === 1) ones.push(q);
+          }
+        } else {
+          rows.forEach(function (r) {
+            var v = r.out[o];
+            if (v === null) dcs.push(r.m); else if (v === 1) ones.push(r.m);
+          });
+        }
+        outEqs[o] = sopEq(name, outVars, ones, dcs, { role: 'out', index: o });
+      });
+    } else {
+      // One-hot: flip-flop i is high only in state i. Each equation is a sum of
+      // Qi · (input condition) terms, one per source state; the condition is
+      // minimized over the inputs with that state's x next states as don't-cares.
+      var qbit = function (i) { return 1 << (ni + i); };
+      var withQ = function (i, cubes) {
+        return cubes.map(function (c) { return { mask: qbit(i) | c.mask, value: qbit(i) | c.value }; });
+      };
+      var into = function (i, j) {
+        var ones = [], dcs = [];
+        for (var c = 0; c < nc; c++) {
+          if (m.next[i][c] === j) ones.push(c); else if (m.next[i][c] < 0) dcs.push(c);
+        }
+        return condCubes(ni, ones, dcs);
+      };
+      var leave = function (j) {
+        var ones = [], dcs = [];
+        for (var c = 0; c < nc; c++) {
+          var t = m.next[j][c];
+          if (t < 0) dcs.push(c); else if (t !== j) ones.push(c);
+        }
+        return condCubes(ni, ones, dcs);
+      };
+      var mk = function (name, cubes, extra) {
+        var eq = { name: name, vars: vars, ones: null, dcs: null, cubes: cubes,
+                   expr: exprOf(cubes, vars), kmap: null, onehot: true };
+        for (var key in extra) eq[key] = extra[key];
+        return eq;
+      };
+      for (var j = n - 1; j >= 0; j--) {
+        var set1 = {};
+        kinds.forEach(function (kd) {
+          var cubes = [];
+          if (kd === 'D') {
+            for (var i = 0; i < n; i++) cubes = cubes.concat(withQ(i, into(i, j)));
+          } else if (kd === 'T') {
+            for (var i2 = 0; i2 < n; i2++) {
+              cubes = cubes.concat(i2 === j ? withQ(j, leave(j)) : withQ(i2, into(i2, j)));
+            }
+          } else if (kd === 'J') {
+            for (var i3 = 0; i3 < n; i3++) if (i3 !== j) cubes = cubes.concat(withQ(i3, into(i3, j)));
+          } else {
+            cubes = leave(j);   // K is only used while Qj = 1, i.e. in state j
+          }
+          set1[kd] = mk(kd + j, cubes, { role: 'ff', bit: j, kind: kd });
+        });
+        ffEqs[j] = set1;
+      }
+      m.outputs.forEach(function (name, o) {
+        var cubes = [];
+        for (var i = 0; i < n; i++) {
+          if (moore) {
+            if (m.out[i][o] === 1) cubes.push({ mask: 1 << i, value: 1 << i });
+          } else {
+            var ones = [], dcs = [];
+            for (var c = 0; c < nc; c++) {
+              var v = m.out[i][c][o];
+              if (v === null) dcs.push(c); else if (v === 1) ones.push(c);
+            }
+            cubes = cubes.concat(withQ(i, condCubes(ni, ones, dcs)));
+          }
+        }
+        var eq = mk(name, cubes, { role: 'out', index: o });
+        eq.vars = outVars;
+        eq.expr = exprOf(cubes, outVars);
+        outEqs[o] = eq;
+      });
+    }
+
+    return {
+      machine: m, enc: enc, ff: ff, kinds: kinds, k: k, ni: ni, nc: nc, n: n, moore: moore,
+      codes: a.codes, byCode: a.byCode, qNames: a.qNames, unused: a.unused,
+      vars: vars, outVars: outVars, rows: rows, ffEqs: ffEqs, outEqs: outEqs
+    };
+  }
+
+  // One clock edge computed from the equations only
+  function step(d, code, c) {
+    var mt = (code << d.ni) | c, nextCode = 0, ffIn = [];
+    for (var b = 0; b < d.k; b++) {
+      var inp = {}, eqs = d.ffEqs[b];
+      for (var kd in eqs) inp[kd] = evalCubes(eqs[kd].cubes, mt);
+      ffIn[b] = inp;
+      nextCode |= applyFF(d.ff, (code >> b) & 1, inp) << b;
+    }
+    var out = d.outEqs.map(function (eq) { return evalCubes(eq.cubes, d.moore ? code : mt); });
+    return { nextCode: nextCode, out: out, ffIn: ffIn };
+  }
+
+  function stateOf(d, code) { return (code in d.byCode) ? d.byCode[code] : -1; }
+
+  // Every state and input, through the equations, against the table
+  function verify(d) {
+    var m = d.machine, checks = 0, mismatches = [];
+    for (var s = 0; s < d.n; s++) {
+      for (var c = 0; c < d.nc; c++) {
+        var r = step(d, d.codes[s], c);
+        var ns = m.next[s][c];
+        if (ns >= 0) {
+          checks++;
+          if (r.nextCode !== d.codes[ns]) mismatches.push({ s: s, c: c, what: 'next', got: r.nextCode, want: d.codes[ns] });
+        }
+        var want = d.moore ? m.out[s] : m.out[s][c];
+        for (var o = 0; o < want.length; o++) {
+          if (want[o] === null) continue;
+          checks++;
+          if (r.out[o] !== want[o]) mismatches.push({ s: s, c: c, what: 'out', o: o, got: r.out[o], want: want[o] });
+        }
+      }
+    }
+    return { pairs: d.n * d.nc, checks: checks, mismatches: mismatches };
+  }
+
+  function simulate(d, reset, seq) {
+    var m = d.machine, code = d.codes[reset], rows = [];
+    seq.forEach(function (c, i) {
+      var s = stateOf(d, code);
+      var r = step(d, code, c);
+      var row = { step: i + 1, code: code, s: s, c: c, out: r.out, nextCode: r.nextCode,
+                  ns: stateOf(d, r.nextCode), wantNext: null, wantOut: null, ok: true };
+      if (s >= 0) {
+        var t = m.next[s][c];
+        row.wantNext = t;
+        if (t >= 0 && r.nextCode !== d.codes[t]) row.ok = false;
+        row.wantOut = d.moore ? m.out[s] : m.out[s][c];
+        row.wantOut.forEach(function (v, o) { if (v !== null && v !== r.out[o]) row.ok = false; });
+      }
+      rows.push(row);
+      code = r.nextCode;
+    });
+    return rows;
+  }
+
+  // Input sequence: bits, optionally separated by spaces or commas
+  function parseSequence(str, ni) {
+    var clean = String(str).replace(/[\s,_]+/g, '');
+    if (!clean.length) return { error: 'Enter an input sequence, for example 0110101.' };
+    if (/[^01]/.test(clean)) return { error: 'The input sequence can only contain 0 and 1.' };
+    if (clean.length % ni) return { error: 'With 2 inputs, enter pairs of bits such as 00 01 11.' };
+    var seq = [];
+    for (var i = 0; i < clean.length; i += ni) seq.push(parseInt(clean.substr(i, ni), 2));
+    if (seq.length > 64) return { error: 'Keep the sequence to 64 steps or fewer.' };
+    return { seq: seq };
+  }
+
+  // Diagram edges: one per (from, to), label lists input patterns (and Mealy outputs)
+  function edges(m) {
+    var ni = m.inputs.length, nc = 1 << ni, map = {}, list = [];
+    for (var s = 0; s < m.states.length; s++) {
+      for (var c = 0; c < nc; c++) {
+        var t = m.next[s][c];
+        if (t < 0) continue;
+        var key = s + ':' + t;
+        if (!map[key]) { map[key] = { from: s, to: t, groups: {}, order: [] }; list.push(map[key]); }
+        var o = m.type === 'mealy' ? m.out[s][c].map(function (v) { return v === null ? 'x' : v; }).join('') : '';
+        if (!map[key].groups[o]) { map[key].groups[o] = []; map[key].order.push(o); }
+        map[key].groups[o].push(c);
+      }
+    }
+    list.forEach(function (e) {
+      var parts = [];
+      e.order.forEach(function (o) {
+        var combos = e.groups[o];
+        var pats = ni === 1 ? combos.map(String)
+          : LM.minimize(ni, combos, []).cover.map(function (cb) { return LM.cubeToPattern(cb, ni); });
+        pats.forEach(function (p) { parts.push(m.type === 'mealy' ? p + '/' + o : p); });
+      });
+      e.label = parts.join(', ');
+    });
+    return list;
+  }
+
+  function validate(m) {
+    var errs = [];
+    var seen = {};
+    m.states.forEach(function (s) {
+      if (!NAME_RE.test(s)) errs.push('State name "' + s + '" must start with a letter and be up to 6 letters, digits or _.');
+      else if (seen[s]) errs.push('Two states are named ' + s + '. Give each state its own name.');
+      seen[s] = true;
+    });
+    var sig = {};
+    [['input', m.inputs], ['output', m.outputs]].forEach(function (p) {
+      p[1].forEach(function (v) {
+        if (!NAME_RE.test(v)) errs.push('The ' + p[0] + ' name "' + v + '" must start with a letter and be up to 6 letters, digits or _.');
+        else if (RESERVED_RE.test(v)) errs.push(v + ' clashes with a flip-flop name (Q, D, T, J or K with a number). Pick another ' + p[0] + ' name.');
+        else if (sig[v.toLowerCase()]) errs.push(v + ' is used twice. Input and output names must all differ.');
+        sig[v.toLowerCase()] = true;
+      });
+    });
+    return errs;
+  }
+
+  // ── Example machines ──
+  function preset(name) {
+    if (name === 'counter') {
+      // Inputs E (enable) and U (up): E=0 holds, E=1 counts up when U=1, down when U=0
+      var next = [], out = [];
+      for (var s = 0; s < 4; s++) {
+        next.push([s, s, (s + 3) % 4, (s + 1) % 4]);
+        out.push([(s >> 1) & 1, s & 1]);
+      }
+      return { type: 'moore', inputs: ['E', 'U'], outputs: ['Z1', 'Z0'], states: ['S0', 'S1', 'S2', 'S3'],
+               next: next, out: out, seq: '11 11 11 00 10 10 11' };
+    }
+    if (name === 'traffic') {
+      // C = car waiting on the side road. Outputs: M = main road green, S = side road green
+      return { type: 'moore', inputs: ['C'], outputs: ['M', 'S'], states: ['MG', 'MY', 'SG', 'SY'],
+               next: [[0, 1], [2, 2], [3, 2], [0, 0]],
+               out: [[1, 0], [0, 0], [0, 1], [0, 0]], seq: '0011100' };
+    }
+    // Overlapping 101 detector, Mealy: Z = 1 on the input that completes 101
+    return { type: 'mealy', inputs: ['X'], outputs: ['Z'], states: ['S0', 'S1', 'S2'],
+             next: [[0, 1], [2, 1], [0, 1]],
+             out: [[[0], [0]], [[0], [0]], [[0], [1]]], seq: '0110101' };
+  }
+
+  global.FSMCore = {
+    NAME_RE: NAME_RE, EXCITATION: EXCITATION, FF_KINDS: FF_KINDS,
+    bitsOf: bitsOf, excite: excite, applyFF: applyFF, ffCount: ffCount, assign: assign,
+    evalCubes: evalCubes, design: design, step: step, verify: verify, simulate: simulate,
+    parseSequence: parseSequence, edges: edges, validate: validate, preset: preset, kmapUrl: kmapUrl
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+(function () {
+  'use strict';
+  var F = window.FSMCore;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) {
+    return String(s).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  };
+  var bitText = function (v) { return v === null ? 'x' : String(v); };
+  var bitCell = function (v) { return v === null ? '<span class="fsm-x">x</span>' : String(v); };
+
+  var M = null;          // the machine being edited
+  var enc = 'binary';
+  var ff = 'D';
+  var resetState = 0;
+  var lastDesign = null;
+
+  function loadPreset(name) {
+    var p = F.preset(name);
+    $('fsm-seq').value = p.seq;
+    delete p.seq;
+    M = p;
+    resetState = 0;
+    syncControls();
+    renderTable();
+    update();
+  }
+
+  function defaultNames(prefix, count) { return count === 1 ? [prefix] : [prefix + '1', prefix + '0']; }
+
+  function syncControls() {
+    setSeg('fsm-type', M.type);
+    setSeg('fsm-ni', String(M.inputs.length));
+    setSeg('fsm-no', String(M.outputs.length));
+    setSeg('fsm-enc', enc);
+    setSeg('fsm-ff', ff);
+    $('fsm-in-names').value = M.inputs.join(', ');
+    $('fsm-out-names').value = M.outputs.join(', ');
+    $('fsm-seq').placeholder = M.inputs.length === 1 ? '0110101' : '00 01 11 10';
+    $('fsm-seq-lbl').textContent = 'Input sequence (' + M.inputs.join(' ') + ')';
+    $('fsm-add').disabled = M.states.length >= 8;
+    $('fsm-remove').disabled = M.states.length <= 2;
+  }
+
+  function setSeg(id, v) {
+    var btns = $(id).querySelectorAll('.mode-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var on = btns[i].getAttribute('data-v') === v;
+      btns[i].classList.toggle('on', on);
+      btns[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  }
+
+  // ── State table editor ──
+  function stateOptions(sel) {
+    var html = '';
+    M.states.forEach(function (s, i) {
+      html += '<option value="' + i + '"' + (sel === i ? ' selected' : '') + '>' + esc(s) + '</option>';
+    });
+    return html + '<option value="-1"' + (sel === -1 ? ' selected' : '') + '>x</option>';
+  }
+
+  function bitButtons(vals, s, c) {
+    return '<span class="fsm-bits">' + vals.map(function (v, o) {
+      var label = 'Output ' + M.outputs[o] + ' in ' + M.states[s] + (c === null ? '' : ' when ' + comboText(c));
+      return '<button class="btn-t fsm-bit" type="button" data-s="' + s + '" data-c="' + (c === null ? '' : c) +
+        '" data-o="' + o + '" data-v="' + bitText(v) + '" aria-label="' + esc(label + ': ' + bitText(v)) + '">' + bitText(v) + '</button>';
+    }).join('') + '</span>';
+  }
+
+  function comboText(c) {
+    var ni = M.inputs.length;
+    return M.inputs.map(function (name, i) { return name + '=' + ((c >> (ni - 1 - i)) & 1); }).join(' ');
+  }
+
+  function renderTable() {
+    var ni = M.inputs.length, nc = 1 << ni, mealy = M.type === 'mealy';
+    var table = $('fsm-table');
+    table.classList.toggle('fsm-stack', mealy && ni === 2);
+    var inNames = '<span class="t-data">' + esc(M.inputs.join('')) + '</span>';
+    var outNames = '<span class="t-data">' + esc(M.outputs.join('')) + '</span>';
+    var h = '<thead><tr><th rowspan="2" scope="col">State</th>' +
+      '<th colspan="' + nc + '" scope="colgroup">' + (mealy ? 'Next state / ' + outNames + ' for ' : 'Next state for ') + inNames + ' =</th>' +
+      (mealy ? '' : '<th rowspan="2" scope="col" class="fsm-out-col">' + outNames + '</th>') + '</tr><tr>';
+    for (var c = 0; c < nc; c++) h += '<th scope="col"><span class="t-data">' + F.bitsOf(c, ni) + '</span></th>';
+    h += '</tr></thead><tbody>';
+    M.states.forEach(function (name, s) {
+      h += '<tr><td><input class="inp fsm-name" data-s="' + s + '" value="' + esc(name) + '" maxlength="6" spellcheck="false" autocomplete="off" aria-label="Name of state ' + (s + 1) + '"></td>';
+      for (var c2 = 0; c2 < nc; c2++) {
+        h += '<td><span class="fsm-cell"><select class="inp fsm-sel" data-s="' + s + '" data-c="' + c2 + '" aria-label="Next state from ' + esc(name) + ' when ' + esc(comboText(c2)) + '">' +
+          stateOptions(M.next[s][c2]) + '</select>';
+        if (mealy) h += (ni === 1 ? '<span class="fsm-slash" aria-hidden="true">/</span>' : '') + bitButtons(M.out[s][c2], s, c2);
+        h += '</span></td>';
+      }
+      if (!mealy) h += '<td class="fsm-out-col">' + bitButtons(M.out[s], s, null) + '</td>';
+      h += '</tr>';
+    });
+    table.innerHTML = h + '</tbody>';
+  }
+
+  // Keep select labels in step with renamed states without rebuilding the table
+  function refreshStateNames() {
+    var sels = document.querySelectorAll('#fsm-table .fsm-sel');
+    for (var i = 0; i < sels.length; i++) {
+      var opts = sels[i].options;
+      M.states.forEach(function (s, j) { if (opts[j]) opts[j].textContent = s; });
+    }
+  }
+
+  $('fsm-table').addEventListener('change', function (e) {
+    var t = e.target;
+    if (!t.classList.contains('fsm-sel')) return;
+    M.next[+t.getAttribute('data-s')][+t.getAttribute('data-c')] = +t.value;
+    update();
+  });
+  $('fsm-table').addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t.classList.contains('fsm-name')) return;
+    M.states[+t.getAttribute('data-s')] = t.value.trim();
+    refreshStateNames();
+    update();
+  });
+  $('fsm-table').addEventListener('click', function (e) {
+    var t = e.target.closest('.fsm-bit');
+    if (!t) return;
+    var s = +t.getAttribute('data-s'), o = +t.getAttribute('data-o'), cAttr = t.getAttribute('data-c');
+    var arr = cAttr === '' ? M.out[s] : M.out[s][+cAttr];
+    var v = arr[o];
+    arr[o] = v === 0 ? 1 : v === 1 ? null : 0;
+    t.textContent = bitText(arr[o]);
+    t.setAttribute('data-v', bitText(arr[o]));
+    var label = t.getAttribute('aria-label').replace(/: [01x]$/, ': ' + bitText(arr[o]));
+    t.setAttribute('aria-label', label);
+    update();
+  });
+
+  function segHandler(id, fn) {
+    $(id).addEventListener('click', function (e) {
+      var b = e.target.closest('.mode-btn');
+      if (!b) return;
+      fn(b.getAttribute('data-v'));
+      syncControls();
+      update();
+    });
+  }
+
+  segHandler('fsm-type', function (v) {
+    if (v === M.type) return;
+    if (v === 'mealy') {
+      // Each transition starts with the state's Moore output
+      M.out = M.out.map(function (o) { return M.next[0].map(function () { return o.slice(); }); });
+    } else {
+      M.out = M.out.map(function (row) { return row[0].slice(); });
+    }
+    M.type = v;
+    renderTable();
+  });
+
+  segHandler('fsm-ni', function (v) {
+    var ni = +v, old = M.inputs.length;
+    if (ni === old) return;
+    var remap = function (row) {
+      var r = [];
+      for (var c = 0; c < (1 << ni); c++) r.push(ni > old ? row[c >> 1] : row[c << 1]);
+      return r;
+    };
+    M.next = M.next.map(remap);
+    if (M.type === 'mealy') M.out = M.out.map(function (row) { return remap(row).map(function (o) { return o.slice(); }); });
+    M.inputs = defaultNames('X', ni);
+    renderTable();
+  });
+
+  segHandler('fsm-no', function (v) {
+    var no = +v;
+    if (no === M.outputs.length) return;
+    var resize = function (o) { return no === 2 ? [o[0], 0] : [o[0]]; };
+    M.out = M.out.map(function (row) { return M.type === 'moore' ? resize(row) : row.map(resize); });
+    M.outputs = defaultNames('Z', no);
+    renderTable();
+  });
+
+  segHandler('fsm-enc', function (v) { enc = v; });
+  segHandler('fsm-ff', function (v) { ff = v; });
+
+  function parseNames(str) { return str.split(/[\s,]+/).filter(Boolean); }
+
+  $('fsm-in-names').addEventListener('input', function () {
+    var names = parseNames(this.value);
+    if (names.length === M.inputs.length) {
+      M.inputs = names;
+      this.removeAttribute('aria-invalid');
+      renderTable();
+      $('fsm-seq-lbl').textContent = 'Input sequence (' + M.inputs.join(' ') + ')';
+    } else {
+      this.setAttribute('aria-invalid', 'true');
+    }
+    update();
+  });
+  $('fsm-out-names').addEventListener('input', function () {
+    var names = parseNames(this.value);
+    if (names.length === M.outputs.length) {
+      M.outputs = names;
+      this.removeAttribute('aria-invalid');
+      renderTable();
+    } else {
+      this.setAttribute('aria-invalid', 'true');
+    }
+    update();
+  });
+
+  $('fsm-add').addEventListener('click', function () {
+    if (M.states.length >= 8) return;
+    var i = M.states.length, nc = 1 << M.inputs.length;
+    var name = 'S' + i, k = i;
+    while (M.states.indexOf(name) !== -1) name = 'S' + (++k);
+    M.states.push(name);
+    var row = [];
+    for (var c = 0; c < nc; c++) row.push(i);
+    M.next.push(row);
+    var zeros = M.outputs.map(function () { return 0; });
+    M.out.push(M.type === 'moore' ? zeros : row.map(function () { return zeros.slice(); }));
+    syncControls();
+    renderTable();
+    update();
+  });
+
+  $('fsm-remove').addEventListener('click', function () {
+    if (M.states.length <= 2) return;
+    var gone = M.states.length - 1, name = M.states[gone], hit = false;
+    M.states.pop(); M.next.pop(); M.out.pop();
+    M.next.forEach(function (row) {
+      row.forEach(function (t, c) { if (t === gone) { row[c] = -1; hit = true; } });
+    });
+    if (resetState >= M.states.length) resetState = 0;
+    syncControls();
+    renderTable();
+    update();
+    if (hit) toast('Transitions into ' + name + ' are now x. Pick their next states.');
+  });
+
+  document.querySelector('.fsm-examples').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-preset]');
+    if (b) loadPreset(b.getAttribute('data-preset'));
+  });
+
+  // ── Update everything ──
+  function showErrors(errs) {
+    var box = $('fsm-err');
+    var inErr = $('fsm-in-names').getAttribute('aria-invalid') === 'true';
+    var outErr = $('fsm-out-names').getAttribute('aria-invalid') === 'true';
+    if (inErr) errs.unshift('Enter ' + M.inputs.length + ' input name' + (M.inputs.length > 1 ? 's' : '') + ', separated by commas.');
+    if (outErr) errs.unshift('Enter ' + M.outputs.length + ' output name' + (M.outputs.length > 1 ? 's' : '') + ', separated by commas.');
+    if (!errs.length) { box.hidden = true; return false; }
+    box.innerHTML = errs.map(esc).join('<br>');
+    box.hidden = false;
+    return true;
+  }
+
+  function update() {
+    var names = document.querySelectorAll('#fsm-table .fsm-name');
+    for (var i = 0; i < names.length; i++) {
+      names[i].toggleAttribute('aria-invalid', !F.NAME_RE.test(M.states[i]) || M.states.indexOf(M.states[i]) !== i);
+    }
+    if (showErrors(F.validate(M))) {
+      $('fsm-results').style.opacity = '0.5';
+      return;
+    }
+    $('fsm-results').style.opacity = '';
+    var d = F.design(M, enc, ff);
+    lastDesign = d;
+    renderDiagram(d);
+    renderAssignment(d);
+    renderTransition(d);
+    renderEquations(d);
+    renderResetOptions();
+    runSimulation(false);
+  }
+
+  // ── Diagram ──
+  function renderDiagram(d) {
+    var n = M.states.length, mealy = M.type === 'mealy';
+    var R = [0, 0, 105, 110, 125, 140, 150, 165, 175][n];
+    var r = 27;
+    var start = n === 2 ? Math.PI : n === 4 ? -3 * Math.PI / 4 : -Math.PI / 2;
+    var pos = M.states.map(function (_, i) {
+      var a = start + 2 * Math.PI * i / n;
+      return { x: R * Math.cos(a), y: R * Math.sin(a), a: a };
+    });
+    var es = F.edges(M);
+    var pair = {};
+    es.forEach(function (e) { pair[e.from + ':' + e.to] = true; });
+
+    var parts = [], labels = [];
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    var grow = function (x, y) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); };
+    var charW = 7.3, lh = 17;
+    var labelW = function (text) { return text.length * charW + 8; };
+    // Occupied boxes (nodes and placed labels) so labels avoid each other
+    var boxes = pos.map(function (p) { return { x: p.x - r, y: p.y - r, w: 2 * r, h: 2 * r }; });
+    var hits = function (b) {
+      return boxes.some(function (o) { return b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y; });
+    };
+    var addLabel = function (text, x, y) {
+      var w = labelW(text);
+      boxes.push({ x: x - w / 2, y: y - lh / 2, w: w, h: lh });
+      labels.push('<rect class="fsm-label-bg" x="' + (x - w / 2).toFixed(1) + '" y="' + (y - lh / 2).toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + lh + '" rx="3"/>' +
+        '<text class="fsm-label" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '">' + esc(text) + '</text>');
+      grow(x - w / 2, y - lh / 2); grow(x + w / 2, y + lh / 2);
+    };
+    // Put a label on the first free spot along an edge, middle first
+    var placeOnEdge = function (text, at) {
+      var w = labelW(text), ts = [0.5, 0.4, 0.6, 0.32, 0.68, 0.25, 0.75];
+      for (var i = 0; i < ts.length; i++) {
+        var p = at(ts[i]);
+        if (!hits({ x: p.x - w / 2, y: p.y - lh / 2, w: w, h: lh })) return addLabel(text, p.x, p.y);
+      }
+      var m = at(0.5);
+      addLabel(text, m.x, m.y);
+    };
+
+    // Self-loops first: their label spots are fixed
+    es.sort(function (a, b) { return (b.from === b.to) - (a.from === a.to); });
+    var later = [];
+    var touch = pos.map(function () { return []; });   // directions edges use at each state
+    var dir = function (i, pt) { touch[i].push(Math.atan2(pt.y - pos[i].y, pt.x - pos[i].x)); };
+    es.forEach(function (e) {
+      var A = pos[e.from], B = pos[e.to];
+      if (e.from === e.to) {
+        // Self-loop pointing away from the centre
+        var a = A.a, spread = 0.42, reach = 2.9 * r;
+        var p1 = { x: A.x + r * Math.cos(a - spread), y: A.y + r * Math.sin(a - spread) };
+        var p2 = { x: A.x + r * Math.cos(a + spread), y: A.y + r * Math.sin(a + spread) };
+        var c1 = { x: A.x + reach * Math.cos(a - 0.75), y: A.y + reach * Math.sin(a - 0.75) };
+        var c2 = { x: A.x + reach * Math.cos(a + 0.75), y: A.y + reach * Math.sin(a + 0.75) };
+        parts.push('<path class="fsm-edge" marker-end="url(#fsm-arrow)" d="M' + p1.x.toFixed(1) + ' ' + p1.y.toFixed(1) +
+          ' C' + c1.x.toFixed(1) + ' ' + c1.y.toFixed(1) + ' ' + c2.x.toFixed(1) + ' ' + c2.y.toFixed(1) + ' ' + p2.x.toFixed(1) + ' ' + p2.y.toFixed(1) + '"/>');
+        // The loop's far point is about 1.82 r from the centre of the state
+        var ca = Math.cos(a), sn = Math.sin(a);
+        var dist = 1.82 * r + 5 + Math.abs(ca) * labelW(e.label) / 2 + Math.abs(sn) * lh / 2;
+        grow(A.x + 1.85 * r * ca, A.y + 1.85 * r * sn);
+        touch[e.from].push(a, a - 0.6, a + 0.6, a - 1.15, a + 1.15);
+        addLabel(e.label, A.x + dist * ca, A.y + dist * sn);
+        return;
+      }
+      var dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy);
+      var ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
+      var bend = pair[e.to + ':' + e.from] ? 26 : 0;
+      // Curved edges leave and enter on the side they bulge toward (+n),
+      // so the two directions of a pair never cross
+      var off = 0.3;
+      var sA = bend ? rotate(ux, uy, off) : { x: ux, y: uy };
+      var sB = bend ? rotate(-ux, -uy, -off) : { x: -ux, y: -uy };
+      var P = { x: A.x + r * sA.x, y: A.y + r * sA.y };
+      var Q = { x: B.x + (r + 1) * sB.x, y: B.y + (r + 1) * sB.y };
+      dir(e.from, P); dir(e.to, Q);
+      if (bend) {
+        var mid = { x: (P.x + Q.x) / 2 + nx * bend * 2, y: (P.y + Q.y) / 2 + ny * bend * 2 };
+        // Control point that puts the curve through mid at t = 0.5
+        var C = { x: 2 * mid.x - (P.x + Q.x) / 2, y: 2 * mid.y - (P.y + Q.y) / 2 };
+        dir(e.from, C); dir(e.to, C);
+        parts.push('<path class="fsm-edge" marker-end="url(#fsm-arrow)" d="M' + P.x.toFixed(1) + ' ' + P.y.toFixed(1) +
+          ' Q' + C.x.toFixed(1) + ' ' + C.y.toFixed(1) + ' ' + Q.x.toFixed(1) + ' ' + Q.y.toFixed(1) + '"/>');
+        later.push([e.label, function (t) {
+          var u = 1 - t;
+          return { x: u * u * P.x + 2 * u * t * C.x + t * t * Q.x, y: u * u * P.y + 2 * u * t * C.y + t * t * Q.y };
+        }]);
+      } else {
+        parts.push('<path class="fsm-edge" marker-end="url(#fsm-arrow)" d="M' + P.x.toFixed(1) + ' ' + P.y.toFixed(1) +
+          ' L' + Q.x.toFixed(1) + ' ' + Q.y.toFixed(1) + '"/>');
+        later.push([e.label, function (t) { return { x: P.x + (Q.x - P.x) * t, y: P.y + (Q.y - P.y) * t }; }]);
+      }
+    });
+    later.forEach(function (l) { placeOnEdge(l[0], l[1]); });
+
+    // Reset arrow: from the direction around the reset state that is furthest from any edge
+    var ri = pos[resetState] ? resetState : 0, rs = pos[ri];
+    var used = touch[ri].slice();
+    used.push(rs.a + Math.PI);   // toward the centre of the ring
+    var best = rs.a, bestGap = -1;
+    for (var step = 0; step < 72; step++) {
+      var cand = rs.a + step * Math.PI / 36;
+      var gap = Math.min.apply(null, used.map(function (u) {
+        var dd = Math.abs(((cand - u) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI);
+        return dd;
+      }));
+      if (gap > bestGap + 1e-9) { bestGap = gap; best = cand; }
+    }
+    var sa = { x: Math.cos(best), y: Math.sin(best) };
+    var tip = { x: rs.x + (r + 1) * sa.x, y: rs.y + (r + 1) * sa.y };
+    var tail = { x: rs.x + (r + 30) * sa.x, y: rs.y + (r + 30) * sa.y };
+    parts.push('<path class="fsm-edge" marker-end="url(#fsm-arrow)" d="M' + tail.x.toFixed(1) + ' ' + tail.y.toFixed(1) + ' L' + tip.x.toFixed(1) + ' ' + tip.y.toFixed(1) + '"/>');
+    var rtx = rs.x + (r + 36) * sa.x, rty = rs.y + (r + 36) * sa.y + (sa.y > 0.5 ? 6 : sa.y < -0.5 ? -6 : 0);
+    var anchor = sa.x < -0.3 ? 'end' : sa.x > 0.3 ? 'start' : 'middle';
+    parts.push('<text class="fsm-start" text-anchor="' + anchor + '" x="' + rtx.toFixed(1) + '" y="' + rty.toFixed(1) + '">reset</text>');
+    grow(rtx + (anchor === 'end' ? -36 : anchor === 'start' ? 36 : -18), rty - 8);
+    grow(rtx + (anchor === 'end' ? 0 : anchor === 'start' ? 0 : 18), rty + 8);
+
+    var nodes = '';
+    pos.forEach(function (p, i) {
+      grow(p.x - r, p.y - r); grow(p.x + r, p.y + r);
+      nodes += '<g><circle class="fsm-node" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '"/>';
+      if (mealy) {
+        nodes += '<text class="fsm-node-name" x="' + p.x.toFixed(1) + '" y="' + (p.y + 4.5).toFixed(1) + '">' + esc(M.states[i]) + '</text>';
+      } else {
+        nodes += '<text class="fsm-node-name" x="' + p.x.toFixed(1) + '" y="' + (p.y - 3).toFixed(1) + '">' + esc(M.states[i]) + '</text>' +
+          '<line class="fsm-node-rule" x1="' + (p.x - 15).toFixed(1) + '" x2="' + (p.x + 15).toFixed(1) + '" y1="' + (p.y + 2).toFixed(1) + '" y2="' + (p.y + 2).toFixed(1) + '"/>' +
+          '<text class="fsm-node-out" x="' + p.x.toFixed(1) + '" y="' + (p.y + 15).toFixed(1) + '">' + M.out[i].map(bitText).join('') + '</text>';
+      }
+      nodes += '</g>';
+    });
+
+    var pad = 12;
+    var vx = minX - pad, vy = minY - pad, vw = maxX - minX + 2 * pad, vh = maxY - minY + 2 * pad;
+    var desc = M.states.length + ' states. ' + es.map(function (e) { return M.states[e.from] + ' to ' + M.states[e.to] + ' on ' + e.label; }).join('; ') + '.';
+    $('fsm-diagram').innerHTML =
+      '<svg viewBox="' + [vx, vy, vw, vh].map(function (v) { return v.toFixed(1); }).join(' ') + '" width="' + Math.round(vw) + '" height="' + Math.round(vh) + '" role="img" aria-label="' + esc('State diagram. ' + desc) + '">' +
+      '<defs><marker id="fsm-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+      '<path class="fsm-arrowhead" d="M0 0 L10 5 L0 10 z"/></marker></defs>' +
+      parts.join('') + nodes + labels.join('') + '</svg>';
+
+    var inNames = M.inputs.join('');
+    var key = mealy
+      ? 'Edges read ' + inNames + '/' + M.outputs.join('') + ', input then output.'
+      : 'Circles show the state over its output ' + M.outputs.join('') + '. Edges read ' + inNames + '.';
+    if (M.inputs.length === 2) key += ' A dash means either value.';
+    if (M.next.some(function (row) { return row.indexOf(-1) !== -1; })) key += ' Next states of x are not drawn.';
+    $('fsm-diagram-key').textContent = key;
+  }
+
+  function rotate(x, y, a) {
+    var c = Math.cos(a), s = Math.sin(a);
+    return { x: x * c - y * s, y: x * s + y * c };
+  }
+
+  // ── State assignment and excitation ──
+  function renderAssignment(d) {
+    var head = '<span class="t-data">' + d.qNames.join(' ') + '</span>';
+    var h = '<table class="data-table fsm-small"><thead><tr><th scope="col">State</th><th scope="col">' + head + '</th></tr></thead><tbody>';
+    M.states.forEach(function (s, i) {
+      h += '<tr><td>' + esc(s) + '</td><td>' + F.bitsOf(d.codes[i], d.k).split('').join(' ') + '</td></tr>';
+    });
+    d.unused.forEach(function (c) {
+      h += '<tr class="fsm-unused"><td>unused</td><td>' + F.bitsOf(c, d.k).split('').join(' ') + '</td></tr>';
+    });
+    $('fsm-assign').innerHTML = h + '</tbody></table>';
+
+    var note;
+    var nff = d.k + ' flip-flop' + (d.k > 1 ? 's' : '');
+    if (enc === 'onehot') note = 'One-hot: ' + nff + ', one per state. Exactly one flip-flop is 1 at a time: Q0 is 1 in ' + M.states[0] + ', Q1 in ' + M.states[1] + ', and so on.';
+    else if (d.unused.length) note = (enc === 'gray' ? 'Gray code' : 'Binary') + ': ' + nff + ' for ' + d.n + ' states. Unused code' + (d.unused.length > 1 ? 's ' : ' ') +
+      d.unused.map(function (c) { return F.bitsOf(c, d.k); }).join(', ') + (d.unused.length > 1 ? ' are' : ' is') + ' never reached, so ' + (d.unused.length > 1 ? 'their' : 'its') + ' rows are don\'t-cares.';
+    else note = (enc === 'gray' ? 'Gray code' : 'Binary') + ': ' + nff + ' for ' + d.n + ' states. Every code is used.';
+    $('fsm-assign-note').textContent = note;
+
+    var kinds = d.kinds;
+    var e = '<table class="data-table fsm-small"><caption class="sr-only">' + ff + ' flip-flop excitation table</caption><thead><tr><th scope="col">Q</th><th scope="col">Q+</th>' +
+      kinds.map(function (k) { return '<th scope="col">' + k + '</th>'; }).join('') + '</tr></thead><tbody>';
+    F.EXCITATION[ff].forEach(function (row) {
+      e += '<tr><td>' + row[0] + '</td><td>' + row[1] + '</td>' + kinds.map(function (k) { return '<td>' + bitCell(row[2][k]) + '</td>'; }).join('') + '</tr>';
+    });
+    $('fsm-excite').innerHTML = '<span class="lbl">' + (ff === 'JK' ? 'JK' : ff) + ' flip-flop excitation</span>' + e + '</tbody></table>';
+  }
+
+  // ── Transition table ──
+  function renderTransition(d) {
+    var grouped = enc === 'onehot';
+    var ni = d.ni, k = d.k;
+    var ffCols = [];
+    for (var b = k - 1; b >= 0; b--) d.kinds.forEach(function (kd) { ffCols.push({ b: b, kd: kd }); });
+
+    var h = '<table class="data-table fsm-trans"><thead><tr>';
+    if (!grouped) h += '<th scope="col">m</th>';
+    h += '<th scope="col">Present</th>';
+    if (grouped) h += '<th scope="col">' + d.qNames.join('') + '</th>';
+    else d.qNames.forEach(function (q) { h += '<th scope="col"' + (q === d.qNames[0] ? ' class="fsm-sep"' : '') + '>' + q + '</th>'; });
+    M.inputs.forEach(function (x, i) { h += '<th scope="col"' + (i === 0 ? ' class="fsm-sep"' : '') + '>' + esc(x) + '</th>'; });
+    h += '<th scope="col" class="fsm-sep">Next</th>';
+    if (grouped) h += '<th scope="col">' + d.qNames.map(function (q) { return q; }).join('') + '+</th>';
+    else d.qNames.forEach(function (q) { h += '<th scope="col">' + q + '+</th>'; });
+    if (grouped) {
+      d.kinds.forEach(function (kd, i) {
+        var names = [];
+        for (var b2 = k - 1; b2 >= 0; b2--) names.push(kd + b2);
+        h += '<th scope="col"' + (i === 0 ? ' class="fsm-sep"' : '') + '>' + names.join('') + '</th>';
+      });
+    } else {
+      ffCols.forEach(function (col, i) { h += '<th scope="col"' + (i === 0 ? ' class="fsm-sep"' : '') + '>' + col.kd + col.b + '</th>'; });
+    }
+    M.outputs.forEach(function (z, i) { h += '<th scope="col"' + (i === 0 ? ' class="fsm-sep"' : '') + '>' + esc(z) + '</th>'; });
+    h += '</tr></thead><tbody>';
+
+    d.rows.forEach(function (r) {
+      var unused = r.s < 0;
+      h += '<tr' + (unused ? ' class="fsm-unused"' : '') + '>';
+      if (!grouped) h += '<td>' + r.m + '</td>';
+      h += '<td>' + (unused ? 'unused' : esc(M.states[r.s])) + '</td>';
+      var qbits = F.bitsOf(r.q, k);
+      if (grouped) h += '<td>' + qbits + '</td>';
+      else qbits.split('').forEach(function (ch, i) { h += '<td' + (i === 0 ? ' class="fsm-sep"' : '') + '>' + ch + '</td>'; });
+      F.bitsOf(r.c, ni).split('').forEach(function (ch, i) { h += '<td' + (i === 0 ? ' class="fsm-sep"' : '') + '>' + ch + '</td>'; });
+      h += '<td class="fsm-sep">' + (unused ? '<span class="fsm-x">x</span>' : r.ns < 0 ? '<span class="fsm-x">x</span>' : esc(M.states[r.ns])) + '</td>';
+      var qn = r.qn === null ? null : F.bitsOf(r.qn, k);
+      if (grouped) h += '<td>' + (qn === null ? '<span class="fsm-x">' + 'x'.repeat(k) + '</span>' : qn) + '</td>';
+      else for (var i = 0; i < k; i++) h += '<td>' + (qn === null ? '<span class="fsm-x">x</span>' : qn[i]) + '</td>';
+      if (grouped) {
+        d.kinds.forEach(function (kd, j) {
+          var s = '';
+          for (var b3 = k - 1; b3 >= 0; b3--) s += bitText(r.ffIn[b3][kd]);
+          h += '<td' + (j === 0 ? ' class="fsm-sep"' : '') + '>' + s.replace(/x+/g, function (x) { return '<span class="fsm-x">' + x + '</span>'; }) + '</td>';
+        });
+      } else {
+        ffCols.forEach(function (col, j) { h += '<td' + (j === 0 ? ' class="fsm-sep"' : '') + '>' + bitCell(r.ffIn[col.b][col.kd]) + '</td>'; });
+      }
+      r.out.forEach(function (v, j) { h += '<td' + (j === 0 ? ' class="fsm-sep"' : '') + '>' + bitCell(v) + '</td>'; });
+      h += '</tr>';
+    });
+    $('fsm-trans').innerHTML = h + '</tbody></table>';
+
+    var note = 'Each row takes the present code to the next code, and the excitation table gives the flip-flop inputs that make that change.';
+    if (!grouped) note += ' The m column is the minterm number for the K-map.';
+    if (grouped) note += ' Only the ' + d.n + ' one-hot codes are listed; every other code is assumed never to occur.';
+    else if (M.type === 'moore') note += ' Moore outputs repeat on every row of a state, since they ignore the input.';
+    $('fsm-trans-note').textContent = note;
+  }
+
+  // ── Equations ──
+  function eqLines(d) {
+    var lines = [];
+    for (var b = d.k - 1; b >= 0; b--) d.kinds.forEach(function (kd) { lines.push(d.ffEqs[b][kd]); });
+    return { ff: lines, out: d.outEqs };
+  }
+
+  function renderEquations(d) {
+    var L = eqLines(d);
+    var item = function (eq) {
+      var meta = '';
+      if (eq.onehot) {
+        if (eq.role === 'ff') meta = 'Flip-flop for ' + M.states[eq.bit];
+      } else {
+        meta = '&Sigma;m(' + (eq.ones.join(', ') || '') + ')' + (eq.dcs.length ? ' + d(' + eq.dcs.join(', ') + ')' : '');
+        if (!eq.ones.length) meta = 'No minterms' + (eq.dcs.length ? ', d(' + eq.dcs.join(', ') + ')' : '');
+      }
+      var link = eq.kmap ? '<a class="btn-t" href="' + esc(eq.kmap) + '" aria-label="Open ' + esc(eq.name) + ' in the K-map generator">Open in K-map</a>' : '';
+      return '<li class="fsm-eq"><div class="fsm-eq-main"><div class="fsm-eq-expr">' + esc(eq.name) + ' = ' + esc(eq.expr) + '</div>' +
+        (meta ? '<div class="fsm-eq-meta">' + meta + '</div>' : '') + '</div>' + link + '</li>';
+    };
+    var h = '<p class="fsm-eq-sub">Flip-flop inputs</p><ul class="fsm-eqs">' + L.ff.map(item).join('') + '</ul>' +
+      '<p class="fsm-eq-sub">Outputs</p><ul class="fsm-eqs">' + L.out.map(item).join('') + '</ul>';
+    $('fsm-eqs').innerHTML = h;
+
+    var vars = '<span class="t-data">' + esc(d.vars.join(', ')) + '</span>';
+    var note;
+    if (enc === 'onehot') {
+      note = 'Each flip-flop input ORs Qi times the input condition for every transition that sets it. ' +
+        (ff === 'JK' ? 'K only matters while its flip-flop is 1, which in one-hot means the machine is in that state, so K depends on the inputs alone. ' : '') +
+        'The input conditions are minimized with x next states as don\'t-cares.';
+    } else {
+      note = 'Minimum sums of products over ' + vars + (M.type === 'moore' ? ' (outputs use the state bits only, since this is a Moore machine)' : '') + '. ' +
+        'Don\'t-cares come from unused codes, x entries' + (ff === 'JK' ? ' and the JK excitation table' : '') + '.';
+    }
+    $('fsm-eq-note').innerHTML = note;
+  }
+
+  $('fsm-copy').addEventListener('click', function () {
+    if (!lastDesign) return;
+    var L = eqLines(lastDesign);
+    var text = L.ff.concat(L.out).map(function (eq) { return eq.name + ' = ' + eq.expr; }).join('\n');
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { toast('Equations copied'); });
+  });
+
+  // ── Simulation ──
+  function renderResetOptions() {
+    var sel = $('fsm-reset');
+    if (resetState >= M.states.length) resetState = 0;
+    sel.innerHTML = M.states.map(function (s, i) {
+      return '<option value="' + i + '"' + (i === resetState ? ' selected' : '') + '>' + esc(s) + '</option>';
+    }).join('');
+  }
+  $('fsm-reset').addEventListener('change', function () {
+    resetState = +this.value;
+    renderDiagram(lastDesign);
+    runSimulation(true);
+  });
+
+  function codeName(d, code) {
+    var s = (code in d.byCode) ? d.byCode[code] : -1;
+    return s >= 0 ? esc(M.states[s]) : '<span class="fsm-bad">' + F.bitsOf(code, d.k) + ' (no state)</span>';
+  }
+
+  function runSimulation(fromUser) {
+    var d = lastDesign;
+    if (!d) return;
+    var seqInput = $('fsm-seq');
+    var p = F.parseSequence(seqInput.value, d.ni);
+    var verdict = $('fsm-verdict');
+    var all = F.verify(d);
+    if (p.error) {
+      seqInput.setAttribute('aria-invalid', 'true');
+      verdict.className = 'fsm-verdict fsm-bad';
+      verdict.textContent = p.error;
+      $('fsm-sim').innerHTML = '';
+      return;
+    }
+    seqInput.removeAttribute('aria-invalid');
+    var rows = F.simulate(d, resetState, p.seq);
+    var bad = rows.filter(function (r) { return !r.ok; }).length;
+
+    var h = '<table class="data-table fsm-sim-table"><thead><tr><th scope="col">Step</th><th scope="col">State</th><th scope="col">' + d.qNames.join('') + '</th>' +
+      '<th scope="col">' + esc(M.inputs.join('')) + '</th><th scope="col">' + esc(M.outputs.join('')) + '</th><th scope="col">Next</th><th scope="col">Table says</th></tr></thead><tbody>';
+    rows.forEach(function (r) {
+      var want;
+      if (r.s < 0) want = '<span class="fsm-x">no row</span>';
+      else {
+        var nx = r.wantNext < 0 ? 'x' : M.states[r.wantNext];
+        want = esc(nx) + ', ' + r.wantOut.map(bitText).join('');
+      }
+      h += '<tr' + (r.ok ? '' : ' class="fsm-mismatch"') + '><td>' + r.step + '</td><td>' + codeName(d, r.code) + '</td><td>' + F.bitsOf(r.code, d.k) + '</td>' +
+        '<td>' + F.bitsOf(r.c, d.ni) + '</td><td>' + r.out.join('') + '</td><td>' + codeName(d, r.nextCode) + '</td><td>' + want + (r.ok ? '' : ' (mismatch)') + '</td></tr>';
+    });
+    $('fsm-sim').innerHTML = h + '</tbody></table>';
+
+    var msg;
+    if (!bad && !all.mismatches.length) {
+      verdict.className = 'fsm-verdict fsm-ok';
+      msg = rows.length + ' step' + (rows.length > 1 ? 's' : '') + ' match the state table. The equations also reproduce all ' +
+        all.pairs + ' state and input combinations in the table.';
+    } else {
+      verdict.className = 'fsm-verdict fsm-bad';
+      msg = (bad ? bad + ' of ' + rows.length + ' steps differ from the state table. ' : '') +
+        (all.mismatches.length ? all.mismatches.length + ' table entries are not reproduced by the equations.' : '');
+    }
+    verdict.textContent = msg;
+    if (fromUser) toast('Simulated ' + rows.length + ' steps');
+  }
+
+  $('fsm-run').addEventListener('click', function () { runSimulation(true); });
+  $('fsm-seq').addEventListener('keydown', function (e) { if (e.key === 'Enter') runSimulation(true); });
+
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.style.display = 'none'; }, 2200);
+  }
+
+  loadPreset('detector');
+})();
+</script>
+</body>
+</html>
