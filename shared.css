@@ -928,3 +928,364 @@ select.inp, .select {
   .how-to-body { padding: var(--s-3) var(--s-4); }
   .nav-links > span { display: none; }
 }
+
+/* ═════════════════════════════════════════════════════════════
+   v2 (2026-10): tonal surfaces, navigation drawer, pill controls.
+   Breathable spacing, larger radii, selection shown with a tonal
+   fill and a check. Overrides the rules above; folded in on rollout.
+   ═════════════════════════════════════════════════════════════ */
+:root {
+  --bg:          #EEF0F4;
+  --surface:     #FFFFFF;
+  --well:        #F1F3F6;
+  --well-2:      #E6E9EE;
+  --select:      #DCE3EE;   /* selected chip, segment, nav item */
+  --hover:       rgba(22, 24, 28, 0.06);
+  --border:      #D7DBE2;
+  --border-soft: #E6E9EE;
+
+  --radius-card:  24px;
+  --radius-field: 12px;
+  --radius-panel: 24px;
+  --radius-control: 12px;
+  --radius-control-sm: 10px;
+
+  --nav-w: 264px;
+  --page-max: 1200px;
+  --check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E");
+}
+body.dark {
+  --bg:          #0E1013;
+  --surface:     #171A1E;
+  --well:        #1E2227;
+  --well-2:      #272C33;
+  --select:      #2C3542;
+  --hover:       rgba(233, 235, 238, 0.07);
+  --border:      #2B3038;
+  --border-soft: #22262C;
+}
+
+/* ── App shell: drawer on the left, page on the right ─────────── */
+body.app { padding: 0; }
+.app-nav {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--nav-w);
+  padding: var(--s-5) var(--s-3) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  background: var(--bg);
+  z-index: var(--z-menu);
+}
+.app-nav .wordmark { padding: var(--s-1) var(--s-4) var(--s-5); font-size: 1.25rem; }
+.nav-group { margin-bottom: var(--s-3); }
+.nav-group-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: var(--s-2) var(--s-4) var(--s-1);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 40px;
+  padding: 0 var(--s-4);
+  border-radius: 999px;
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background var(--dur-quick) var(--ease-out), color var(--dur-quick) var(--ease-out);
+}
+.nav-item:hover { background: var(--hover); color: var(--ink); }
+.nav-item[aria-current="page"] { background: var(--select); color: var(--ink); font-weight: 600; }
+.nav-item .new-pill { margin-left: auto; }
+.nav-foot {
+  margin-top: auto;
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-foot .theme-toggle { align-self: flex-start; margin: var(--s-3) 0 0 var(--s-4); }
+
+.app-main {
+  margin-left: var(--nav-w);
+  min-height: 100vh;
+  padding: var(--s-6) var(--s-7) var(--s-7);
+}
+.app-main > .container, .app-main > .site-footer { max-width: var(--page-max); margin-left: 0; margin-right: auto; }
+
+/* Narrow screens: a top bar and the drawer slides over the page */
+.top-bar { display: none; }
+.nav-scrim { display: none; }
+@media (max-width: 1023px) {
+  .app-nav {
+    width: min(304px, 86vw);
+    background: var(--surface);
+    border-radius: 0 var(--radius-card) var(--radius-card) 0;
+    transform: translateX(-104%);
+    transition: transform var(--dur-smooth) var(--ease-out);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  }
+  body.nav-open .app-nav { transform: none; }
+  body.nav-open .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.32);
+    z-index: calc(var(--z-menu) - 1);
+  }
+  .app-main { margin-left: 0; padding: 0 var(--s-4) var(--s-6); }
+  .top-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    height: 64px;
+    margin: 0 calc(-1 * var(--s-2)) var(--s-3);
+  }
+  .top-bar .wordmark { font-size: 1.125rem; }
+}
+@media (prefers-reduced-motion: reduce) { .app-nav { transition: none; } }
+.nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 40px;
+  padding: 0 var(--s-4) 0 var(--s-3);
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+.nav-toggle:hover { background: var(--hover); }
+.nav-toggle-icon { width: 18px; height: 2px; background: currentColor; box-shadow: 0 -6px 0 currentColor, 0 6px 0 currentColor; border-radius: 1px; }
+
+/* ── Page head ───────────────────────────────────────────────── */
+h1, .t-display { font-size: clamp(2rem, 1.5rem + 1.6vw, 2.75rem); letter-spacing: -0.025em; }
+.page-head { margin-bottom: var(--s-4); }
+.lede, .subtitle { font-size: 1.125rem; }
+.how-to { margin-bottom: var(--s-6); }
+.how-to-body { border-radius: var(--radius-card); padding: var(--s-5) var(--s-6); background: var(--surface); }
+.how-to-body code { background: var(--well); border: 0; }
+
+/* ── Surfaces: tonal cards, no frames ───────────────────────── */
+.section, .panel {
+  border: 0;
+  border-radius: var(--radius-card);
+  padding: var(--s-6);
+  margin-bottom: var(--s-5);
+}
+.workbench, body.dark .workbench { border: 0; box-shadow: none; animation: none; }
+.well, .expr-box, .mint-box, .steps-box { border-radius: 16px; padding: var(--s-4) var(--s-5); }
+.result-label, h3, .t-title { font-size: 1rem; }
+.lbl, .t-label { font-size: 0.875rem; }
+
+.tool-layout { gap: var(--s-5); }
+@media (min-width: 961px) {
+  .tool-layout { grid-template-columns: minmax(320px, 380px) minmax(0, 1fr); }
+  .tool-controls { top: var(--s-5); max-height: calc(100vh - var(--s-7)); }
+}
+
+/* ── Fields ──────────────────────────────────────────────────── */
+.inp, .field input, .field select {
+  border-radius: var(--radius-field);
+  padding: 12px 14px;
+  font-size: 1rem;
+  background: var(--surface);
+}
+.inp:focus, .field input:focus, .field select:focus {
+  border-color: var(--accent-ink);
+  box-shadow: 0 0 0 1px var(--accent-ink);
+}
+select.inp, .select { background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; }
+.input-row { gap: var(--s-4); margin-bottom: var(--s-5); }
+
+/* ── Buttons: pill primary, chips for toggles ───────────────── */
+.btn-go, .btn-primary { border-radius: 999px; min-height: 44px; padding: 0 var(--s-5); font-size: 0.9375rem; }
+
+.btn-t, .btn-secondary {
+  min-height: 36px;
+  padding: 0 var(--s-4);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+  gap: 6px;
+}
+.btn-t:hover, .btn-secondary:hover { background: var(--hover); border-color: var(--border); }
+.btn-t.on, .btn-t[aria-pressed="true"] {
+  background: var(--select);
+  color: var(--ink);
+  border-color: transparent;
+  padding-left: var(--s-3);
+}
+.btn-t.on::before, .btn-t[aria-pressed="true"]::before, .mode-btn.on::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  background: currentColor;
+  -webkit-mask: var(--check) center / contain no-repeat;
+  mask: var(--check) center / contain no-repeat;
+}
+.toggle-btns { gap: var(--s-2); }
+.btn-row { gap: var(--s-4); margin-top: var(--s-5); }
+
+.btn-copy { border-radius: 999px; padding: 4px 12px; }
+
+/* Segmented control */
+.mode-selector {
+  padding: 0;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  overflow: hidden;
+}
+.mode-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 var(--s-4);
+  border-radius: 0;
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+.mode-btn + .mode-btn { border-left: 1px solid var(--border); }
+.mode-btn:hover { background: var(--hover); color: var(--ink); }
+.mode-btn.on, .mode-btn[aria-selected="true"] { background: var(--select); color: var(--ink); font-weight: 600; }
+.on > .new-pill { background: var(--accent); color: var(--on-accent); }
+
+.tag { padding: 2px 10px; }
+.err { border: 0; border-radius: var(--radius-field); }
+.toast { border-radius: 999px; padding: 12px 20px; }
+
+/* ── Footer and feedback ─────────────────────────────────────── */
+.feedback-box { border-top: 0; }
+.site-footer { border-top: 0; margin-top: var(--s-7); padding: var(--s-6) 0 0; }
+.site-footer-line { border-top: 1px solid var(--border); }
+.site-footer .site-footer-pages { margin-bottom: var(--s-6); }
+
+@media (max-width: 640px) {
+  .section, .panel { padding: var(--s-5) var(--s-4); border-radius: 20px; }
+  .how-to-body { padding: var(--s-4); }
+}
+
+/* ── Motion: Material emphasized easing; movement answers a click ── */
+:root {
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emph-decel: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --dur-quick: 160ms;
+  --dur-smooth: 280ms;
+}
+.btn-go:active, .btn-primary:active, .btn-t:active, .mode-btn:active, .nav-item:active, .btn-copy:active { transform: scale(0.97); }
+.btn-go, .btn-t, .mode-btn, .nav-item, .btn-copy { transition: background var(--dur-quick) var(--ease-out), color var(--dur-quick) var(--ease-out), border-color var(--dur-quick) var(--ease-out), transform 100ms var(--ease-out); }
+details.how-to[open] .how-to-body { animation: unfold var(--dur-smooth) var(--ease-emph-decel); }
+@keyframes unfold { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  details.how-to[open] .how-to-body { animation: none; }
+  .btn-go:active, .btn-t:active, .mode-btn:active, .nav-item:active, .btn-copy:active { transform: none; }
+}
+
+/* ── Shapes: one radius per role ──────────────────────────────
+   card 24 · well 16 · field 12 · chip, button, segment, nav item: pill */
+
+/* ── Slider (Material 3: thick track, bar handle) ───────────── */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 24px;
+  background: transparent;
+  cursor: pointer;
+  --fill: 50%;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--ink) var(--fill), var(--well-2) var(--fill));
+}
+input[type="range"]::-moz-range-track { height: 8px; border-radius: 999px; background: var(--well-2); }
+input[type="range"]::-moz-range-progress { height: 8px; border-radius: 999px; background: var(--ink); }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 6px;
+  height: 24px;
+  margin-top: -8px;
+  border-radius: 3px;
+  background: var(--ink);
+  border: 0;
+  box-shadow: 0 0 0 4px var(--surface);
+}
+input[type="range"]::-moz-range-thumb { width: 6px; height: 24px; border-radius: 3px; background: var(--ink); border: 0; box-shadow: 0 0 0 4px var(--surface); }
+input[type="range"]:focus-visible { outline: none; }
+input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--surface), 0 0 0 6px var(--accent-ink); }
+input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--surface), 0 0 0 6px var(--accent-ink); }
+
+/* ── Checkbox and radio ──────────────────────────────────────── */
+input[type="checkbox"], input[type="radio"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex-shrink: 0;
+  border: 2px solid var(--ink-2);
+  border-radius: 6px;
+  background: transparent;
+  display: inline-grid;
+  place-content: center;
+  vertical-align: -4px;
+  cursor: pointer;
+  transition: background var(--dur-quick) var(--ease-out), border-color var(--dur-quick) var(--ease-out);
+}
+input[type="radio"] { border-radius: 50%; }
+input[type="checkbox"]::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  background: var(--bg);
+  -webkit-mask: var(--check) center / contain no-repeat;
+  mask: var(--check) center / contain no-repeat;
+  transform: scale(0);
+  transition: transform var(--dur-quick) var(--ease-emph-decel);
+}
+input[type="radio"]::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  transform: scale(0);
+  transition: transform var(--dur-quick) var(--ease-emph-decel);
+}
+input[type="checkbox"]:checked { background: var(--ink); border-color: var(--ink); }
+input[type="checkbox"]:checked::before, input[type="radio"]:checked::before { transform: scale(1); }
+input[type="radio"]:checked { border-color: var(--ink); }
+label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  cursor: pointer;
+}
+
+/* ── Rows: hairline lists with a hover state layer ──────────── */
+.data-table td { padding: 10px 12px; }
+.data-table th { padding: 10px 12px; background: transparent; border-bottom: 1px solid var(--border); }
+.data-table tbody tr:hover td { background: var(--hover); }
+
+/* Selects get the field shape */
+select:not(.inp) {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-field);
+  background: var(--surface);
+  padding: 8px 12px;
+}

@@ -232,13 +232,18 @@
     .tool-controls .toggle-btns { margin-left: 0; }
     .tool-controls .ref-section { font-size: 0.75rem; }
     .empty-state { color: var(--muted); font-size: 0.9375rem; padding: var(--s-6) 0; }
+    /* The map is the page's hero: larger cells where there is room */
+    @media (min-width: 1200px) {
+      .km-cell { width: 58px; height: 58px; font-size: 18px; }
+      .km-hdr { font-size: 14px; }
+    }
     @media (max-width: 600px) {
       .km-cell { width: 38px; height: 38px; font-size: 14px; }
       .alg-form { display: block; margin-left: 20px; }
     }
   </style>
 </head>
-<body>
+<body class="app">
 <script>
 (function() {
   var saved = localStorage.getItem('theme');
@@ -248,27 +253,43 @@
 })();
 </script>
   <a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header">
-  <div class="site-bar">
-    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
-    <nav class="site-links" aria-label="Site">
-      <a href="/#tools">Tools</a>
-      <a href="/learn/">Learn</a>
-      <a href="/#about">About</a>
-      <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
-    </nav>
-  </div>
-  <nav class="tool-strip" aria-label="Tools">
-    <a href="/adders/">Adders</a>
-    <a href="/bits/">Bits</a>
-    <a href="/cache/">Cache</a>
-    <a href="/circuitgen/">CircuitGen</a>
-    <a href="/float/">Float</a>
-    <a href="/kmap/" aria-current="page">K-Map</a>
-    <a href="/multipliers/">Multipliers</a>
-    <a href="/orderbook/">Order Book</a>
+<aside class="app-nav" id="appNav" aria-label="Site">
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+  <nav aria-label="Tools">
+    <div class="nav-group" role="group" aria-labelledby="nav-logic">
+      <div class="nav-group-label" id="nav-logic">Logic</div>
+      <a class="nav-item" href="/kmap/" aria-current="page">K-Map generator</a>
+      <a class="nav-item" href="/circuitgen/">CircuitGen</a>
+      <a class="nav-item" href="/fsm/" data-new-until="2026-10-21">State machines</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-arithmetic">
+      <div class="nav-group-label" id="nav-arithmetic">Arithmetic</div>
+      <a class="nav-item" href="/adders/">Adders</a>
+      <a class="nav-item" href="/multipliers/">Multipliers</a>
+      <a class="nav-item" href="/bits/">Bits</a>
+      <a class="nav-item" href="/float/">Floating point</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-memory">
+      <div class="nav-group-label" id="nav-memory">Memory</div>
+      <a class="nav-item" href="/cache/">Cache simulator</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-markets">
+      <div class="nav-group-label" id="nav-markets">Markets</div>
+      <a class="nav-item" href="/orderbook/">Order book</a>
+    </div>
   </nav>
-</header>
+  <div class="nav-foot">
+    <a class="nav-item" href="/learn/">Learn</a>
+    <a class="nav-item" href="/#about">About</a>
+    <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
+  </div>
+</aside>
+<div class="nav-scrim"></div>
+<div class="app-main">
+<div class="top-bar">
+  <button class="nav-toggle" type="button" aria-controls="appNav" aria-expanded="false"><span class="nav-toggle-icon" aria-hidden="true"></span>Menu</button>
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+</div>
 <main id="main" class="container">
 
     <div class="page-head">
@@ -423,6 +444,7 @@
     </ul>
   </div>
 </footer>
+</div>
 
   <div id="toast" class="toast" style="display: none;"></div>
 
@@ -1592,6 +1614,8 @@ function generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetect
   }
 
   let body = '<ul>';
+  const byIndex = (a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1));
+  oneCells.sort(byIndex); dcCells.sort(byIndex); zeroCells.sort(byIndex);
   body += '<li><strong>1-cells:</strong> ' + (oneCells.length > 0 ? oneCells.join(', ') : 'none') + '</li>';
   if (dcCells.length > 0) body += '<li><strong>Don\'t-care cells:</strong> ' + dcCells.join(', ') + '</li>';
   body += '<li><strong>0-cells:</strong> ' + (zeroCells.length > 0 ? zeroCells.join(', ') : 'none') + '</li>';
@@ -1606,7 +1630,7 @@ function generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetect
   // Step 2+: Each group
   const groupTerms = [];
   oneGroups.forEach((group, gi) => {
-    const gCells = group.cells.map(([r, c]) => cellLabel(r, c));
+    const gCells = group.cells.map(([r, c]) => cellLabel(r, c)).sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1)));
     const size = group.cells.length;
 
     // Determine adjacency / wraparound info

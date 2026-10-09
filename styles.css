@@ -35,3 +35,22 @@ section + section { margin-top: var(--s-7); }
   .intro { margin: var(--s-4) 0 var(--s-7); }
   section + section { margin-top: var(--s-6); }
 }
+
+/* ── v2: one column beside the navigation drawer ─────────────── */
+.home { display: block; max-width: 880px; }
+.home .intro { position: static; margin: var(--s-6) 0 var(--s-7); max-width: 640px; }
+.home .portrait { width: 96px; height: 96px; }
+.home .home-body { max-width: none; margin-top: 0; }
+.home section { background: var(--surface); border-radius: var(--radius-card); padding: var(--s-6); }
+.home section + section { margin-top: var(--s-5); }
+.home .intro { background: transparent; padding: 0; }
+.home h2 { margin: 0 0 var(--s-5); }
+.tool-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-6) var(--s-7); }
+.tool-group h3 { margin: 0 0 var(--s-2); font-size: 0.875rem; color: var(--muted); font-weight: 600; }
+.index-list li { padding: var(--s-3) 0; border-top: 1px solid var(--border-soft); }
+.index-list a .new-pill, .index-list li > a + .new-pill { vertical-align: 2px; }
+@media (max-width: 760px) {
+  .tool-groups { grid-template-columns: 1fr; gap: var(--s-5); }
+  .home section { padding: var(--s-5) var(--s-4); }
+  .home .intro { margin: var(--s-3) 0 var(--s-6); }
+}
