@@ -537,6 +537,12 @@ function bestBid() { return book.bids.length > 0 ? book.bids[0].price : null; }
 function bestAsk() { return book.asks.length > 0 ? book.asks[0].price : null; }
 function levelQty(level) { return level.orders.reduce((s, o) => s + o.remaining, 0); }
 
+// Iceberg: reserve not yet shown on the book
+function hiddenQty(o) {
+  return o.totalQty !== null ? Math.max(0, o.totalQty - o.filled - o.remaining) : 0;
+}
+function levelHasHidden(level) { return level.orders.some(o => hiddenQty(o) > 0); }
+
 // Iceberg: get visible quantity for display
 function levelVisibleQty(level) {
   return level.orders.reduce((s, o) => {
@@ -677,6 +683,8 @@ function matchOrder(order) {
 
 // ── Cancel ──
 function cancelOrder(id) {
+  // Finish a match that is mid-step first, so the cancel applies to the real book
+  if (stepMode && pendingSteps.length > 0) finishPendingSteps();
   const order = allOrders[id];
   if (!order || order.status === 'filled' || order.status === 'cancelled') return;
   removeFromBook(order);
@@ -1213,9 +1221,12 @@ function submitOrder() {
 
   let price = null;
   if (currentType === 'limit') {
-    price = parseFloat(document.getElementById('ob-price').value);
-    if (!price || price <= 0) { showToast('Enter a price above 0'); return; }
+    price = round2(parseFloat(document.getElementById('ob-price').value));
+    if (!(price > 0)) { showToast('Enter a price of 0.01 or more'); return; }
   }
+
+  // Finish a match that is mid-step before starting another
+  if (stepMode && pendingSteps.length > 0) finishPendingSteps();
 
   const order = createOrder(currentSide, currentType, price, qty);
 
@@ -1264,7 +1275,7 @@ function renderBook() {
     const flash = flashLevels.has(level.price) ? ' ob-flash' : '';
     const isFifo = fifoHighlight && level.price === fifoHighlight.price;
     const depthPct = (cum / maxCum * 100).toFixed(1);
-    const hasHidden = visQty < qty;
+    const hasHidden = levelHasHidden(level);
     const fifoTag = isFifo ? `<span class="ob-fifo-tag">#${fifoHighlight.orderId} (${fifoHighlight.position}/${fifoHighlight.total})</span>` : '';
     html += `<div class="ob-row ob-row-ask${isBest ? ' ob-row-best' : ''}${flash}${isFifo ? ' ob-fifo-highlight' : ''}" onclick="clickPrice(${level.price})">
       <div class="ob-depth-bar" style="width:${depthPct}%"></div>
@@ -1296,7 +1307,7 @@ function renderBook() {
     const flash = flashLevels.has(level.price) ? ' ob-flash' : '';
     const isFifo = fifoHighlight && level.price === fifoHighlight.price;
     const depthPct = (cum / maxCum * 100).toFixed(1);
-    const hasHidden = visQty < qty;
+    const hasHidden = levelHasHidden(level);
     const fifoTag = isFifo ? `<span class="ob-fifo-tag">#${fifoHighlight.orderId} (${fifoHighlight.position}/${fifoHighlight.total})</span>` : '';
     html += `<div class="ob-row ob-row-bid${isBest ? ' ob-row-best' : ''}${flash}${isFifo ? ' ob-fifo-highlight' : ''}" onclick="clickPrice(${level.price})">
       <div class="ob-depth-bar" style="width:${depthPct}%"></div>
@@ -1319,10 +1330,11 @@ function renderSpreadBar() {
   document.getElementById('ob-best-ask').textContent = ba !== null ? ba.toFixed(2) : '--';
   if (bb !== null && ba !== null) {
     const spread = round2(ba - bb);
-    const mid = round2((ba + bb) / 2);
+    const mid = (ba + bb) / 2;
     const bps = ((spread / mid) * 10000).toFixed(1);
     document.getElementById('ob-spread').textContent = spread.toFixed(2);
-    document.getElementById('ob-mid').textContent = mid.toFixed(2);
+    // A mid between two cents needs a third decimal (99.995)
+    document.getElementById('ob-mid').textContent = Math.abs(mid * 100 - Math.round(mid * 100)) > 1e-6 ? mid.toFixed(3) : mid.toFixed(2);
     document.getElementById('ob-spread-bps').textContent = bps;
   } else {
     document.getElementById('ob-spread').textContent = '--';
@@ -1371,9 +1383,9 @@ function renderOrders() {
       <span>${o.side === 'buy' ? 'B' : 'S'}</span>
       <span>${o.type === 'limit' ? 'LMT' : 'MKT'}</span>
       <span>${o.price !== null ? o.price.toFixed(2) : 'MKT'}</span>
-      <span>${o.qty}</span>
+      <span>${o.totalQty !== null ? o.totalQty : o.qty}</span>
       <span class="ob-col-filled">${o.filled}</span>
-      <span class="ob-col-rem">${o.remaining}</span>
+      <span class="ob-col-rem">${o.remaining + hiddenQty(o)}</span>
       <span class="${statusCls}">${o.status}</span>
       <span>${canCancel ? `<button class="ob-cancel-btn" onclick="cancelOrder(${o.id})">&times;</button>` : ''}</span>
     </div>`;

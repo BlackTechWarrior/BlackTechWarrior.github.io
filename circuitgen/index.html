@@ -213,7 +213,11 @@ var SYMBOLS = {
   '\u22BC': TOKEN.NAND, '%': TOKEN.NAND,
   '@': TOKEN.XNOR, '\u2299': TOKEN.XNOR,
   '#': TOKEN.NOR, '\u22BD': TOKEN.NOR,
+  '\u00AC': TOKEN.NOT, '\u22C5': TOKEN.AND, '\u2227': TOKEN.AND,
+  '\u2228': TOKEN.OR, '\u22BB': TOKEN.XOR,
 };
+// Postfix NOT: apostrophe, the curly quote phones substitute for it, and the prime sign
+var POSTFIX_NOT = "'\u2019\u2032";
 var KEYWORDS = { not: TOKEN.NOT, and: TOKEN.AND, or: TOKEN.OR, nand: TOKEN.NAND, nor: TOKEN.NOR, xor: TOKEN.XOR, xnor: TOKEN.XNOR };
 
 function isAlpha(ch) { return /[a-zA-Z_]/.test(ch); }
@@ -224,7 +228,7 @@ function extractVars(expr) {
   var vars = new Map(), i = 0;
   while (i < expr.length) {
     if (expr[i] === ' ' || expr[i] === '\t') { i++; continue; }
-    if (SYMBOLS[expr[i]] || expr[i] === '(' || expr[i] === ')' || expr[i] === "'") {
+    if (SYMBOLS[expr[i]] || expr[i] === '(' || expr[i] === ')' || POSTFIX_NOT.includes(expr[i])) {
       if (i + 1 < expr.length && SYMBOLS[expr[i] + expr[i + 1]]) i += 2; else i++;
       continue;
     }
@@ -254,7 +258,7 @@ function tokenize(expr, varNames) {
     if (s[i] === ' ' || s[i] === '\t') { i++; continue; }
     if (s[i] === '(') { tokens.push({ type: TOKEN.LPAREN }); i++; continue; }
     if (s[i] === ')') { tokens.push({ type: TOKEN.RPAREN }); i++; continue; }
-    if (s[i] === "'") { tokens.push({ type: TOKEN.NOT, postfix: true }); i++; continue; }
+    if (POSTFIX_NOT.includes(s[i])) { tokens.push({ type: TOKEN.NOT, postfix: true }); i++; continue; }
     if (i + 1 < s.length && SYMBOLS[s[i] + s[i + 1]]) { tokens.push({ type: SYMBOLS[s[i] + s[i + 1]] }); i += 2; continue; }
     if (SYMBOLS[s[i]] && s[i] !== "'") { tokens.push({ type: SYMBOLS[s[i]] }); i++; continue; }
     if ((s[i] === '0' || s[i] === '1') && (i + 1 >= s.length || !isAlpha(s[i + 1]))) {
