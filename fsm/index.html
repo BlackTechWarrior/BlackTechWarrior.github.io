@@ -68,6 +68,23 @@
     .btn-t.fsm-bit { width: 26px; height: 26px; padding: 0; font-family: var(--font-mono); font-size: 0.8125rem; color: var(--ink); }
     .btn-t.fsm-bit[data-v="x"] { color: var(--muted); }
     .fsm-slash { color: var(--muted); font-family: var(--font-mono); }
+    .fsm-link-err { margin: 0 0 var(--s-4); }
+
+    /* Four assignments: labels stay on one line; a 2 by 2 grid when the column is narrow */
+    .fsm-split { container-type: inline-size; }
+    #fsm-enc .mode-btn { padding: 0 var(--s-2); white-space: nowrap; }
+    @container (max-width: 19em) {
+      .tool-controls #fsm-enc { display: grid; grid-template-columns: 1fr 1fr; border-radius: var(--radius-field); }
+      #fsm-enc .mode-btn:nth-child(3) { border-left: 0; }
+      #fsm-enc .mode-btn:nth-child(n+3) { border-top: 1px solid var(--border); }
+    }
+
+    /* Custom state assignment */
+    .fsm-custom { margin-bottom: var(--s-4); }
+    .fsm-codes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5em), 1fr)); gap: var(--s-2) var(--s-4); }
+    .fsm-code { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+    .fsm-code-name { flex: 0 0 auto; min-width: 3.25em; font-size: 0.8125rem; color: var(--ink-2); overflow-wrap: anywhere; }
+    .inp.fsm-code-inp { flex: 1 1 0; min-width: 0; width: auto; padding: 5px 7px; font-size: 0.8125rem; }
 
     /* ── Results ── */
     .fsm-group + .fsm-group { margin-top: var(--s-5); padding-top: var(--s-5); border-top: 1px solid var(--border); }
@@ -184,10 +201,11 @@
       <ul>
         <li><strong>Moore or Mealy.</strong> A Moore output depends only on the present state, so it is written once per state and shown inside the circle. A Mealy output also depends on the input, so it is written per transition as <code>input/output</code>.</li>
         <li><strong>State table.</strong> For each present state and input value, pick the next state. Click an output to cycle it through 0, 1 and x. An x is a don't-care, and so is a next state of x.</li>
-        <li><strong>State assignment.</strong> Binary and Gray codes use &lceil;log<sub>2</sub> n&rceil; flip-flops, and any unused code becomes a don't-care. One-hot uses one flip-flop per state, and each next-state equation ORs the transitions into that state: Q<sub>i</sub> times the input condition for each incoming edge.</li>
+        <li><strong>State assignment.</strong> Binary and Gray codes use &lceil;log<sub>2</sub> n&rceil; flip-flops, and any unused code becomes a don't-care. Custom lets you type each state's code and pick from &lceil;log<sub>2</sub> n&rceil; up to n flip-flops; its unused codes are don't-cares too. One-hot uses one flip-flop per state, and each next-state equation ORs the transitions into that state: Q<sub>i</sub> times the input condition for each incoming edge.</li>
         <li><strong>Excitation.</strong> Each row of the transition table turns a change from Q to Q+ into flip-flop inputs: D = Q+, T = Q &oplus; Q+, and for JK one of the two inputs is a don't-care on every row.</li>
         <li><strong>Equations</strong> are exact minimum sums of products. Open in K-map shows the same function, with its don't-cares, on a Karnaugh map.</li>
         <li><strong>Check.</strong> The simulation runs your input sequence through the equations and compares every step with the state table. A wrong equation shows up as a mismatch.</li>
+        <li><strong>Share.</strong> The address bar always holds a link to the machine on screen, with its settings and input sequence. Copy link copies it.</li>
       </ul>
     </div>
   </details>
@@ -195,6 +213,7 @@
   <div class="tool-layout fsm-page">
     <div class="tool-controls">
       <div class="section workbench">
+        <div id="fsm-link-err" class="err fsm-link-err" role="alert" hidden></div>
         <div class="fsm-field">
           <span class="lbl" id="fsm-ex-lbl">Examples</span>
           <div class="fsm-examples" role="group" aria-labelledby="fsm-ex-lbl">
@@ -249,10 +268,20 @@
               <button class="mode-btn" type="button" data-v="binary">Binary</button>
               <button class="mode-btn" type="button" data-v="gray">Gray</button>
               <button class="mode-btn" type="button" data-v="onehot">One-hot</button>
+              <button class="mode-btn" type="button" data-v="custom">Custom</button>
             </div>
           </div>
+          <div class="fsm-custom" id="fsm-custom" hidden>
+            <div class="fsm-field">
+              <span class="lbl" id="fsm-width-lbl">Number of flip-flops</span>
+              <div class="mode-selector" role="group" aria-labelledby="fsm-width-lbl" id="fsm-width"></div>
+            </div>
+            <span class="lbl" id="fsm-codes-lbl">State codes</span>
+            <div class="fsm-codes" id="fsm-codes" role="group" aria-labelledby="fsm-codes-lbl"></div>
+            <div id="fsm-code-err" class="err" role="alert" hidden></div>
+          </div>
           <div>
-            <span class="lbl" id="fsm-ff-lbl">Flip-flops</span>
+            <span class="lbl" id="fsm-ff-lbl">Flip-flop type</span>
             <div class="mode-selector" role="group" aria-labelledby="fsm-ff-lbl" id="fsm-ff">
               <button class="mode-btn" type="button" data-v="D">D</button>
               <button class="mode-btn" type="button" data-v="T">T</button>
@@ -265,7 +294,10 @@
 
     <div class="tool-results" id="fsm-results">
       <section class="section" aria-labelledby="fsm-diagram-h">
-        <h2 class="result-label" id="fsm-diagram-h">State diagram</h2>
+        <div class="fsm-head">
+          <h2 class="result-label" id="fsm-diagram-h">State diagram</h2>
+          <button class="btn-copy" type="button" id="fsm-link">Copy link</button>
+        </div>
         <div class="fsm-diagram" id="fsm-diagram"></div>
         <p class="t-meta" id="fsm-diagram-key"></p>
       </section>
@@ -398,9 +430,40 @@
     return enc === 'onehot' ? n : Math.max(1, Math.ceil(Math.log2(n)));
   }
 
-  function assign(m, enc) {
-    var n = m.states.length, k = ffCount(n, enc);
-    var codes = m.states.map(function (_, i) {
+  // Custom codes may use from ceil(log2 n) up to n flip-flops
+  function codeRange(n) { return { min: ffCount(n, 'binary'), max: n }; }
+
+  // Custom codes as typed: same width k, only 0 and 1, all different.
+  // Returns { codes: [int] } or { error, bad: [state indices] }.
+  function checkCodes(strs, names, k) {
+    var n = names.length, r = codeRange(n), i;
+    if (!(k >= r.min && k <= r.max)) return { error: 'Pick from ' + r.min + ' to ' + r.max + ' flip-flops.', bad: [] };
+    if (!strs || strs.length !== n) return { error: 'Enter one code per state.', bad: [] };
+    for (i = 0; i < n; i++) if (strs[i] === '') return { error: 'Enter a code for ' + names[i] + '.', bad: [i] };
+    var bad = [];
+    for (i = 0; i < n; i++) if (/[^01]/.test(strs[i])) bad.push(i);
+    if (bad.length) return { error: 'Codes can only contain 0 and 1.', bad: bad };
+    for (i = 0; i < n; i++) if (strs[i].length !== k) bad.push(i);
+    if (bad.length) return { error: 'Codes must be ' + k + ' bit' + (k > 1 ? 's' : '') + '.', bad: bad };
+    var by = {};
+    for (i = 0; i < n; i++) (by[strs[i]] = by[strs[i]] || []).push(i);
+    for (i = 0; i < n; i++) {
+      var same = by[strs[i]];
+      if (same.length > 1) {
+        var who = same.map(function (j) { return names[j]; });
+        var list = who.slice(0, -1).join(', ') + ' and ' + who[who.length - 1];
+        return { error: list + (same.length > 2 ? ' all use ' : ' both use ') + strs[i] + '.', bad: same };
+      }
+    }
+    return { codes: strs.map(function (s) { return parseInt(s, 2); }) };
+  }
+
+  function binaryCodes(n, k) { return range(n).map(function (i) { return bitsOf(i, k); }); }
+
+  // custom = { k, codes: [int] }, only for enc 'custom'
+  function assign(m, enc, custom) {
+    var n = m.states.length, k = enc === 'custom' ? custom.k : ffCount(n, enc);
+    var codes = enc === 'custom' ? custom.codes.slice() : m.states.map(function (_, i) {
       return enc === 'onehot' ? (1 << i) : enc === 'gray' ? (i ^ (i >> 1)) : i;
     });
     var byCode = {};
@@ -430,8 +493,124 @@
     return url;
   }
 
+  // Exact minimum sum of products for functions with many variables but few cared-for
+  // minterms (custom codes wider than 4 bits leave most codes unused). A cube through a
+  // 1 avoids every 0 exactly when its fixed bits include a bit where that 0 differs, so
+  // the primes through a 1 are the minimal sets of fixed bits that meet every such
+  // difference. The cover is a minimum: fewest cubes, then fewest literals.
+  function minimizeSparse(nv, ones, dcs) {
+    if (!ones.length) return { primes: [], cover: [], exact: true };
+    var size = 1 << nv, care = new Uint8Array(size), off = [], m, L, j;
+    ones.forEach(function (x) { care[x] = 1; });
+    (dcs || []).forEach(function (x) { care[x] = 2; });
+    for (m = 0; m < size; m++) if (!care[m]) off.push(m);
+    var popcount = LM.popcount, hit = new Uint8Array(size), seen = {}, primes = [];
+    ones.forEach(function (one) {
+      var diffs = off.map(function (p) { return p ^ one; });
+      for (L = 0; L < size; L++) {
+        var h = 1;
+        for (j = 0; j < diffs.length; j++) if (!(L & diffs[j])) { h = 0; break; }
+        hit[L] = h;
+      }
+      for (L = 0; L < size; L++) {
+        if (!hit[L]) continue;
+        var minimal = true;
+        for (var rest = L; rest; rest &= rest - 1) {
+          if (hit[L & ~(rest & -rest)]) { minimal = false; break; }
+        }
+        if (!minimal) continue;
+        var key = L + ':' + (one & L);
+        if (seen[key]) continue;
+        seen[key] = true;
+        primes.push({ mask: L, value: one & L });
+      }
+    });
+    // Larger cubes first, then by first minterm, then by mask, so ties resolve the same way every time
+    var order = function (a, b) { return popcount(a.mask) - popcount(b.mask) || a.value - b.value || a.mask - b.mask; };
+    primes.sort(order);
+    primes.forEach(function (p) {
+      p.covered = ones.filter(function (x) { return (x & p.mask) === p.value; });
+      p.lits = popcount(p.mask);
+    });
+    var r = minCover(ones, primes);
+    return { primes: primes, cover: r.cover.sort(order), exact: r.exact };
+  }
+
+  // Fewest primes covering every 1, then fewest literals. Branch and bound over bit sets
+  // of the ones (32 per word), after dropping primes another prime beats: covers as much
+  // with no more literals.
+  function minCover(ones, primes) {
+    var u = ones.length, W = Math.ceil(u / 32), idx = {}, w;
+    ones.forEach(function (x, i) { idx[x] = i; });
+    var has = function (set, i) { return (set[i >> 5] >>> (i & 31)) & 1; };
+    var cand = primes.map(function (p) {
+      var bits = new Array(W).fill(0);
+      p.covered.forEach(function (x) { bits[idx[x] >> 5] |= 1 << (idx[x] & 31); });
+      return { p: p, bits: bits, lits: p.lits };
+    });
+    var within = function (a, b) {
+      for (var w = 0; w < W; w++) if ((a[w] & b[w]) !== a[w]) return false;
+      return true;
+    };
+    var same = function (a, b) {
+      for (var w = 0; w < W; w++) if (a[w] !== b[w]) return false;
+      return true;
+    };
+    cand = cand.filter(function (a, i) {
+      return !cand.some(function (b, k) {
+        if (k === i || b.lits > a.lits || !within(a.bits, b.bits)) return false;
+        // b beats a; on an exact tie keep the earlier one
+        return !same(a.bits, b.bits) || b.lits < a.lits || k < i;
+      });
+    });
+    var coverers = [];
+    for (var i = 0; i < u; i++) coverers.push(cand.filter(function (c) { return has(c.bits, i); }));
+    var minLits = Math.min.apply(null, cand.map(function (c) { return c.lits; }));
+    var full = new Array(W).fill(0);
+    for (i = 0; i < u; i++) full[i >> 5] |= 1 << (i & 31);
+    var best = null, bestN = Infinity, bestL = Infinity, budget = 500000;
+
+    // Ones that no single prime covers two of: each needs its own prime
+    function lowerBound(unc) {
+      var blocked = new Array(W).fill(0), lb = 0;
+      for (var i = 0; i < u; i++) {
+        if (!has(unc, i) || has(blocked, i)) continue;
+        lb++;
+        coverers[i].forEach(function (c) { for (var w = 0; w < W; w++) blocked[w] |= c.bits[w]; });
+      }
+      return lb;
+    }
+    function search(chosen, unc, lits) {
+      if (--budget < 0 && best) return;
+      var pick = -1;
+      for (var i = 0; i < u; i++) {
+        if (has(unc, i) && (pick < 0 || coverers[i].length < coverers[pick].length)) pick = i;
+      }
+      if (pick < 0) {
+        if (chosen.length < bestN || (chosen.length === bestN && lits < bestL)) {
+          best = chosen.slice(); bestN = chosen.length; bestL = lits;
+        }
+        return;
+      }
+      var lb = lowerBound(unc), n = chosen.length + lb;
+      if (n > bestN || (n === bestN && lits + lb * minLits >= bestL)) return;
+      coverers[pick].forEach(function (c) {
+        chosen.push(c.p);
+        search(chosen, unc.map(function (x, w) { return x & ~c.bits[w]; }), lits + c.lits);
+        chosen.pop();
+      });
+    }
+    search([], full, 0);
+    return { cover: best, exact: budget >= 0 };
+  }
+
+  // LogicMin enumerates every cube, which is fine up to 6 variables
+  function minimize(nv, ones, dcs) {
+    return nv <= 6 ? LM.minimize(nv, ones, dcs) : minimizeSparse(nv, ones, dcs);
+  }
+
   function sopEq(name, vars, ones, dcs, extra) {
-    var r = LM.minimize(vars.length, ones, dcs);
+    var r = minimize(vars.length, ones, dcs);
     var cubes = r.cover.map(function (c) { return { mask: c.mask, value: c.value }; });
     var eq = { name: name, vars: vars, ones: ones, dcs: dcs, cubes: cubes,
                expr: exprOf(cubes, vars), kmap: kmapUrl(vars, ones, dcs), onehot: false };
@@ -445,8 +624,8 @@
     return LM.minimize(ni, ones, dcs).cover.map(function (c) { return { mask: c.mask, value: c.value }; });
   }
 
-  function design(m, enc, ff) {
-    var a = assign(m, enc);
+  function design(m, enc, ff, custom) {
+    var a = assign(m, enc, custom);
     var ni = m.inputs.length, nc = 1 << ni, n = m.states.length, k = a.k;
     var moore = m.type === 'moore';
     var kinds = FF_KINDS[ff];
@@ -704,6 +883,149 @@
     return errs;
   }
 
+  // ── Share links ──
+  // The query recreates everything on screen. Parameters:
+  //   t  machine type: moore or mealy
+  //   i  input names, comma-separated (1 or 2; the count comes from the list)
+  //   o  output names, comma-separated (1 or 2)
+  //   s  state names, comma-separated (2 to 8)
+  //   n  next states: one group per state, comma-separated, one character per input
+  //      combination in order 0, 1, ...: the next state's index (0-7) or x
+  //   z  outputs: one group per state, comma-separated, each character 0, 1 or x.
+  //      Moore: the state's outputs. Mealy: the outputs for combination 0, then 1, ...
+  //   a  state assignment: binary, gray, onehot or custom
+  //   c  custom codes, one per state, comma-separated (only with a=custom; the width is
+  //      the code length)
+  //   f  flip-flop type: D, T or JK
+  //   q  simulation input sequence as bits, no separators (2 bits per step with 2 inputs)
+  //   r  reset state index
+  // Example: ?t=mealy&i=X&o=Z&s=S0,S1,S2&n=01,21,01&z=00,00,01&a=binary&f=D&q=0110101&r=0
+
+  // A sequence as bare bits, or null if it is not a whole number of steps up to 64
+  function seqBits(str, ni) {
+    var clean = String(str).replace(/[\s,_]+/g, '');
+    if (/[^01]/.test(clean) || clean.length % ni || clean.length > 64 * ni) return null;
+    return clean;
+  }
+  function formatSeq(bits, ni) {
+    return ni === 1 ? bits : (bits.match(/../g) || []).join(' ');
+  }
+
+  // st = { machine, enc, ff, codes (strings, custom only), seq (bits), reset }
+  function shareQuery(st) {
+    var m = st.machine, moore = m.type === 'moore';
+    var ch = function (v) { return v === null ? 'x' : String(v); };
+    var parts = [];
+    var add = function (key, v) { parts.push(key + '=' + encodeURIComponent(v).replace(/%2C/g, ',')); };
+    add('t', m.type);
+    add('i', m.inputs.join(','));
+    add('o', m.outputs.join(','));
+    add('s', m.states.join(','));
+    add('n', m.next.map(function (row) { return row.map(function (t) { return t < 0 ? 'x' : String(t); }).join(''); }).join(','));
+    add('z', m.out.map(function (row) {
+      return moore ? row.map(ch).join('') : row.map(function (o) { return o.map(ch).join(''); }).join('');
+    }).join(','));
+    add('a', st.enc);
+    if (st.enc === 'custom') add('c', st.codes.join(','));
+    add('f', st.ff);
+    add('q', st.seq);
+    add('r', String(st.reset));
+    return parts.join('&');
+  }
+
+  // Reads a query. Anything missing or unreadable falls back to `fallback` (a machine)
+  // or to the default setting, and is named in `bad`. Never throws.
+  function parseShare(search, fallback) {
+    var res = { found: false, machine: fallback, fromLink: false, enc: null, ff: null,
+                codes: null, seq: null, reset: null, bad: [] };
+    var str = String(search || '').replace(/^\?/, '');
+    if (!str) return res;
+    var p = Object.create(null);
+    var KEYS = ['t', 'i', 'o', 's', 'n', 'z', 'a', 'c', 'f', 'q', 'r'];
+    if (str.length > 4000) { res.found = true; res.bad.push('state table'); return res; }
+    str.split('&').forEach(function (kv) {
+      var at = kv.indexOf('='), key = at < 0 ? kv : kv.slice(0, at), val = at < 0 ? '' : kv.slice(at + 1);
+      try { key = decodeURIComponent(key); } catch (e) { return; }
+      if (KEYS.indexOf(key) < 0 || (key in p)) return;
+      try { p[key] = decodeURIComponent(val); } catch (e) { p[key] = null; }
+    });
+    if (!Object.keys(p).length) return res;
+    res.found = true;
+
+    var machineKeys = ['t', 'i', 'o', 's', 'n', 'z'];
+    if (machineKeys.some(function (k) { return k in p; })) {
+      var m = readMachine(p);
+      if (m) { res.machine = m; res.fromLink = true; }
+      else res.bad.push('state table');
+    }
+
+    if ('a' in p) {
+      if (['binary', 'gray', 'onehot', 'custom'].indexOf(p.a) >= 0) res.enc = p.a;
+      else res.bad.push('state assignment');
+    }
+    if ('f' in p) {
+      var f = String(p.f).toUpperCase();
+      if (FF_KINDS.hasOwnProperty(f)) res.ff = f;
+      else res.bad.push('flip-flop type');
+    }
+    // Codes, sequence and reset belong to the machine in the link
+    if (res.bad.indexOf('state table') >= 0) return res;
+    var mm = res.machine, n = mm.states.length;
+    if (res.enc === 'custom') {
+      var strs = typeof p.c === 'string' ? p.c.split(',') : null;
+      if (strs && !checkCodes(strs, mm.states, strs[0].length).error) res.codes = strs;
+      else res.bad.push('state codes');
+    }
+    if ('q' in p) {
+      var bits = typeof p.q === 'string' && p.q.length <= 128 ? seqBits(p.q, mm.inputs.length) : null;
+      if (bits !== null) res.seq = bits;
+      else res.bad.push('input sequence');
+    }
+    if ('r' in p) {
+      if (/^[0-7]$/.test(p.r) && +p.r < n) res.reset = +p.r;
+      else res.bad.push('reset state');
+    }
+    return res;
+  }
+
+  function readMachine(p) {
+    var list = function (v) { return typeof v === 'string' ? v.split(',') : null; };
+    var type = p.t, inputs = list(p.i), outputs = list(p.o), states = list(p.s);
+    var nrows = list(p.n), zrows = list(p.z);
+    if (type !== 'moore' && type !== 'mealy') return null;
+    if (!inputs || inputs.length < 1 || inputs.length > 2) return null;
+    if (!outputs || outputs.length < 1 || outputs.length > 2) return null;
+    if (!states || states.length < 2 || states.length > 8) return null;
+    var n = states.length, ni = inputs.length, nc = 1 << ni, no = outputs.length, moore = type === 'moore';
+    if (!nrows || nrows.length !== n || !zrows || zrows.length !== n) return null;
+    var next = [], out = [], s, c, o;
+    var bit = function (ch) { return ch === 'x' ? null : +ch; };
+    for (s = 0; s < n; s++) {
+      if (nrows[s].length !== nc || /[^0-7x]/.test(nrows[s])) return null;
+      var row = [];
+      for (c = 0; c < nc; c++) {
+        var t = nrows[s][c] === 'x' ? -1 : +nrows[s][c];
+        if (t >= n) return null;
+        row.push(t);
+      }
+      next.push(row);
+      var z = zrows[s];
+      if (z.length !== (moore ? no : nc * no) || /[^01x]/.test(z)) return null;
+      if (moore) out.push(z.split('').map(bit));
+      else {
+        var per = [];
+        for (c = 0; c < nc; c++) {
+          var vals = [];
+          for (o = 0; o < no; o++) vals.push(bit(z[c * no + o]));
+          per.push(vals);
+        }
+        out.push(per);
+      }
+    }
+    var m = { type: type, inputs: inputs, outputs: outputs, states: states, next: next, out: out };
+    return validate(m).length ? null : m;
+  }
+
   // ── Example machines ──
   function preset(name) {
     if (name === 'counter') {
@@ -731,8 +1053,11 @@
   global.FSMCore = {
     NAME_RE: NAME_RE, EXCITATION: EXCITATION, FF_KINDS: FF_KINDS,
     bitsOf: bitsOf, excite: excite, applyFF: applyFF, ffCount: ffCount, assign: assign,
+    codeRange: codeRange, checkCodes: checkCodes, binaryCodes: binaryCodes,
+    minimize: minimize, minimizeSparse: minimizeSparse,
     evalCubes: evalCubes, design: design, step: step, verify: verify, simulate: simulate,
-    parseSequence: parseSequence, edges: edges, validate: validate, preset: preset, kmapUrl: kmapUrl
+    parseSequence: parseSequence, edges: edges, validate: validate, preset: preset, kmapUrl: kmapUrl,
+    shareQuery: shareQuery, parseShare: parseShare, seqBits: seqBits, formatSeq: formatSeq
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 </script>
@@ -754,6 +1079,9 @@
   var ff = 'D';
   var resetState = 0;
   var lastDesign = null;
+  var custom = { k: 1, strs: [] };   // custom codes as typed, k bits each
+  var designOk = false;              // the results show the machine as edited
+  var lastSeqBits = '';
 
   function loadPreset(name) {
     var p = F.preset(name);
@@ -761,9 +1089,45 @@
     delete p.seq;
     M = p;
     resetState = 0;
+    resetCustom();
     syncControls();
     renderTable();
     update();
+  }
+
+  // Binary codes at width k (clamped to what the number of states allows)
+  function resetCustom(k) {
+    var n = M.states.length, r = F.codeRange(n);
+    if (!(k >= r.min)) k = r.min;
+    if (k > r.max) k = r.max;
+    custom = { k: k, strs: F.binaryCodes(n, k) };
+  }
+
+  // A state was added: keep the codes, widen if needed, give the new state the lowest free code
+  function growCustom() {
+    var n = M.states.length, r = F.codeRange(n);
+    if (F.checkCodes(custom.strs, M.states.slice(0, n - 1), custom.k).error) return resetCustom(custom.k);
+    var k = Math.min(Math.max(custom.k, r.min), r.max);
+    var strs = custom.strs.map(function (c) { return '0'.repeat(k - custom.k) + c; });
+    for (var c = 0; ; c++) {
+      var b = F.bitsOf(c, k);
+      if (strs.indexOf(b) < 0) { strs.push(b); break; }
+    }
+    custom = { k: k, strs: strs };
+  }
+
+  // The last state was removed: keep the other codes, narrowing if the width is now above n
+  function shrinkCustom() {
+    var n = M.states.length, r = F.codeRange(n);
+    var valid = !F.checkCodes(custom.strs, M.states.concat(['']), custom.k).error;
+    var strs = custom.strs.slice(0, n), k = custom.k;
+    if (!valid) return resetCustom(Math.min(k, r.max));
+    while (k > r.max) {
+      if (strs.some(function (c) { return c[0] !== '0'; })) return resetCustom(r.max);
+      strs = strs.map(function (c) { return c.slice(1); });
+      k--;
+    }
+    custom = { k: k, strs: strs };
   }
 
   function defaultNames(prefix, count) { return count === 1 ? [prefix] : [prefix + '1', prefix + '0']; }
@@ -780,6 +1144,23 @@
     $('fsm-seq-lbl').textContent = 'Input sequence (' + M.inputs.join(' ') + ')';
     $('fsm-add').disabled = M.states.length >= 8;
     $('fsm-remove').disabled = M.states.length <= 2;
+    renderCustom();
+  }
+
+  function renderCustom() {
+    var on = enc === 'custom';
+    $('fsm-custom').hidden = !on;
+    if (!on) return;
+    var r = F.codeRange(M.states.length), h = '';
+    for (var k = r.min; k <= r.max; k++) {
+      h += '<button class="mode-btn" type="button" data-v="' + k + '" aria-label="' + k + ' flip-flop' + (k > 1 ? 's' : '') + '">' + k + '</button>';
+    }
+    $('fsm-width').innerHTML = h;
+    setSeg('fsm-width', String(custom.k));
+    $('fsm-codes').innerHTML = M.states.map(function (s, i) {
+      return '<label class="fsm-code"><span class="fsm-code-name t-data">' + esc(s) + '</span>' +
+        '<input class="inp fsm-code-inp" data-s="' + i + '" value="' + esc(custom.strs[i]) + '" maxlength="8" inputmode="numeric" spellcheck="false" autocomplete="off" aria-label="Code for ' + esc(s) + '"></label>';
+    }).join('');
   }
 
   function setSeg(id, v) {
@@ -844,6 +1225,11 @@
     for (var i = 0; i < sels.length; i++) {
       var opts = sels[i].options;
       M.states.forEach(function (s, j) { if (opts[j]) opts[j].textContent = s; });
+    }
+    var codes = document.querySelectorAll('#fsm-codes .fsm-code');
+    for (var k = 0; k < codes.length; k++) {
+      codes[k].querySelector('.fsm-code-name').textContent = M.states[k];
+      codes[k].querySelector('.fsm-code-inp').setAttribute('aria-label', 'Code for ' + M.states[k]);
     }
   }
 
@@ -921,6 +1307,14 @@
 
   segHandler('fsm-enc', function (v) { enc = v; });
   segHandler('fsm-ff', function (v) { ff = v; });
+  segHandler('fsm-width', function (v) { if (+v !== custom.k) resetCustom(+v); });
+
+  $('fsm-codes').addEventListener('input', function (e) {
+    var t = e.target;
+    if (!t.classList.contains('fsm-code-inp')) return;
+    custom.strs[+t.getAttribute('data-s')] = t.value.trim();
+    update();
+  });
 
   function parseNames(str) { return str.split(/[\s,]+/).filter(Boolean); }
 
@@ -959,6 +1353,7 @@
     M.next.push(row);
     var zeros = M.outputs.map(function () { return 0; });
     M.out.push(M.type === 'moore' ? zeros : row.map(function () { return zeros.slice(); }));
+    growCustom();
     syncControls();
     renderTable();
     update();
@@ -972,6 +1367,7 @@
       row.forEach(function (t, c) { if (t === gone) { row[c] = -1; hit = true; } });
     });
     if (resetState >= M.states.length) resetState = 0;
+    shrinkCustom();
     syncControls();
     renderTable();
     update();
@@ -981,6 +1377,13 @@
   document.querySelector('.fsm-examples').addEventListener('click', function (e) {
     var b = e.target.closest('[data-preset]');
     if (b) loadPreset(b.getAttribute('data-preset'));
+  });
+
+  // A link error stays until the next edit
+  ['click', 'input', 'change'].forEach(function (type) {
+    document.querySelector('.fsm-page').addEventListener(type, function (e) {
+      if (e.target.closest('button, input, select')) $('fsm-link-err').hidden = true;
+    }, true);
   });
 
   // ── Update everything ──
@@ -996,17 +1399,37 @@
     return true;
   }
 
+  function setInvalid(el, bad) {
+    if (bad) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+  }
+
+  // Custom codes: mark the inputs at fault and say what is wrong
+  function checkCustom() {
+    var box = $('fsm-code-err');
+    if (enc !== 'custom') { box.hidden = true; return {}; }
+    var r = F.checkCodes(custom.strs, M.states, custom.k);
+    var inps = document.querySelectorAll('#fsm-codes .fsm-code-inp');
+    for (var i = 0; i < inps.length; i++) setInvalid(inps[i], r.error && r.bad.indexOf(i) >= 0);
+    box.textContent = r.error || '';
+    box.hidden = !r.error;
+    return r;
+  }
+
   function update() {
     var names = document.querySelectorAll('#fsm-table .fsm-name');
     for (var i = 0; i < names.length; i++) {
-      names[i].toggleAttribute('aria-invalid', !F.NAME_RE.test(M.states[i]) || M.states.indexOf(M.states[i]) !== i);
+      setInvalid(names[i], !F.NAME_RE.test(M.states[i]) || M.states.indexOf(M.states[i]) !== i);
     }
-    if (showErrors(F.validate(M))) {
+    var badMachine = showErrors(F.validate(M));
+    var cc = checkCustom();
+    if (badMachine || cc.error) {
+      // The last valid design stays on screen, dimmed, and the link keeps pointing at it
       $('fsm-results').style.opacity = '0.5';
+      designOk = false;
       return;
     }
     $('fsm-results').style.opacity = '';
-    var d = F.design(M, enc, ff);
+    var d = F.design(M, enc, ff, enc === 'custom' ? { k: custom.k, codes: cc.codes } : null);
     lastDesign = d;
     renderDiagram(d);
     renderAssignment(d);
@@ -1014,6 +1437,62 @@
     renderEquations(d);
     renderResetOptions();
     runSimulation(false);
+    designOk = true;
+    syncUrl();
+  }
+
+  // ── Share links ──
+  // The sequence as bits; while the box holds something unreadable, the last good one
+  function currentSeqBits() {
+    var ni = M.inputs.length, b = F.seqBits($('fsm-seq').value, ni);
+    if (b !== null) lastSeqBits = b;
+    else if (F.seqBits(lastSeqBits, ni) === null) lastSeqBits = '';
+    return lastSeqBits;
+  }
+
+  function shareQuery() {
+    return F.shareQuery({ machine: M, enc: enc, ff: ff, codes: custom.strs, seq: currentSeqBits(), reset: resetState });
+  }
+
+  // The address bar always holds a link to what is on screen
+  function syncUrl() {
+    if (!designOk) return;
+    try { history.replaceState(null, '', location.pathname + '?' + shareQuery()); } catch (e) {}
+  }
+
+  $('fsm-seq').addEventListener('input', syncUrl);
+  $('fsm-link').addEventListener('click', function () {
+    syncUrl();
+    if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(function () { toast('Copied link'); }, function () {});
+  });
+
+  function joinList(a) { return a.length === 1 ? a[0] : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+
+  function loadFromLink() {
+    var fallback = F.preset('detector');
+    delete fallback.seq;
+    var res = F.parseShare(location.search, fallback);
+    if (!res.found) { loadPreset('detector'); return; }
+    M = res.machine;
+    enc = res.enc || 'binary';
+    ff = res.ff || 'D';
+    resetState = res.reset !== null ? res.reset : 0;
+    var ni = M.inputs.length;
+    var seq = res.seq !== null ? res.seq : ni === 1 ? '0110101' : '00011110';
+    $('fsm-seq').value = F.formatSeq(seq, ni);
+    if (res.codes) custom = { k: res.codes[0].length, strs: res.codes.slice() };
+    else resetCustom();
+    syncControls();
+    renderTable();
+    update();
+    if (res.bad.length) {
+      var box = $('fsm-link-err');
+      var table = res.bad.indexOf('state table') >= 0;
+      box.textContent = 'Could not read the ' + joinList(res.bad) + ' in this link, so ' +
+        (table ? 'the 101 detector is shown' + (res.bad.length > 1 ? ' with default settings.' : '.')
+               : (res.bad.length > 1 ? 'the defaults are used.' : 'the default is used.'));
+      box.hidden = false;
+    }
   }
 
   // ── Diagram ──
@@ -1173,23 +1652,29 @@
   }
 
   // ── State assignment and excitation ──
+  // Past this many unused codes (wide custom codes), their rows are summarized
+  var MAX_UNUSED_ROWS = 8;
+
   function renderAssignment(d) {
     var head = '<span class="t-data">' + d.qNames.join(' ') + '</span>';
     var h = '<table class="data-table fsm-small"><thead><tr><th scope="col">State</th><th scope="col">' + head + '</th></tr></thead><tbody>';
     M.states.forEach(function (s, i) {
       h += '<tr><td>' + esc(s) + '</td><td>' + F.bitsOf(d.codes[i], d.k).split('').join(' ') + '</td></tr>';
     });
-    d.unused.forEach(function (c) {
+    var many = d.unused.length > MAX_UNUSED_ROWS;
+    if (!many) d.unused.forEach(function (c) {
       h += '<tr class="fsm-unused"><td>unused</td><td>' + F.bitsOf(c, d.k).split('').join(' ') + '</td></tr>';
     });
     $('fsm-assign').innerHTML = h + '</tbody></table>';
 
     var note;
     var nff = d.k + ' flip-flop' + (d.k > 1 ? 's' : '');
+    var kind = enc === 'gray' ? 'Gray code' : enc === 'custom' ? 'Custom' : 'Binary';
     if (enc === 'onehot') note = 'One-hot: ' + nff + ', one per state. Exactly one flip-flop is 1 at a time: Q0 is 1 in ' + M.states[0] + ', Q1 in ' + M.states[1] + ', and so on.';
-    else if (d.unused.length) note = (enc === 'gray' ? 'Gray code' : 'Binary') + ': ' + nff + ' for ' + d.n + ' states. Unused code' + (d.unused.length > 1 ? 's ' : ' ') +
+    else if (many) note = kind + ': ' + nff + ' for ' + d.n + ' states. The other ' + d.unused.length + ' codes are never reached, so their rows are don\'t-cares. The tables list only the codes in use.';
+    else if (d.unused.length) note = kind + ': ' + nff + ' for ' + d.n + ' states. Unused code' + (d.unused.length > 1 ? 's ' : ' ') +
       d.unused.map(function (c) { return F.bitsOf(c, d.k); }).join(', ') + (d.unused.length > 1 ? ' are' : ' is') + ' never reached, so ' + (d.unused.length > 1 ? 'their' : 'its') + ' rows are don\'t-cares.';
-    else note = (enc === 'gray' ? 'Gray code' : 'Binary') + ': ' + nff + ' for ' + d.n + ' states. Every code is used.';
+    else note = kind + ': ' + nff + ' for ' + d.n + ' states. Every code is used.';
     $('fsm-assign-note').textContent = note;
 
     var kinds = d.kinds;
@@ -1229,8 +1714,10 @@
     M.outputs.forEach(function (z, i) { h += '<th scope="col"' + (i === 0 ? ' class="fsm-sep"' : '') + '>' + esc(z) + '</th>'; });
     h += '</tr></thead><tbody>';
 
+    var skip = d.unused.length > MAX_UNUSED_ROWS;
     d.rows.forEach(function (r) {
       var unused = r.s < 0;
+      if (unused && skip) return;
       h += '<tr' + (unused ? ' class="fsm-unused"' : '') + '>';
       if (!grouped) h += '<td>' + r.m + '</td>';
       h += '<td>' + (unused ? 'unused' : esc(M.states[r.s])) + '</td>';
@@ -1258,6 +1745,7 @@
 
     var note = 'Each row takes the present code to the next code, and the excitation table gives the flip-flop inputs that make that change.';
     if (!grouped) note += ' The m column is the minterm number for the K-map.';
+    if (skip) note += ' Rows for the ' + d.unused.length + ' unused codes are all don\'t-cares and are not listed.';
     if (grouped) note += ' Only the ' + d.n + ' one-hot codes are listed; every other code is assumed never to occur.';
     else if (M.type === 'moore') note += ' Moore outputs repeat on every row of a state, since they ignore the input.';
     $('fsm-trans-note').textContent = note;
@@ -1277,8 +1765,9 @@
       if (eq.onehot) {
         if (eq.role === 'ff') meta = 'Flip-flop for ' + M.states[eq.bit];
       } else {
-        meta = '&Sigma;m(' + (eq.ones.join(', ') || '') + ')' + (eq.dcs.length ? ' + d(' + eq.dcs.join(', ') + ')' : '');
-        if (!eq.ones.length) meta = 'No minterms' + (eq.dcs.length ? ', d(' + eq.dcs.join(', ') + ')' : '');
+        var dcText = eq.dcs.length > 40 ? eq.dcs.length + ' don\'t-cares' : 'd(' + eq.dcs.join(', ') + ')';
+        meta = '&Sigma;m(' + (eq.ones.join(', ') || '') + ')' + (eq.dcs.length ? ' + ' + dcText : '');
+        if (!eq.ones.length) meta = 'No minterms' + (eq.dcs.length ? ', ' + dcText : '');
       }
       var link = eq.kmap ? '<a class="btn-t" href="' + esc(eq.kmap) + '" aria-label="Open ' + esc(eq.name) + ' in the K-map generator">Open in K-map</a>' : '';
       return '<li class="fsm-eq"><div class="fsm-eq-main"><div class="fsm-eq-expr">' + esc(eq.name) + ' = ' + esc(eq.expr) + '</div>' +
@@ -1320,6 +1809,7 @@
     resetState = +this.value;
     renderDiagram(lastDesign);
     runSimulation(true);
+    syncUrl();
   });
 
   function codeName(d, code) {
@@ -1385,7 +1875,7 @@
     toastTimer = setTimeout(function () { t.style.display = 'none'; }, 2200);
   }
 
-  loadPreset('detector');
+  loadFromLink();
 })();
 </script>
 </body>
