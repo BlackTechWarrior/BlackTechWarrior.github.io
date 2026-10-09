@@ -425,10 +425,12 @@ const ADDERS = {
     area: n => Math.ceil(2.25 * n),
     delay: n => {
       if (n <= 4) return 4;
-      return 4 + 2 * (Math.ceil(Math.log(n) / Math.log(4)) - 1);
+      // 4-bit lookahead groups, L levels: P/G 1, up the tree 2 per level, carries back down
+      // 2 per level, sum XOR 1. That is 4 gate delays per level.
+      return 4 * Math.ceil(Math.log(n) / Math.log(4));
     },
     areaFormula: '~2.25n',
-    delayFormula: '4+2(⌈log₄n⌉−1)',
+    delayFormula: '4⌈log₄n⌉',
   },
   csel: {
     name: 'Carry select',
@@ -665,23 +667,36 @@ function simulateCLA(a, b, cin, n) {
   for (let g = 0; g < numGroups; g++) cluState[g] = 'computing';
   steps.push({
     time: 1,
-    desc: `CLU computes all ${numGroups} group carries using lookahead logic`,
+    desc: levels > 1
+      ? `Each of the ${numGroups} 4-bit lookahead units computes its group generate and propagate`
+      : `The lookahead unit computes every carry from G, P and C0`,
     fa: Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'resolved'])),
     carries: {},
     sums: {},
     clu: {...cluState},
   });
 
-  // If hierarchical (multiple levels), add intermediate steps
+  // Hierarchical: group P and G go up one level every 2 gate delays, then carries come
+  // back down one level every 2, so bit carries are ready at 4L - 1 and sums at 4L
   if (levels > 1) {
+    const allResolved = Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'resolved']));
+    const cluBusy = Object.fromEntries(Array.from({length: numGroups}, (_, g) => [g, 'computing']));
     for (let l = 1; l < levels; l++) {
       steps.push({
-        time: 3 + 2 * l,
-        desc: `Level-${l + 1} CLU resolves inter-group carries`,
-        fa: Object.fromEntries(Array.from({length: n}, (_, i) => [i, 'resolved'])),
-        carries: {},
-        sums: {},
-        clu: Object.fromEntries(Array.from({length: numGroups}, (_, g) => [g, l < levels - 1 ? 'computing' : 'resolved'])),
+        time: 1 + 2 * l,
+        desc: l < levels - 1
+          ? `Level-${l + 1} lookahead units combine group generate and propagate`
+          : `Top-level lookahead unit computes the carry into every block`,
+        fa: allResolved, carries: {}, sums: {}, clu: {...cluBusy},
+      });
+    }
+    for (let k = 1; k < levels; k++) {
+      steps.push({
+        time: 2 * levels - 1 + 2 * k,
+        desc: k < levels - 1
+          ? `Level-${levels - k} lookahead units pass carries down to their groups`
+          : `Each 4-bit lookahead unit computes its bit carries from its block carry-in`,
+        fa: allResolved, carries: {}, sums: {}, clu: {...cluBusy},
       });
     }
   }

@@ -100,6 +100,8 @@
     .pp-dot.neg { background: var(--error-wash); color: var(--error); border-color: var(--error); }
     .pp-dot.neg-done { background: var(--error-wash); color: var(--error); border-color: var(--d5); font-weight: 600; }
     .pp-sign { background: none; border: 0; color: var(--ink-2); font-size: 11px; font-weight: 600; }
+    .pp-dot.pp-inv { text-decoration: overline; }
+    .pp-dot.pp-const { border-style: dashed; color: var(--ink-2); }
     .result-dots { display: flex; gap: 2px; justify-content: flex-end; margin-top: 4px; padding-top: 4px; border-top: 2px solid var(--ink); }
     .pp-dot.result { background: var(--surface); color: var(--ink); border-color: var(--border-strong); font-weight: 600; }
     .pp-dot.result.done { background: var(--d5-wash); color: var(--d5); border-color: var(--d5); }
@@ -116,6 +118,7 @@
     .pp-legend .l-active i { background: var(--d1-wash); border-color: var(--d1); }
     .pp-legend .l-done i { background: var(--d5-wash); border-color: var(--d5); }
     .pp-legend .l-neg i { background: var(--error-wash); border-color: var(--error); }
+    .pp-legend .l-inv b { font-family: var(--font-mono); font-weight: 600; color: var(--ink-2); }
 
     /* Progress */
     .progress-bar { height: 3px; background: var(--well-2); border-radius: 2px; margin-top: var(--s-2); overflow: hidden; }
@@ -207,7 +210,8 @@
           <li>Pick a <strong>bit width</strong> (4, 8, 12 or 16) and tick the <strong>architectures</strong> to compare.</li>
           <li>Click <strong>Compute product</strong>, then use the playback controls to <strong>animate</strong> the reduction. <strong>Step</strong> advances one gate delay at a time; the line under each diagram explains the current step.</li>
           <li>The <strong>comparison table</strong> lists area in full-adder equivalents, delay in gate delays, and their product.</li>
-          <li><strong>Booth radix-2</strong> recodes the multiplier into {&minus;1, 0, +1} digits and skips runs of ones. Partial products shown in red are subtracted. It handles signed operands natively.</li>
+          <li><strong>Booth radix-2</strong> recodes the multiplier into {&minus;1, 0, +1} digits, so a run of ones costs one subtract and one add. Partial products shown in red are subtracted. It handles signed operands directly.</li>
+          <li><strong>Signed mode:</strong> shift-and-add subtracts the last row, because B's top bit weighs &minus;2<sup>n&minus;1</sup>. Array and Wallace use the modified Baugh-Wooley scheme: bits that involve exactly one sign bit are inverted (shown with a bar over them), and a row of 1s at columns n and 2n&minus;1 corrects the sum.</li>
           <li><strong>Wallace tree</strong> finishes with a carry-propagate adder of your choice (ripple carry or carry lookahead).</li>
           <li>Choose <strong>Signed (two's complement)</strong> to read the operands and the 2n-bit result as signed integers.</li>
         </ul>
@@ -289,6 +293,7 @@
             <span class="l-active"><i></i>being added</span>
             <span class="l-done"><i></i>resolved</span>
             <span class="l-neg"><i></i>subtracted (Booth)</span>
+            <span class="l-inv" id="legendInv" hidden><b>1&#773;</b> inverted bit (Baugh-Wooley)</span>
           </div>
           <div class="race-container" id="raceContainer"></div>
         </div>
@@ -390,7 +395,7 @@ function wallaceLevels(n) {
 function cpaDelay(type, width) {
   if (type === 'cla') {
     if (width <= 4) return 4;
-    return 4 + 2 * (Math.ceil(Math.log(width) / Math.log(4)) - 1);
+    return 4 * Math.ceil(Math.log(width) / Math.log(4)); // 4 gate delays per lookahead level
   }
   return 2 * width; // RCA
 }
@@ -553,21 +558,34 @@ function completeText(a, b, n, result) {
    A step = { time, desc, ppState: {row: {col: 'idle'|'active'|'done'}}, resultBits: {col: true} }
    time = gate-delay timestamp matching actual propagation delay */
 
-function generatePartialProducts(a, b, n) {
+// Row i, column j holds A[j]·B[i]. In signed mode (unless plain) this is the modified
+// Baugh-Wooley array: a bit with exactly one sign bit (j = n-1 or i = n-1, not both) is
+// inverted, and 1s are added at columns n and 2n-1. Summing the array mod 2^2n gives the
+// two's complement product.
+function generatePartialProducts(a, b, n, plain) {
   const pp = [];
+  const bw = state.signed && !plain;
+  pp.inv = [];
   for (let i = 0; i < n; i++) {
-    const row = [];
+    const row = [], invRow = [];
     for (let j = 0; j < n; j++) {
-      row.push(bitAt(a, j) & bitAt(b, i));
+      const inv = bw && ((j === n - 1) !== (i === n - 1));
+      row.push((bitAt(a, j) & bitAt(b, i)) ^ (inv ? 1 : 0));
+      invRow.push(inv);
     }
     pp.push(row);
+    pp.inv.push(invRow);
   }
+  pp.constCols = bw ? [n, 2 * n - 1] : [];
   return pp;
 }
 
 function simulateSAA(a, b, n) {
   const steps = [];
-  const pp = generatePartialProducts(a, b, n);
+  const pp = generatePartialProducts(a, b, n, true);
+  // Signed: B's top bit weighs -2^(n-1), so the last row is subtracted, and A is used as a signed value
+  const aVal = state.signed ? toSigned(a, n) : a;
+  const rowSigns = state.signed ? Array.from({length: n}, (_, i) => i === n - 1 && bitAt(b, i) ? -1 : (bitAt(b, i) ? 1 : 0)) : null;
   const resultWidth = 2 * n;
   const result = multiply(a, b, n);
   const totalDelay = MULTIPLIERS.saa.delay(n); // 2n²
@@ -583,7 +601,9 @@ function simulateSAA(a, b, n) {
   }
   steps.push({
     time: 0,
-    desc: 'Generate all partial products: PP[i][j] = A[j] \u00D7 B[i]',
+    desc: state.signed
+      ? 'Generate all partial products: PP[i][j] = A[j] \u00D7 B[i]. The last row is subtracted, since B\'s top bit weighs \u22122^(n\u22121)'
+      : 'Generate all partial products: PP[i][j] = A[j] \u00D7 B[i]',
     ppState: JSON.parse(JSON.stringify(ppState0)),
     resultBits: {},
   });
@@ -598,12 +618,10 @@ function simulateSAA(a, b, n) {
     }
     for (let j = 0; j < n; j++) ppS[i][j] = 'active';
 
-    // Compute partial product value and shift
-    let ppVal = 0;
-    for (let j = 0; j < n; j++) {
-      ppVal += pp[i][j] * Math.pow(2, j);
-    }
-    accumulator += ppVal * Math.pow(2, i);
+    // Add the row (A when B[i] = 1), or subtract it for a signed B's top bit
+    const rowVal = bitAt(b, i) ? aVal * Math.pow(2, i) : 0;
+    if (state.signed && i === n - 1) accumulator -= rowVal;
+    else accumulator += rowVal;
 
     // Which result bits are known
     const rBits = {};
@@ -618,7 +636,9 @@ function simulateSAA(a, b, n) {
       time: (i + 1) * delayPerRow,
       desc: i === 0
         ? `Add row 0 (B[0]=${bitAt(b,0)}): accumulator = ${accumulator}`
-        : `Shift and add row ${i} (B[${i}]=${bitAt(b,i)}): accumulator = ${accumulator}`,
+        : state.signed && i === n - 1
+          ? `Shift and subtract row ${i} (B[${i}]=${bitAt(b,i)} is the sign bit): accumulator = ${accumulator}`
+          : `Shift and add row ${i} (B[${i}]=${bitAt(b,i)}): accumulator = ${accumulator}`,
       ppState: ppS,
       resultBits: rBits,
     });
@@ -637,7 +657,7 @@ function simulateSAA(a, b, n) {
     resultBits: Object.fromEntries(Array.from({length: resultWidth}, (_, i) => [i, true])),
   });
 
-  return { steps, result, pp };
+  return { steps, result, pp, rowSigns };
 }
 
 function boothDigitCount(n) {
@@ -767,7 +787,9 @@ function simulateArray(a, b, n) {
   }
   steps.push({
     time: 0,
-    desc: 'All AND gates generate partial products in parallel',
+    desc: state.signed
+      ? 'All partial products in parallel: bits with one sign bit use NAND (overlined), plus 1s at columns n and 2n\u22121 (modified Baugh-Wooley)'
+      : 'All AND gates generate partial products in parallel',
     ppState: JSON.parse(JSON.stringify(ppState0)),
     resultBits: {},
   });
@@ -832,7 +854,9 @@ function simulateWallace(a, b, n, finalType) {
   }
   steps.push({
     time: 0,
-    desc: 'All AND gates generate partial products in parallel',
+    desc: state.signed
+      ? 'All partial products in parallel: bits with one sign bit use NAND (overlined), plus 1s at columns n and 2n\u22121 (modified Baugh-Wooley)'
+      : 'All AND gates generate partial products in parallel',
     ppState: JSON.parse(JSON.stringify(ppState0)),
     resultBits: {},
   });
@@ -891,8 +915,9 @@ function simulateWallace(a, b, n, finalType) {
 
 /* ═══════════════════════ PP Matrix Rendering ═══════════════════════ */
 
-function renderPPMatrix(pp, n, resultWidth, boothDigits) {
+function renderPPMatrix(pp, n, resultWidth, boothDigits, rowSigns) {
   let html = '';
+  const signs = boothDigits || rowSigns;
 
   // Show Booth encoding if applicable
   if (boothDigits) {
@@ -917,9 +942,9 @@ function renderPPMatrix(pp, n, resultWidth, boothDigits) {
     for (let s = 0; s < leftSpacers; s++) {
       html += '<div class="pp-spacer"></div>';
     }
-    // Sign indicator for Booth
-    if (boothDigits) {
-      const d = boothDigits[i];
+    // Sign indicator for Booth digits and signed shift-and-add
+    if (signs) {
+      const d = signs[i];
       const sign = d === -1 ? '\u2212' : d === 1 ? '+' : '';
       if (sign) {
         html += `<div class="pp-dot pp-sign">${sign}</div>`;
@@ -927,11 +952,21 @@ function renderPPMatrix(pp, n, resultWidth, boothDigits) {
     }
     // PP dots
     for (let j = n - 1; j >= 0; j--) {
-      html += `<div class="pp-dot" data-row="${i}" data-col="${j}">${pp[i][j]}</div>`;
+      const inv = pp.inv && pp.inv[i] && pp.inv[i][j];
+      html += `<div class="pp-dot${inv ? ' pp-inv' : ''}" data-row="${i}" data-col="${j}"${inv ? ' title="Inverted (NAND)"' : ''}>${pp[i][j]}</div>`;
     }
     // Right spacers
     for (let s = 0; s < i; s++) {
       html += '<div class="pp-spacer"></div>';
+    }
+    html += '</div>';
+  }
+
+  // Baugh-Wooley correction: constant 1s at columns n and 2n-1
+  if (pp.constCols && pp.constCols.length) {
+    html += '<div class="pp-row" title="Baugh-Wooley correction">';
+    for (let c = resultWidth - 1; c >= 0; c--) {
+      html += pp.constCols.includes(c) ? '<div class="pp-dot pp-const">1</div>' : '<div class="pp-spacer"></div>';
     }
     html += '</div>';
   }
@@ -997,7 +1032,7 @@ function buildRaceLanes() {
         <span class="lane-title">${info.name}${key === 'wallace' ? ' + ' + state.wtFinal.toUpperCase() : ''}</span>
         <span class="lane-stats">Area <b>${areaVal}</b> FA, delay <b>${delayVal}</b>&Delta;</span>
       </div>
-      ${renderPPMatrix(sim.pp, n, resultWidth, sim.boothDigits)}
+      ${renderPPMatrix(sim.pp, n, resultWidth, sim.boothDigits, sim.rowSigns)}
       <div class="progress-bar"><div class="progress-fill" data-pf="${key}" style="width:0%"></div></div>
       <div class="lane-step" data-desc="${key}">Ready</div>
     `;
@@ -1172,6 +1207,8 @@ function compute() {
     return;
   }
   hideError();
+
+  document.getElementById('legendInv').hidden = !signed;
 
   // Run simulations
   state.simulations = {};
