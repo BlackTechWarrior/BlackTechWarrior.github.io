@@ -68,7 +68,7 @@
     .tt-table td.tt-out { border-left: 1px solid var(--border); }
   </style>
 </head>
-<body>
+<body class="app">
 <script>
 (function() {
   var saved = localStorage.getItem('theme');
@@ -78,27 +78,43 @@
 })();
 </script>
   <a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header">
-  <div class="site-bar">
-    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
-    <nav class="site-links" aria-label="Site">
-      <a href="/#tools">Tools</a>
-      <a href="/learn/">Learn</a>
-      <a href="/#about">About</a>
-      <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
-    </nav>
-  </div>
-  <nav class="tool-strip" aria-label="Tools">
-    <a href="/adders/">Adders</a>
-    <a href="/bits/">Bits</a>
-    <a href="/cache/">Cache</a>
-    <a href="/circuitgen/" aria-current="page">CircuitGen</a>
-    <a href="/float/">Float</a>
-    <a href="/kmap/">K-Map</a>
-    <a href="/multipliers/">Multipliers</a>
-    <a href="/orderbook/">Order Book</a>
+<aside class="app-nav" id="appNav" aria-label="Site">
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+  <nav aria-label="Tools">
+    <div class="nav-group" role="group" aria-labelledby="nav-logic">
+      <div class="nav-group-label" id="nav-logic">Logic</div>
+      <a class="nav-item" href="/kmap/">K-Map generator</a>
+      <a class="nav-item" href="/circuitgen/" aria-current="page">CircuitGen</a>
+      <a class="nav-item" href="/fsm/" data-new-until="2026-10-21">State machines</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-arithmetic">
+      <div class="nav-group-label" id="nav-arithmetic">Arithmetic</div>
+      <a class="nav-item" href="/adders/">Adders</a>
+      <a class="nav-item" href="/multipliers/">Multipliers</a>
+      <a class="nav-item" href="/bits/">Bits</a>
+      <a class="nav-item" href="/float/">Floating point</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-memory">
+      <div class="nav-group-label" id="nav-memory">Memory</div>
+      <a class="nav-item" href="/cache/">Cache simulator</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-markets">
+      <div class="nav-group-label" id="nav-markets">Markets</div>
+      <a class="nav-item" href="/orderbook/">Order book</a>
+    </div>
   </nav>
-</header>
+  <div class="nav-foot">
+    <a class="nav-item" href="/learn/">Learn</a>
+    <a class="nav-item" href="/#about">About</a>
+    <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
+  </div>
+</aside>
+<div class="nav-scrim"></div>
+<div class="app-main">
+<div class="top-bar">
+  <button class="nav-toggle" type="button" aria-controls="appNav" aria-expanded="false"><span class="nav-toggle-icon" aria-hidden="true"></span>Menu</button>
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+</div>
 <main id="main" class="container">
 
   <div class="page-head">
@@ -181,6 +197,7 @@
       <li><a href="/kmap/">K-Map generator</a></li>
       <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
       <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/fsm/">State machine designer</a></li>
       <li><a href="/learn/">Learn</a></li>
     </ul>
   </nav>
@@ -194,6 +211,7 @@
     </ul>
   </div>
 </footer>
+</div>
 
 <script src="/lib/circuit.js"></script>
 <script>

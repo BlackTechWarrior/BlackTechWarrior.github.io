@@ -37,7 +37,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
 </head>
-<body>
+<body class="app">
 <script>
 (function() {
   var saved = localStorage.getItem('theme');
@@ -47,27 +47,43 @@
 })();
 </script>
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header">
-  <div class="site-bar">
-    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
-    <nav class="site-links" aria-label="Site">
-      <a href="/#tools">Tools</a>
-      <a href="/learn/" aria-current="page">Learn</a>
-      <a href="/#about">About</a>
-      <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
-    </nav>
-  </div>
-  <nav class="tool-strip" aria-label="Tools">
-    <a href="/adders/">Adders</a>
-    <a href="/bits/">Bits</a>
-    <a href="/cache/">Cache</a>
-    <a href="/circuitgen/">CircuitGen</a>
-    <a href="/float/">Float</a>
-    <a href="/kmap/">K-Map</a>
-    <a href="/multipliers/">Multipliers</a>
-    <a href="/orderbook/">Order Book</a>
+<aside class="app-nav" id="appNav" aria-label="Site">
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+  <nav aria-label="Tools">
+    <div class="nav-group" role="group" aria-labelledby="nav-logic">
+      <div class="nav-group-label" id="nav-logic">Logic</div>
+      <a class="nav-item" href="/kmap/">K-Map generator</a>
+      <a class="nav-item" href="/circuitgen/">CircuitGen</a>
+      <a class="nav-item" href="/fsm/" data-new-until="2026-10-21">State machines</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-arithmetic">
+      <div class="nav-group-label" id="nav-arithmetic">Arithmetic</div>
+      <a class="nav-item" href="/adders/">Adders</a>
+      <a class="nav-item" href="/multipliers/">Multipliers</a>
+      <a class="nav-item" href="/bits/">Bits</a>
+      <a class="nav-item" href="/float/">Floating point</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-memory">
+      <div class="nav-group-label" id="nav-memory">Memory</div>
+      <a class="nav-item" href="/cache/">Cache simulator</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-markets">
+      <div class="nav-group-label" id="nav-markets">Markets</div>
+      <a class="nav-item" href="/orderbook/">Order book</a>
+    </div>
   </nav>
-</header>
+  <div class="nav-foot">
+    <a class="nav-item" href="/learn/" aria-current="page">Learn</a>
+    <a class="nav-item" href="/#about">About</a>
+    <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
+  </div>
+</aside>
+<div class="nav-scrim"></div>
+<div class="app-main">
+<div class="top-bar">
+  <button class="nav-toggle" type="button" aria-controls="appNav" aria-expanded="false"><span class="nav-toggle-icon" aria-hidden="true"></span>Menu</button>
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+</div>
 <main id="main" class="container">
   <div class="learn-topic">
 <article class="learn-article"><div class="page-head"><h1>Carry Lookahead Adder (CLA)</h1><p class="lede">Computes all carries in parallel using generate/propagate logic.</p></div><div class="topic-meta"><span class="tag">Tool topic</span><a class="tag tag-link" href="/adders/">Adders</a><a class="plain" href="/learn/#category/adders">Final-stage Adders</a></div><section class="topic-section" id="problem"><h2>Problem</h2><div class="topic-body">How do you eliminate the sequential carry chain in addition?</div></section><section class="topic-section" id="how-it-works"><h2>How it works</h2><div class="topic-body">Each bit precomputes generate G = A·B and propagate P = A⊕B. A carry lookahead unit (CLU) uses G and P to compute all carries simultaneously as Boolean functions of inputs and C₀. Groups of 4 bits share one CLU; larger adders stack CLU levels hierarchically.</div></section><div class="insight" id="key-insight"><strong>Key insight</strong>Every carry is just a Boolean function of the inputs: C₁ = G₀ + P₀·C₀ can be computed in constant time, no ripple needed.</div><section class="topic-section" id="tradeoffs"><h2>Tradeoffs</h2><dl class="tradeoffs"><dt>Area</dt><dd>~2.25n FA-eq</dd><dt>Delay</dt><dd>4 + 2(⌈log₄n⌉−1) gate delays</dd><dd class="tradeoff-best"><strong>Best when:</strong> Speed is critical and ~2× area overhead is acceptable.</dd></dl></section><div class="topic-actions"><a class="btn-go" href="/adders/">Open the tool</a></div><div class="feedback-box" data-topic="cla" data-label="Was this useful?"></div></article><aside class="learn-rail" aria-label="Topic navigation"><p><a class="rail-back" href="/learn/">All topics</a></p><div class="rail-onpage"><h2>On this page</h2><ul><li><a href="#problem">Problem</a></li><li><a href="#how-it-works">How it works</a></li><li><a href="#key-insight">Key insight</a></li><li><a href="#tradeoffs">Tradeoffs</a></li></ul></div><h2>Related</h2><ul><li><a href="/learn/rca/">Ripple Carry Adder (RCA)</a></li><li><a href="/learn/carry-select/">Carry Select Adder (CSeA)</a></li><li><a href="/learn/wallace-tree/">Wallace Tree</a></li></ul></aside>
@@ -84,6 +100,7 @@
       <li><a href="/kmap/">K-Map generator</a></li>
       <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
       <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/fsm/">State machine designer</a></li>
       <li><a href="/learn/">Learn</a></li>
     </ul>
   </nav>
@@ -97,5 +114,6 @@
     </ul>
   </div>
 </footer>
+</div>
 </body>
 </html>

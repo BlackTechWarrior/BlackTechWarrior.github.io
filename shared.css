@@ -1125,7 +1125,7 @@ select.inp, .select { background-position: calc(100% - 18px) 50%, calc(100% - 13
   border-color: transparent;
   padding-left: var(--s-3);
 }
-.btn-t.on::before, .btn-t[aria-pressed="true"]::before, .mode-btn.on::before {
+.btn-t.on::before, .btn-t[aria-pressed="true"]::before {
   content: '';
   width: 16px;
   height: 16px;
@@ -1149,6 +1149,8 @@ select.inp, .select { background-position: calc(100% - 18px) 50%, calc(100% - 13
   overflow: hidden;
 }
 .mode-btn {
+  flex-shrink: 1;
+  min-width: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1289,3 +1291,13 @@ select:not(.inp) {
   background: var(--surface);
   padding: 8px 12px;
 }
+
+/* Respect the reader's default font size: rem-based roles scale with it */
+body { font-size: 100%; }
+/* Long words wrap instead of pushing the page wider (narrow screens, large text) */
+main p, main li, main dd, .lede, .how-to-body, .page-head, .app-nav, .site-footer { overflow-wrap: break-word; }
+/* Tables in explanations scroll inside their panel on narrow screens */
+.how-to-body table { display: block; max-width: 100%; overflow-x: auto; }
+/* Columns may shrink below their content; wide content scrolls inside its own card */
+.tool-controls, .tool-results { min-width: 0; }
+@media (max-width: 960px) { .tool-layout { grid-template-columns: minmax(0, 1fr); } }

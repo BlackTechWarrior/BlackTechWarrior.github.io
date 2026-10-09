@@ -14,10 +14,10 @@ values, sentence case, accent = action) and none of the palette.
 
 | law | the rule |
 |---|---|
-| **uniform** | one value per role. Radius: panel 12, control 8, control-sm 6, pill full. Edge: hairline for panels and rows, 2px ink only on the one workbench frame per page. Wash: `--accent-wash` at rest, nothing else. Every value in `shared.css` is a token; a page never types a hex. |
-| **breathable** | spacing on 4·8·12·16·24·32·48·64. A type role owns size, weight, leading, tracking, face and ink. A callsite picks a role, never a number. |
+| **uniform** | one value per role. Shape: card 24, well 16, field 12; buttons, chips, segments and nav items are pills. Surfaces are told apart by tone, not by borders: page `--bg`, cards `--surface`, wells `--well`, selection `--select`. Hairlines only separate rows. Every value in `shared.css` is a token; a page never types a hex. |
+| **breathable** | spacing on 4·8·12·16·24·32·48·64; cards pad 32 (20 on phones), page gutters 48. A type role owns size, weight, leading, tracking, face and ink. A callsite picks a role, never a number. Text scales with the reader's browser font size (`body` is 100%), and no page scrolls sideways at 320px wide or at 200% text. |
 | **mature** | the accent is the action colour. It appears on the single primary button of a surface, on focus rings, and under links. Data (K-map groups, tag/index/offset, bid/ask, sign/exponent/mantissa) uses the six `--d*` hues. State (hit/miss, error, warning) uses the three semantic tokens. Nothing decorative wears the accent. |
-| **polished** | sentence case everywhere. No tracked uppercase labels, no numbered section markers, no middle-dot metadata strings, no arrows appended to buttons, no monospace for labels. Mono is for data and code only. One moving thing on load: the workbench frame settles. Everything else moves only in answer to a click. |
+| **polished** | sentence case everywhere. No tracked uppercase labels, no numbered section markers, no middle-dot metadata strings, no arrows appended to buttons, no monospace for labels. Mono is for data and code only. Nothing moves on load; everything moves only in answer to an action. |
 
 ## Colour
 
@@ -69,15 +69,18 @@ Two families, both self-hosted from `/fonts`:
 
 ## Layout
 
-- One reading column: 880px on tool pages, 720px on the front page.
-- Page order on a tool: site bar → tool strip → h1 + one-sentence lede →
-  "How it works" disclosure → the **workbench** (framed) → results → footer.
-- **The one-framed-workbench rule.** Exactly one surface per page carries the
-  2px ink frame and 4px offset (light) or the strong 1px frame (dark): the
-  panel where the user acts. Results are flat panels with a hairline.
-- Panels never nest. Inside a panel, a well (`--well` ground, radius 8, no
-  border) separates a sub-region. A second bordered box inside a panel is a
-  defect.
+- **App shell.** A navigation drawer on the left (264px) lists every tool
+  grouped by topic (Logic, Arithmetic, Memory, Markets), then Learn, About
+  and the theme toggle. The current page is a tonal pill. Below 1024px the
+  drawer hides behind a Menu button in a top bar and slides over the page.
+  The markup comes from one template so every page lists the same links.
+- Page order on a tool: h1 + one-sentence lede → "How it works" disclosure →
+  the tool layout (controls card left, results right, one column below
+  960px) → footer. Content is left-aligned beside the drawer, up to 1200px.
+- The tool's own output (the K-map grid, the book, the diagram) is the hero:
+  it gets the most room and the largest type on the page.
+- Cards never nest. Inside a card, a well (`--well` ground, radius 16, no
+  border) separates a sub-region. A bordered box inside a card is a defect.
 - Rows are hairline-separated, never boxed. Four boxed panels in a stack
   means the hierarchy is gone: merge or flatten.
 - Header: wordmark left, `Tools · Learn · About · theme` right, and on tool
@@ -87,20 +90,27 @@ Two families, both self-hosted from `/fonts`:
 
 ## Controls
 
-- Primary (`.btn-go`): accent fill, `--on-accent` text, radius 8, 600/14px,
+- Primary (`.btn-go`): accent pill, 44px tall, `--on-accent` text, 600,
   verb + object copy ("Generate map", "Compute sum"). One per surface.
-- Secondary (`.btn-t`): hairline border, ink-2 text. Selected (`.on`): ink
-  fill, `--bg` text. The segmented control (`.mode-selector`) uses the same
-  selected treatment. Selected is always ink, never accent.
-- Inputs (`.inp`): surface fill, hairline, radius 8; focus thickens the
-  border to accent-ink with no glow.
-- Press = `translateY(1px)`; hover = one tonal step; 150ms ease-out.
+- Toggles (`.btn-t`) are filter chips: hairline pill; on (`.on`) is a
+  `--select` fill with a check mark. Segmented controls (`.mode-selector`)
+  are a hairline pill split by dividers; the selected segment is a
+  `--select` fill in 600 weight. Selected is never accent.
+- Checkboxes and radios: 20px, 2px ink-2 outline, ink fill with a check when
+  on. Sliders: 8px track filled in ink up to the value, a 6px bar handle.
+- Inputs (`.inp`): surface fill, hairline, radius 12, 48px tall; focus turns
+  the border accent-ink with no glow.
+- New features carry a "New" pill through a date: `data-new-until` on the
+  element, filled in by `lib/site.js`.
+- Hover = a state layer (`--hover`); press = scale 0.97.
 - Focus visible on keyboard: 2px accent-ink ring, 2px offset.
 
 ## Motion
 
-`--ease-out: cubic-bezier(.16, 1, .3, 1)`; quick 150ms, smooth 240ms.
-One page-load moment: the workbench frame's offset grows in (400ms). No
+Material easing: `--ease-out: cubic-bezier(0.2, 0, 0, 1)` for state changes,
+`--ease-emph-decel: cubic-bezier(0.05, 0.7, 0.1, 1)` for things entering;
+quick 160ms, smooth 280ms. Nothing moves on page load. Motion answers an
+action: the drawer slides, a disclosure unfolds, a pressed control dips. No
 staggered reveals, no fade-ups per section, no hover transforms on cards.
 `prefers-reduced-motion` gets the settled state instantly.
 
@@ -128,18 +138,18 @@ in-app navigation.
 - **Hierarchy**: read the page top to bottom and name each element's rung.
   Two adjacent elements on the same rung means one is wrong.
 - **One focal point**: squint. If nothing wins, the surface has no hero.
-- **One moving thing** on first paint.
+- **Nothing moving** on first paint.
 - **Re-art-direct at 400px**: a layout that merely wrapped is not designed.
 - **Preserve character**: "too faint" means tune, never swap.
 - **Say the label aloud** to someone doing the task.
 
 ## Do / don't
 
-Do pull every value from a token. Do lead a tool with its workbench. Do
+Do pull every value from a token. Do lead a tool with its controls and give its output the most room. Do
 make the primary button say what will happen. Do check both themes and both
 widths before calling a page done.
 
-Don't add a second framed surface. Don't put a border on a box inside a
-panel. Don't use uppercase tracking, numbered eyebrows, middle dots, arrows
+Don't frame a surface with a heavy border; use tone. Don't put a border on
+a box inside a card. Don't use uppercase tracking, numbered eyebrows, middle dots, arrows
 in buttons, gradient text, side-stripe borders, or a card grid of identical
 boxes. Don't animate on scroll. Don't use the accent for data.

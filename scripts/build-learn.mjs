@@ -19,9 +19,12 @@ const L = globalThis.P14M_LEARN;
 if (!L) throw new Error('learn/app.js did not expose P14M_LEARN');
 
 const shell = fs.readFileSync(path.join(ROOT, 'learn/index.html'), 'utf8');
-const header = shell.slice(shell.indexOf('<a class="skip-link"'), shell.indexOf('</header>') + '</header>'.length);
+// Shell chrome: skip link, navigation drawer, scrim and the top bar that opens .app-main
+const topBar = shell.indexOf('<div class="top-bar">');
+const header = shell.slice(shell.indexOf('<a class="skip-link"'), shell.indexOf('</div>', topBar) + '</div>'.length);
 const footer = shell.slice(shell.indexOf('<footer class="site-footer">'), shell.indexOf('</footer>') + '</footer>'.length);
-const themeBoot = shell.slice(shell.indexOf('<body>') + '<body>'.length, shell.indexOf('<a class="skip-link"')).trim();
+const bodyOpen = shell.match(/<body[^>]*>/)[0];
+const themeBoot = shell.slice(shell.indexOf(bodyOpen) + bodyOpen.length, shell.indexOf('<a class="skip-link"')).trim();
 
 const GA = `<!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
@@ -99,7 +102,7 @@ function page(topic) {
   <script type="application/ld+json">${JSON.stringify(ld)}</script>
   ${GA}
 </head>
-<body>
+${bodyOpen}
 ${themeBoot}
 ${header}
 <main id="main" class="container">
@@ -108,6 +111,7 @@ ${L.renderTopicHTML(topic)}
   </div>
 </main>
 ${footer}
+</div>
 </body>
 </html>
 `;

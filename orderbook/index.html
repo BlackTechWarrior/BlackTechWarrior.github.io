@@ -225,6 +225,9 @@
 
     /* ── Bottom panels ── */
     .ob-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); margin: 0; }
+    /* Narrow cards scroll the log sideways instead of clipping columns */
+    .ob-bottom > * { min-width: 0; overflow-x: auto; }
+    .ob-orders-th, .ob-orders-list, .ob-trades-th, .ob-trades-list { min-width: max-content; }
     .ob-trades-list, .ob-orders-list {
       max-height: 220px; overflow-y: auto;
       font-size: 0.75rem; font-family: var(--font-mono); font-variant-numeric: tabular-nums;
@@ -271,12 +274,13 @@
       .ob-panel { order: -1; }
       .ob-main { order: 0; }
       .ob-spread-bar { justify-content: space-between; gap: var(--s-2) var(--s-3); }
-      .ob-metric { min-width: 0; flex: 1 1 30%; }
+      /* Each figure keeps its width; the bar wraps instead of overflowing at large text sizes */
+      .ob-metric { min-width: max-content; flex: 1 1 30%; }
       .ob-card { padding: var(--s-4); }
     }
   </style>
 </head>
-<body>
+<body class="app">
 <script>
 (function() {
   var saved = localStorage.getItem('theme');
@@ -286,27 +290,43 @@
 })();
 </script>
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header">
-  <div class="site-bar">
-    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
-    <nav class="site-links" aria-label="Site">
-      <a href="/#tools">Tools</a>
-      <a href="/learn/">Learn</a>
-      <a href="/#about">About</a>
-      <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
-    </nav>
-  </div>
-  <nav class="tool-strip" aria-label="Tools">
-    <a href="/adders/">Adders</a>
-    <a href="/bits/">Bits</a>
-    <a href="/cache/">Cache</a>
-    <a href="/circuitgen/">CircuitGen</a>
-    <a href="/float/">Float</a>
-    <a href="/kmap/">K-Map</a>
-    <a href="/multipliers/">Multipliers</a>
-    <a href="/orderbook/" aria-current="page">Order Book</a>
+<aside class="app-nav" id="appNav" aria-label="Site">
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+  <nav aria-label="Tools">
+    <div class="nav-group" role="group" aria-labelledby="nav-logic">
+      <div class="nav-group-label" id="nav-logic">Logic</div>
+      <a class="nav-item" href="/kmap/">K-Map generator</a>
+      <a class="nav-item" href="/circuitgen/">CircuitGen</a>
+      <a class="nav-item" href="/fsm/" data-new-until="2026-10-21">State machines</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-arithmetic">
+      <div class="nav-group-label" id="nav-arithmetic">Arithmetic</div>
+      <a class="nav-item" href="/adders/">Adders</a>
+      <a class="nav-item" href="/multipliers/">Multipliers</a>
+      <a class="nav-item" href="/bits/">Bits</a>
+      <a class="nav-item" href="/float/">Floating point</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-memory">
+      <div class="nav-group-label" id="nav-memory">Memory</div>
+      <a class="nav-item" href="/cache/">Cache simulator</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-markets">
+      <div class="nav-group-label" id="nav-markets">Markets</div>
+      <a class="nav-item" href="/orderbook/" aria-current="page">Order book</a>
+    </div>
   </nav>
-</header>
+  <div class="nav-foot">
+    <a class="nav-item" href="/learn/">Learn</a>
+    <a class="nav-item" href="/#about">About</a>
+    <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
+  </div>
+</aside>
+<div class="nav-scrim"></div>
+<div class="app-main">
+<div class="top-bar">
+  <button class="nav-toggle" type="button" aria-controls="appNav" aria-expanded="false"><span class="nav-toggle-icon" aria-hidden="true"></span>Menu</button>
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+</div>
 <main id="main" class="container">
 
   <div class="page-head">
@@ -354,7 +374,7 @@
     <div class="ob-card">
       <h2 class="ob-card-title">Trade history</h2>
       <div class="ob-trades-th ob-th">
-        <span>Time</span><span>Price</span><span>Quantity</span><span>Side</span>
+        <span>Time</span><span>Price</span><span>Qty</span><span>Side</span>
       </div>
       <div class="ob-trades-list" id="ob-trades"></div>
     </div>
@@ -452,6 +472,7 @@
       <li><a href="/kmap/">K-Map generator</a></li>
       <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
       <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/fsm/">State machine designer</a></li>
       <li><a href="/learn/">Learn</a></li>
     </ul>
   </nav>
@@ -465,6 +486,7 @@
     </ul>
   </div>
 </footer>
+</div>
 
 <div id="toast" class="toast" style="display:none;"></div>
 
@@ -923,7 +945,7 @@ function loadScenario(name) {
       render();
       pendingSteps = [
         { type: 'INFO', text: 'Setup: a wide spread, with the best bid at 99.90 and the best ask at 100.10 (a 0.20 gap). Three aggressive orders are queued.' },
-        { type: 'INFO', text: 'Watch how each crossing limit order narrows the spread. When a buy price meets or exceeds the ask, it fills immediately instead of resting, collapsing the gap between buyers and sellers.' },
+        { type: 'INFO', text: 'Watch how each crossing limit order narrows the spread. A buy priced at or above the ask fills right away, which closes the gap between buyers and sellers.' },
       ];
       currentStepIndex = 0;
       showStepUI();
@@ -1404,7 +1426,9 @@ function scrollToSpread() {
   const body = document.getElementById('ob-book-body');
   const spreadRow = body.querySelector('.ob-spread-row');
   if (spreadRow) {
-    spreadRow.scrollIntoView({ block: 'center', behavior: 'instant' });
+    // Scroll the book itself; scrollIntoView would also scroll the page
+    const offset = spreadRow.getBoundingClientRect().top - body.getBoundingClientRect().top;
+    body.scrollTop += offset - (body.clientHeight - spreadRow.offsetHeight) / 2;
   }
 }
 

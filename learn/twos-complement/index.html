@@ -37,7 +37,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
 </head>
-<body>
+<body class="app">
 <script>
 (function() {
   var saved = localStorage.getItem('theme');
@@ -47,27 +47,43 @@
 })();
 </script>
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header">
-  <div class="site-bar">
-    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
-    <nav class="site-links" aria-label="Site">
-      <a href="/#tools">Tools</a>
-      <a href="/learn/" aria-current="page">Learn</a>
-      <a href="/#about">About</a>
-      <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
-    </nav>
-  </div>
-  <nav class="tool-strip" aria-label="Tools">
-    <a href="/adders/">Adders</a>
-    <a href="/bits/">Bits</a>
-    <a href="/cache/">Cache</a>
-    <a href="/circuitgen/">CircuitGen</a>
-    <a href="/float/">Float</a>
-    <a href="/kmap/">K-Map</a>
-    <a href="/multipliers/">Multipliers</a>
-    <a href="/orderbook/">Order Book</a>
+<aside class="app-nav" id="appNav" aria-label="Site">
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+  <nav aria-label="Tools">
+    <div class="nav-group" role="group" aria-labelledby="nav-logic">
+      <div class="nav-group-label" id="nav-logic">Logic</div>
+      <a class="nav-item" href="/kmap/">K-Map generator</a>
+      <a class="nav-item" href="/circuitgen/">CircuitGen</a>
+      <a class="nav-item" href="/fsm/" data-new-until="2026-10-21">State machines</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-arithmetic">
+      <div class="nav-group-label" id="nav-arithmetic">Arithmetic</div>
+      <a class="nav-item" href="/adders/">Adders</a>
+      <a class="nav-item" href="/multipliers/">Multipliers</a>
+      <a class="nav-item" href="/bits/">Bits</a>
+      <a class="nav-item" href="/float/">Floating point</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-memory">
+      <div class="nav-group-label" id="nav-memory">Memory</div>
+      <a class="nav-item" href="/cache/">Cache simulator</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-markets">
+      <div class="nav-group-label" id="nav-markets">Markets</div>
+      <a class="nav-item" href="/orderbook/">Order book</a>
+    </div>
   </nav>
-</header>
+  <div class="nav-foot">
+    <a class="nav-item" href="/learn/" aria-current="page">Learn</a>
+    <a class="nav-item" href="/#about">About</a>
+    <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
+  </div>
+</aside>
+<div class="nav-scrim"></div>
+<div class="app-main">
+<div class="top-bar">
+  <button class="nav-toggle" type="button" aria-controls="appNav" aria-expanded="false"><span class="nav-toggle-icon" aria-hidden="true"></span>Menu</button>
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+</div>
 <main id="main" class="container">
   <div class="learn-topic">
 <article class="learn-article"><div class="page-head"><h1>Two's Complement</h1><p class="lede">The standard way hardware represents negative integers.</p></div><div class="topic-meta"><span class="tag">Concept</span><a class="plain" href="/learn/#category/foundations">Building Blocks</a></div><section class="topic-section" id="problem"><h2>Problem</h2><div class="topic-body">How does hardware represent negative numbers using only 0s and 1s?</div></section><section class="topic-section" id="how-it-works"><h2>How it works</h2><div class="topic-body">In an n-bit two's complement system, the MSB has a <em>negative</em> weight: −(2<sup>n−1</sup>) instead of +(2<sup>n−1</sup>). The remaining bits have normal positive weights.<br><br>For example, in 8-bit: <code>11111011</code> = −128 + 64 + 32 + 16 + 8 + 0 + 2 + 1 = <strong>−5</strong>.<br><br>To negate a number: flip all bits, then add 1. So −5 = NOT(00000101) + 1 = 11111010 + 1 = 11111011.<br><br><strong>Range:</strong> n bits represent −(2<sup>n−1</sup>) to +(2<sup>n−1</sup> − 1). For 8-bit: −128 to +127.<br><br>The key advantage: addition works identically for signed and unsigned numbers: the same adder hardware handles both. Subtraction is just addition of the negated value.</div></section><div class="insight" id="key-insight"><strong>Key insight</strong>Two's complement makes the adder "sign-blind": one circuit handles both signed and unsigned addition. This is why Booth's algorithm gets signed multiplication "for free."</div><div class="feedback-box" data-topic="twos-complement" data-label="Was this useful?"></div></article><aside class="learn-rail" aria-label="Topic navigation"><p><a class="rail-back" href="/learn/">All topics</a></p><div class="rail-onpage"><h2>On this page</h2><ul><li><a href="#problem">Problem</a></li><li><a href="#how-it-works">How it works</a></li><li><a href="#key-insight">Key insight</a></li></ul></div><h2>Related</h2><ul><li><a href="/learn/booth-algorithm/">Booth's Algorithm (Radix-2)</a></li><li><a href="/learn/full-adder/">Full Adder (FA)</a></li></ul><h2>More in Building Blocks</h2><ul><li><a href="/learn/logic-gates/">Logic Gates</a></li><li><a href="/learn/conventions/">Measurement Conventions</a></li><li><a href="/learn/partial-products/">Partial Products</a></li><li><a href="/learn/carry-save/">Carry Save Adder (CSA)</a></li><li><a href="/learn/circuit-diagrams/">Circuit Diagrams</a></li><li><a href="/learn/sign-extension/">Sign Extension</a></li></ul></aside>
@@ -84,6 +100,7 @@
       <li><a href="/kmap/">K-Map generator</a></li>
       <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
       <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/fsm/">State machine designer</a></li>
       <li><a href="/learn/">Learn</a></li>
     </ul>
   </nav>
@@ -97,5 +114,6 @@
     </ul>
   </div>
 </footer>
+</div>
 </body>
 </html>

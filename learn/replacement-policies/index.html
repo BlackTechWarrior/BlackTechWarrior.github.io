@@ -37,7 +37,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-JTNTDY1XRQ"></script>
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JTNTDY1XRQ');</script>
 </head>
-<body>
+<body class="app">
 <script>
 (function() {
   var saved = localStorage.getItem('theme');
@@ -47,27 +47,43 @@
 })();
 </script>
 <a class="skip-link" href="#main">Skip to content</a>
-<header class="site-header">
-  <div class="site-bar">
-    <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
-    <nav class="site-links" aria-label="Site">
-      <a href="/#tools">Tools</a>
-      <a href="/learn/" aria-current="page">Learn</a>
-      <a href="/#about">About</a>
-      <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
-    </nav>
-  </div>
-  <nav class="tool-strip" aria-label="Tools">
-    <a href="/adders/">Adders</a>
-    <a href="/bits/">Bits</a>
-    <a href="/cache/">Cache</a>
-    <a href="/circuitgen/">CircuitGen</a>
-    <a href="/float/">Float</a>
-    <a href="/kmap/">K-Map</a>
-    <a href="/multipliers/">Multipliers</a>
-    <a href="/orderbook/">Order Book</a>
+<aside class="app-nav" id="appNav" aria-label="Site">
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+  <nav aria-label="Tools">
+    <div class="nav-group" role="group" aria-labelledby="nav-logic">
+      <div class="nav-group-label" id="nav-logic">Logic</div>
+      <a class="nav-item" href="/kmap/">K-Map generator</a>
+      <a class="nav-item" href="/circuitgen/">CircuitGen</a>
+      <a class="nav-item" href="/fsm/" data-new-until="2026-10-21">State machines</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-arithmetic">
+      <div class="nav-group-label" id="nav-arithmetic">Arithmetic</div>
+      <a class="nav-item" href="/adders/">Adders</a>
+      <a class="nav-item" href="/multipliers/">Multipliers</a>
+      <a class="nav-item" href="/bits/">Bits</a>
+      <a class="nav-item" href="/float/">Floating point</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-memory">
+      <div class="nav-group-label" id="nav-memory">Memory</div>
+      <a class="nav-item" href="/cache/">Cache simulator</a>
+    </div>
+    <div class="nav-group" role="group" aria-labelledby="nav-markets">
+      <div class="nav-group-label" id="nav-markets">Markets</div>
+      <a class="nav-item" href="/orderbook/">Order book</a>
+    </div>
   </nav>
-</header>
+  <div class="nav-foot">
+    <a class="nav-item" href="/learn/" aria-current="page">Learn</a>
+    <a class="nav-item" href="/#about">About</a>
+    <button class="theme-toggle" type="button" onclick="toggleTheme()">Dark</button>
+  </div>
+</aside>
+<div class="nav-scrim"></div>
+<div class="app-main">
+<div class="top-bar">
+  <button class="nav-toggle" type="button" aria-controls="appNav" aria-expanded="false"><span class="nav-toggle-icon" aria-hidden="true"></span>Menu</button>
+  <a class="wordmark" href="/" aria-label="p14m home">p14m<span class="wordmark-bit" aria-hidden="true"></span></a>
+</div>
 <main id="main" class="container">
   <div class="learn-topic">
 <article class="learn-article"><div class="page-head"><h1>Cache Replacement Policies</h1><p class="lede">LRU, FIFO, and Random: how caches decide which line to evict.</p></div><div class="topic-meta"><span class="tag">Concept</span><a class="plain" href="/learn/#category/memory">Memory Hierarchy</a></div><section class="topic-section" id="problem"><h2>Problem</h2><div class="topic-body">When a cache set is full and a new block must be loaded, one existing line must be evicted. Which one? The choice directly affects hit rate, and the hardware cost varies dramatically between policies.</div></section><section class="topic-section" id="how-it-works"><h2>How it works</h2><div class="topic-body"><strong>LRU (Least Recently Used):</strong> evicts the line that hasn't been accessed the longest. Bets on temporal locality: recently used data is likely to be used again soon. For 2-way caches, LRU is trivial: a single bit per set tracks which way was accessed last. For 4-way, you need to track a full ordering of 4 items (4! = 24 states, 5 bits). For 8-way, exact LRU requires tracking 8! orderings: prohibitively expensive. Real 8+ way caches use <strong>pseudo-LRU</strong> (tree-based approximation with 7 bits for 8 ways).<br><br><strong>FIFO (First In, First Out):</strong> evicts the line that was <em>loaded</em> earliest, regardless of whether it was accessed recently. Simpler hardware: just a counter per set pointing to the next victim. Downside: FIFO can evict hot data that was loaded long ago but is still being used frequently. This causes <strong>Belady's anomaly</strong>: more cache ways can actually <em>increase</em> misses for some access patterns (unlike LRU, which is immune to this).<br><br><strong>Random:</strong> picks a victim at random. Essentially free hardware (just an LFSR or counter). No tracking state per set at all. Surprisingly competitive: for high-associativity caches (8+ ways), random is within 1–2% of LRU's hit rate on most workloads. This is why some real designs (ARM Cortex-A series L2) use random replacement.<br><br><strong>Practical considerations:</strong><br>• LRU is optimal for caches with 2–4 ways where the tracking cost is low.<br>• Random is preferred when associativity is high and the silicon budget for tracking is better spent elsewhere.<br>• FIFO is rare in caches but common in TLBs and write buffers where simplicity matters.</div></section><div class="insight" id="key-insight"><strong>Key insight</strong>LRU's advantage shrinks as associativity grows. At 2-way, LRU clearly wins because every eviction decision is binary. At 16-way, tracking exact recency of 16 items costs more hardware than it saves in hit rate: random gets within a few percent for essentially zero cost. The right policy depends on the associativity budget.</div><div class="section workbench widget" id="try-it" data-widget="replacement-policies"></div><div class="topic-actions"><a class="btn-go" href="/cache/">Open the tool</a></div><div class="feedback-box" data-topic="replacement-policies" data-label="Was this useful?"></div></article><aside class="learn-rail" aria-label="Topic navigation"><p><a class="rail-back" href="/learn/">All topics</a></p><div class="rail-onpage"><h2>On this page</h2><ul><li><a href="#problem">Problem</a></li><li><a href="#how-it-works">How it works</a></li><li><a href="#key-insight">Key insight</a></li><li><a href="#try-it">Try it</a></li></ul></div><h2>Related</h2><ul><li><a href="/learn/cache-fundamentals/">Cache Memory</a></li><li><a href="/learn/write-policies/">Write Policies</a></li><li><a href="/learn/fifo-queue/">FIFO Queues in Hardware</a></li></ul></aside>
@@ -84,6 +100,7 @@
       <li><a href="/kmap/">K-Map generator</a></li>
       <li><a href="/multipliers/">Multiplier architecture visualizer</a></li>
       <li><a href="/orderbook/">Order book simulator</a></li>
+      <li><a href="/fsm/">State machine designer</a></li>
       <li><a href="/learn/">Learn</a></li>
     </ul>
   </nav>
@@ -97,5 +114,6 @@
     </ul>
   </div>
 </footer>
+</div>
 </body>
 </html>

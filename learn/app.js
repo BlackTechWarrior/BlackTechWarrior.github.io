@@ -407,6 +407,8 @@ const TOPICS = [
       keyInsight: 'An FSM is the hardware equivalent of a state machine diagram. Flip-flops store "where am I?", combinational logic answers "given where I am and what I see, where do I go next?" Every sequential circuit, from a simple counter to a CPU, is an FSM.',
     },
     interactive: fsmWidget,
+    tool: 'fsm',
+    tryItLink: '/fsm/',
     relatedTopics: ['flip-flops', 'logic-gates', 'setup-hold'],
     order: 17,
   },
@@ -2523,7 +2525,7 @@ function replacementPolicyWidget(container) {
 /* ═══════════════════════ Rendering ═══════════════════════ */
 
 const TYPE_LABELS = { tool: 'Tool topic', concept: 'Concept', breakdown: 'Breakdown' };
-const TOOL_NAMES = { adders: 'Adders', bits: 'Bits', cache: 'Cache', circuitgen: 'CircuitGen', float: 'Float', kmap: 'K-Map', multipliers: 'Multipliers', orderbook: 'Order Book' };
+const TOOL_NAMES = { adders: 'Adders', bits: 'Bits', cache: 'Cache', circuitgen: 'CircuitGen', float: 'Float', fsm: 'State machines', kmap: 'K-Map', multipliers: 'Multipliers', orderbook: 'Order Book' };
 
 function topicById(id) { return TOPICS.find(t => t.id === id); }
 function topicUrl(id) { return '/learn/' + id + '/'; }
