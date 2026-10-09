@@ -253,6 +253,7 @@
           <li><strong>Operators are flexible.</strong> You can mix symbols and words freely:
             <code>A * B + C'</code> and <code>A and B or not C</code> are both valid, even <code>A * B or !C</code>.</li>
           <li>Multiple symbols per gate: NOT is <code>' ~ !</code>, AND is <code>. * &amp;</code>, OR is <code>+ |</code>, XOR is <code>^</code>, XNOR is <code>@</code>, NAND is <code>%</code>, NOR is <code>#</code>.</li>
+          <li><strong>Implicit AND:</strong> names written next to each other are ANDed, so <code>AB + A'C</code> and <code>(A + B)(C + D)</code> work. Use explicit operators if a variable name is longer than one letter and could be read as two.</li>
           <li><strong>Precedence:</strong> NOT, then AND and NAND, then XOR and XNOR, then OR and NOR. Use parentheses to override.</li>
           <li>Leave the expression blank and click Generate to enter <strong>manual mode</strong>, then click cells directly to set 1, 0, or X.</li>
           <li>Switch to <strong>Minterms/Maxterms</strong> mode to enter indices directly (e.g. <code>1, 3, 5, 7</code>).</li>
@@ -289,11 +290,11 @@
           <input class="inp" id="exprInput" value="A * B + C'" placeholder="A * B + ~C . D" spellcheck="false">
         </div>
         <div id="mintermsInputRow" style="display: none;">
-          <label class="lbl" for="mintermsInput">Minterms <span class="lbl-hint">(comma-separated indices where F=1)</span></label>
+          <label class="lbl" for="mintermsInput">Minterms <span class="lbl-hint">(indices where F=1, ranges like 2-5 work)</span></label>
           <input class="inp" id="mintermsInput" placeholder="1, 3, 5, 7" spellcheck="false">
         </div>
         <div id="maxtermsInputRow" style="display: none;">
-          <label class="lbl" for="maxtermsInput">Maxterms <span class="lbl-hint">(comma-separated indices where F=0)</span></label>
+          <label class="lbl" for="maxtermsInput">Maxterms <span class="lbl-hint">(indices where F=0, ranges like 2-5 work)</span></label>
           <input class="inp" id="maxtermsInput" placeholder="0, 2, 4, 6" spellcheck="false">
         </div>
       </div>
@@ -320,9 +321,9 @@
 
       <div class="ref-section" id="refSection">
         <table class="ref-table" aria-label="Operator reference">
-          <tr><th>NOT</th><td><code>'</code> <code>~</code> <code>!</code> <code>not</code></td></tr>
-          <tr><th>AND</th><td><code>.</code> <code>*</code> <code>&amp;</code> <code>and</code></td></tr>
-          <tr><th>OR</th><td><code>+</code> <code>|</code> <code>or</code></td></tr>
+          <tr><th>NOT</th><td><code>'</code> <code>~</code> <code>!</code> <code>¬</code> <code>not</code></td></tr>
+          <tr><th>AND</th><td><code>.</code> <code>*</code> <code>&amp;</code> <code>∧</code> <code>and</code> <code>AB</code></td></tr>
+          <tr><th>OR</th><td><code>+</code> <code>|</code> <code>∨</code> <code>or</code></td></tr>
           <tr><th>XOR</th><td><code>^</code> <code>xor</code></td></tr>
           <tr><th>XNOR</th><td><code>@</code> <code>xnor</code></td></tr>
           <tr><th>NAND</th><td><code>%</code> <code>nand</code></td></tr>
@@ -413,7 +414,11 @@ const SYMBOLS = {
   "\u22bc": TOKEN.NAND, "%": TOKEN.NAND,
   "@": TOKEN.XNOR, "\u2299": TOKEN.XNOR,
   "#": TOKEN.NOR, "\u22bd": TOKEN.NOR,
+  "\u00ac": TOKEN.NOT, "\u22c5": TOKEN.AND, "\u2227": TOKEN.AND,
+  "\u2228": TOKEN.OR, "\u22bb": TOKEN.XOR,
 };
+// Postfix NOT: apostrophe, the curly quote phones substitute for it, and the prime sign
+const POSTFIX_NOT = "'\u2019\u2032";
 
 const KEYWORDS = {
   not: TOKEN.NOT, and: TOKEN.AND, or: TOKEN.OR,
@@ -423,72 +428,76 @@ const KEYWORDS = {
 function isAlpha(ch) { return /[a-zA-Z_]/.test(ch); }
 function isAlnum(ch) { return /[a-zA-Z0-9_]/.test(ch); }
 
+// Split a word like "AB" into declared names (A, B) for implicit AND; null if it can't be
+function splitIntoVars(word, varNames) {
+  const lower = word.toLowerCase();
+  const names = [...varNames].sort((a, b) => b.length - a.length);
+  const memo = {};
+  function from(i) {
+    if (i === lower.length) return [];
+    if (i in memo) return memo[i];
+    memo[i] = null;
+    for (const v of names) {
+      if (lower.startsWith(v.toLowerCase(), i)) {
+        const rest = from(i + v.length);
+        if (rest) return (memo[i] = [v, ...rest]);
+      }
+    }
+    return null;
+  }
+  return from(0);
+}
+
 function tokenize(expr, varNames) {
   const tokens = [];
-  let i = 0;
   const s = expr;
-  const sortedVars = [...varNames].sort((a, b) => b.length - a.length);
+  let i = 0;
+  // pos is the 1-based character position, for error messages
+  const push = (type, text, extra) => tokens.push(Object.assign({ type, text, pos: i + 1 }, extra));
 
   while (i < s.length) {
-    if (s[i] === " " || s[i] === "\t") { i++; continue; }
-    if (s[i] === "(") { tokens.push({ type: TOKEN.LPAREN }); i++; continue; }
-    if (s[i] === ")") { tokens.push({ type: TOKEN.RPAREN }); i++; continue; }
+    const ch = s[i];
+    if (/\s/.test(ch)) { i++; continue; }
+    if (ch === "(") { push(TOKEN.LPAREN, ch); i++; continue; }
+    if (ch === ")") { push(TOKEN.RPAREN, ch); i++; continue; }
+    if (POSTFIX_NOT.includes(ch)) { push(TOKEN.NOT, ch, { postfix: true }); i++; continue; }
 
-    if (s[i] === "'") {
-      tokens.push({ type: TOKEN.NOT, postfix: true });
-      i++; continue;
+    const two = s.substr(i, 2);
+    if (two.length === 2 && SYMBOLS[two]) { push(SYMBOLS[two], two); i += 2; continue; }
+    if (SYMBOLS[ch]) { push(SYMBOLS[ch], ch); i++; continue; }
+
+    if (/[0-9]/.test(ch)) {
+      let j = i;
+      while (j < s.length && isAlnum(s[j])) j++;
+      const num = s.slice(i, j);
+      if (num !== "0" && num !== "1") throw new Error(`"${num}" at position ${i + 1} is not a constant. Only 0 and 1 are allowed, and names can't start with a digit.`);
+      push(TOKEN.LITERAL, num, { value: parseInt(num) });
+      i = j; continue;
     }
 
-    if (i + 1 < s.length && SYMBOLS[s[i] + s[i + 1]]) {
-      tokens.push({ type: SYMBOLS[s[i] + s[i + 1]] });
-      i += 2; continue;
-    }
-
-    if (SYMBOLS[s[i]] && s[i] !== "'") {
-      tokens.push({ type: SYMBOLS[s[i]] });
-      i++; continue;
-    }
-
-    if ((s[i] === "0" || s[i] === "1") && (i + 1 >= s.length || !isAlpha(s[i + 1]))) {
-      tokens.push({ type: TOKEN.LITERAL, value: parseInt(s[i]) });
-      i++; continue;
-    }
-
-    let matched = false;
-    for (const v of sortedVars) {
-      if (s.substring(i, i + v.length).toLowerCase() === v.toLowerCase()) {
-        const after = i + v.length;
-        if (after >= s.length || !isAlnum(s[after])) {
-          tokens.push({ type: TOKEN.VAR, name: v });
-          i += v.length;
-          matched = true;
-          break;
+    if (isAlpha(ch)) {
+      let j = i;
+      while (j < s.length && isAlnum(s[j])) j++;
+      const word = s.slice(i, j), lower = word.toLowerCase();
+      const exact = varNames.find(v => v.toLowerCase() === lower);
+      if (exact) {
+        push(TOKEN.VAR, word, { name: exact });
+      } else if (KEYWORDS[lower]) {
+        push(KEYWORDS[lower], word);
+      } else {
+        // Juxtaposed names multiply: AB means A·B
+        const parts = splitIntoVars(word, varNames);
+        if (!parts) throw new Error(`Unknown variable "${word}" at position ${i + 1}. Declare it in the variables list.`);
+        let k = i;
+        for (const v of parts) {
+          tokens.push({ type: TOKEN.VAR, text: s.substr(k, v.length), pos: k + 1, name: v });
+          k += v.length;
         }
       }
-    }
-    if (matched) continue;
-
-    let kwMatch = false;
-    for (const [kw, tt] of Object.entries(KEYWORDS)) {
-      if (s.substring(i, i + kw.length).toLowerCase() === kw) {
-        const after = i + kw.length;
-        if (after >= s.length || !isAlnum(s[after])) {
-          tokens.push({ type: tt });
-          i += kw.length;
-          kwMatch = true;
-          break;
-        }
-      }
-    }
-    if (kwMatch) continue;
-
-    if (isAlpha(s[i])) {
-      let start = i;
-      while (i < s.length && isAlnum(s[i])) i++;
-      throw new Error(`Unknown variable "${s.substring(start, i)}". Declare it in the variables list.`);
+      i = j; continue;
     }
 
-    throw new Error(`Unexpected character "${s[i]}" at position ${i + 1}`);
+    throw new Error(`Unexpected character "${ch}" at position ${i + 1}`);
   }
   return tokens;
 }
@@ -518,11 +527,24 @@ function parse(tokens) {
     return left;
   }
 
+  // An operand right after another one is an implicit AND: A'B, A B, (A+B)(C+D)
+  function startsOperand(t) {
+    return t && (t.type === TOKEN.VAR || t.type === TOKEN.LITERAL || t.type === TOKEN.LPAREN ||
+      (t.type === TOKEN.NOT && !t.postfix));
+  }
+
   function parseAnd() {
     let left = parseUnary();
-    while (peek() && (peek().type === TOKEN.AND || peek().type === TOKEN.NAND)) {
-      const op = advance().type;
-      left = { op, left, right: parseUnary() };
+    for (;;) {
+      const t = peek();
+      if (t && (t.type === TOKEN.AND || t.type === TOKEN.NAND)) {
+        advance();
+        left = { op: t.type, left, right: parseUnary() };
+      } else if (startsOperand(t)) {
+        left = { op: TOKEN.AND, left, right: parseUnary() };
+      } else {
+        break;
+      }
     }
     return left;
   }
@@ -546,11 +568,11 @@ function parse(tokens) {
 
   function parseAtom() {
     const t = peek();
-    if (!t) throw new Error("Unexpected end of expression");
+    if (!t) throw new Error("The expression ends early: an operand is missing at the end");
     if (t.type === TOKEN.LPAREN) {
       advance();
       const node = parseOr();
-      if (!peek() || peek().type !== TOKEN.RPAREN) throw new Error("Missing closing parenthesis");
+      if (!peek() || peek().type !== TOKEN.RPAREN) throw new Error(`Missing closing parenthesis for "(" at position ${t.pos}`);
       advance();
       let result = node;
       while (peek() && peek().type === TOKEN.NOT && peek().postfix) {
@@ -561,11 +583,16 @@ function parse(tokens) {
     }
     if (t.type === TOKEN.VAR) { advance(); return { op: TOKEN.VAR, name: t.name }; }
     if (t.type === TOKEN.LITERAL) { advance(); return { op: TOKEN.LITERAL, value: t.value }; }
-    throw new Error(`Unexpected token: ${JSON.stringify(t)}`);
+    throw new Error(`Expected a variable, 0, 1 or "(" at position ${t.pos}, found "${t.text}"`);
   }
 
   const ast = parseOr();
-  if (pos < tokens.length) throw new Error(`Unexpected token at position ${pos + 1}`);
+  if (pos < tokens.length) {
+    const t = tokens[pos];
+    throw new Error(t.type === TOKEN.RPAREN
+      ? `Unmatched ")" at position ${t.pos}`
+      : `Unexpected "${t.text}" at position ${t.pos}`);
+  }
   return ast;
 }
 
@@ -842,32 +869,28 @@ function setInputMode(mode) {
 }
 
 function parseTermList(input, maxVal, termType) {
-  const terms = [];
-  const seen = new Set();
-
   if (!input.trim()) return { terms: [], isEmpty: true };
 
-  const parts = input.split(/[,\s]+/).filter(Boolean);
-
-  for (const p of parts) {
-    const n = parseInt(p);
-    if (isNaN(n)) {
-      throw new Error(`Invalid ${termType}: "${p}" is not a number.`);
-    }
-    if (n < 0) {
-      throw new Error(`Invalid ${termType}: ${n}. Must be non-negative.`);
-    }
+  const seen = new Set();
+  const add = (n) => {
     if (n > maxVal) {
       throw new Error(`${termType} ${n} is out of range. With ${Math.log2(maxVal + 1)} variables, valid range is 0\u2013${maxVal}.`);
     }
-    if (seen.has(n)) {
-      throw new Error(`Duplicate ${termType}: ${n}`);
-    }
     seen.add(n);
-    terms.push(n);
+  };
+  for (const p of input.split(/[,\s]+/).filter(Boolean)) {
+    const range = /^(\d+)\s*[-\u2013]\s*(\d+)$/.exec(p);
+    if (range) {
+      const lo = Number(range[1]), hi = Number(range[2]);
+      if (lo > hi) throw new Error(`Invalid ${termType} range "${p}": the start is larger than the end.`);
+      for (let n = lo; n <= hi; n++) add(n);
+    } else if (/^\d+$/.test(p)) {
+      add(Number(p));
+    } else {
+      throw new Error(`Invalid ${termType}: "${p}" is not a whole number or a range like 2-5.`);
+    }
   }
-
-  return { terms, isEmpty: false };
+  return { terms: [...seen].sort((x, y) => x - y), isEmpty: false };
 }
 
 function getEffectiveResult() {
@@ -902,10 +925,10 @@ function computeSOP(groups, kmap) {
     terms.push(literals.length === 0 ? "1" : literals.join("\u00b7"));
   }
   const rawSop = terms.join(" + ") || "0";
-  return simplifySOPByAdjacency(rawSop);
+  return simplifySOPByAdjacency(rawSop, allVars);
 }
 
-function simplifySOPByAdjacency(sopExpr) {
+function simplifySOPByAdjacency(sopExpr, varOrder) {
   if (!sopExpr || sopExpr === "0" || sopExpr === "1") return sopExpr;
 
   function parseTerm(termStr) {
@@ -923,7 +946,9 @@ function simplifySOPByAdjacency(sopExpr) {
   }
 
   function termToString(t) {
-    const vars = Object.keys(t).sort();
+    const vars = varOrder
+      ? Object.keys(t).sort((x, y) => varOrder.indexOf(x) - varOrder.indexOf(y))
+      : Object.keys(t).sort();
     if (vars.length === 0) return "1";
     return vars.map(v => t[v] ? v : v + "'").join("\u00b7");
   }
@@ -1302,6 +1327,18 @@ function detectXORFromSOP(sopExpr, truthTable, varNames) {
 }
 
 
+// Output port name for generated HDL: F unless an input is already called that (any case)
+function hdlOutputName(varNames) {
+  const taken = new Set(varNames.map(v => v.toLowerCase()));
+  return ['F', 'Y', 'OUT', 'F_OUT', 'RESULT'].find(name => !taken.has(name.toLowerCase())) || 'F_OUT_0';
+}
+
+function withOutputName(code, varNames) {
+  if (!code) return code;
+  const out = hdlOutputName(varNames);
+  return code.replace(/^assign F = /, 'assign ' + out + ' = ').replace(/^F <= /, out + ' <= ');
+}
+
 function generateVerilog(sopExpr, xorDetected) {
   if (!sopExpr && !xorDetected) return null;
 
@@ -1538,7 +1575,8 @@ function handleCellClick(r, c) {
   if (ttIdx >= 0) {
     const cur = state.manualOverrides[ttIdx] !== undefined ? state.manualOverrides[ttIdx] : effectiveResult.truthTable[ttIdx].result;
     const next = cur === 0 ? 1 : cur === 1 ? "X" : 0;
-    state.manualOverrides[ttIdx] = next;
+    if (next === state.result.truthTable[ttIdx].result) delete state.manualOverrides[ttIdx];
+    else state.manualOverrides[ttIdx] = next;
     render();
   }
 }
@@ -1789,7 +1827,7 @@ function render() {
   });
   html += '</tbody></table></div>';
 
-  const sopExpr = oneGroups.length > 0 ? computeSOP(oneGroups, kmap) : null;
+  const sopExpr = oneGroups.length > 0 ? computeSOP(oneGroups, kmap) : "0";
   // Sanity check: "1" in SOP should only appear if truth table is all-1s
   if (sopExpr && sopExpr.split(" + ").some(t => t.trim() === "1")) {
     const allOnes = truthTable.every(r => r.result === 1 || r.result === "X");
@@ -1823,7 +1861,7 @@ function render() {
   }
 
   if (state.showVerilog) {
-    const verilogCode = generateVerilog(sopExpr, xorDetected);
+    const verilogCode = withOutputName(generateVerilog(sopExpr, xorDetected), varNames);
     if (verilogCode) {
       html += `<div class="result-label">Verilog<span class="tag">${xorDetected ? 'XOR' : 'SOP'}</span></div>
         <div class="expr-box">
@@ -1834,7 +1872,7 @@ function render() {
   }
 
   if (state.showVHDL) {
-    const vhdlCode = generateVHDL(sopExpr, xorDetected);
+    const vhdlCode = withOutputName(generateVHDL(sopExpr, xorDetected), varNames);
     if (vhdlCode) {
       html += `<div class="result-label">VHDL<span class="tag">${xorDetected ? 'XOR' : 'SOP'}</span></div>
         <div class="expr-box">
@@ -2030,7 +2068,7 @@ circuitBtn.addEventListener('click', () => {
 });
 
 // Pre-fill from URL params (e.g. from CircuitGen's "Simplify with K-Map" link)
-const urlParams = new URLSearchParams(location.search);
+const urlParams = new URLSearchParams(location.search.replace(/\+/g, '%2B'));
 if (urlParams.get('vars')) varInput.value = urlParams.get('vars');
 if (urlParams.get('expr')) exprInput.value = urlParams.get('expr');
 
