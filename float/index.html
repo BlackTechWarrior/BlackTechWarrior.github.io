@@ -654,7 +654,13 @@ function encodeHalfBits(val) {
   const f = new Float32Array(1);
   const u = new Uint32Array(f.buffer);
   f[0] = val;
-  const x = u[0] >>> 0;
+  let x = u[0] >>> 0;
+  // val -> float32 -> half would round twice. Truncating to float32 and setting a
+  // sticky low bit (round to odd) keeps the later round-to-nearest-even exact.
+  if (f[0] !== val && isFinite(f[0])) {
+    if (Math.abs(f[0]) > Math.abs(val)) x = (x - 1) >>> 0;
+    x = (x | 1) >>> 0;
+  }
 
   const sign = (x >>> 16) & 0x8000;
   let e = (x >>> 23) & 0xFF;
@@ -895,6 +901,17 @@ function doEncode() {
     return;
   }
 
+  const notes = [];
+  if (state.inputFormat === 'decimal') {
+    const t = raw.trim().toLowerCase();
+    const digits = (/^[+-]?([\d._]*)/.exec(t) || ['', ''])[1];
+    if (!isFinite(value) && !Number.isNaN(value) && !/inf/.test(t)) {
+      notes.push('This value is beyond the largest 64-bit double, so it becomes ' + (value < 0 ? '−' : '+') + '∞.');
+    } else if (value === 0 && /[1-9]/.test(digits)) {
+      notes.push('This value is below the smallest 64-bit subnormal, so it rounds to 0.');
+    }
+  }
+
   // Pick widths to show
   let widths;
   if (state.targetWidth === 'auto') {
@@ -911,11 +928,11 @@ function doEncode() {
         showError('fp-encode-err', 'Value cannot be represented in any IEEE-754 width.');
         return;
       }
-      showError('fp-encode-err',
-        requested + '-bit cannot represent this value (overflows or underflows to zero). Showing ' + next + '-bit instead.');
+      notes.push(requested + '-bit cannot represent this value (overflows or underflows to zero). Showing ' + next + '-bit instead.');
       widths = [next];
     }
   }
+  if (notes.length) showError('fp-encode-err', notes.join(' '));
 
   state.cards = {};
   widths.forEach(w => { state.cards[w] = encodeBits(value, w); });
@@ -1192,7 +1209,7 @@ function buildFormula(bits, fmt) {
   const expNum = Number(exp);
   const bias = fmt.bias;
 
-  const mantStr = formatMantissa(mant, fmt);
+  const mantStr = formatMantissa(mant, fmt, cat === 'subnormal');
 
   if (cat === 'subnormal') {
     return '' +
@@ -1216,11 +1233,11 @@ function buildFormula(bits, fmt) {
     ' × 2<sup><span class="s-exp">' + (expNum - bias) + '</span></sup></span>';
 }
 
-function formatMantissa(mant, fmt) {
-  // Print 1 + mant/2^mantBits at appropriate precision
+function formatMantissa(mant, fmt, subnormal) {
+  // Print (1 or 0) + mant/2^mantBits at appropriate precision
   const frac = Number(mant) / Math.pow(2, fmt.mantBits);
   const digits = fmt.w === 16 ? 5 : fmt.w === 32 ? 9 : 17;
-  return (1 + frac).toPrecision(digits);
+  return ((subnormal ? 0 : 1) + frac).toPrecision(digits);
 }
 
 // ── Toast ─────────────────────────────────────────────────────

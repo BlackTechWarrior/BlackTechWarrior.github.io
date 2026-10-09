@@ -434,7 +434,7 @@
           </button>
           <button class="ca-preset-btn" data-preset="stride" onclick="loadPreset('stride')">
             <strong>Power-of-2 stride</strong>
-            A strided pattern that creates worst-case conflict misses. <em data-hint></em>
+            A power-of-2 stride that leaves half the sets empty and causes conflict misses. <em data-hint></em>
           </button>
           <button class="ca-preset-btn" data-preset="lru-vs-fifo" onclick="loadPreset('lru-vs-fifo')">
             <strong>LRU vs FIFO</strong>
@@ -933,7 +933,8 @@ function presetHint(name) {
     }
     case 'stride': {
       var s = 2 * bs;
-      return { applicable: true, text: 'Stride-' + s + ' pattern, ' + assocLabel + '. ' + (associativity === 1 ? 'Expect worst-case conflicts.' : 'Higher associativity absorbs more conflicts.') };
+      if (ns === 1) return { applicable: true, text: 'Stride-' + s + ' pattern, fully associative. Every block fits, so the second pass hits.' };
+      return { applicable: true, text: 'Stride-' + s + ' pattern, ' + assocLabel + '. Only half the sets are used, so the second pass misses. More ways do not fix it.' };
     }
     case 'lru-vs-fifo': {
       if (associativity < 2) {
@@ -1015,22 +1016,22 @@ function generatePreset(name) {
       };
     }
     case 'stride': {
-      // Stride = 2 * blockSize: hits every other set, then wraps to conflict
+      // Stride of two blocks over exactly totalLines blocks, run twice. The index
+      // only takes even values, so half the sets get twice as many blocks as they have ways.
       var s = 2 * bs;
-      var count = totalLines + Math.floor(totalLines / 2);
+      var count = totalLines;
       var addrs = [];
-      for (var i = 0; i < count; i++) {
-        var addr = (i * s) % 256;
-        addrs.push(addr);
+      for (var pass = 0; pass < 2; pass++) {
+        for (var i = 0; i < count; i++) addrs.push(i * s);
       }
-      return {
-        name: 'Power-of-2 stride',
-        addresses: addrs,
-        briefing: [
-          'Stride-' + s + ' pattern across ' + count + ' accesses. The stride hits every other set, then wraps around to conflict with earlier entries.',
-          'Watch how the second pass through the sets causes evictions. Power-of-2 strides are a common source of conflict misses in loops over arrays. Try higher associativity to reduce conflicts.'
-        ]
-      };
+      var briefing = ns === 1 ? [
+        'Stride-' + s + ': ' + count + ' blocks, exactly enough to fill the cache, accessed twice.',
+        'A fully associative cache has no sets, so all ' + count + ' blocks fit and the second pass hits. Switch to direct mapped or 2-way and reload to see the stride cause conflict misses.'
+      ] : [
+        'Stride-' + s + ': ' + count + ' blocks, exactly enough to fill the cache, accessed twice. A stride of two blocks lands only on even-numbered sets, so half the sets stay empty.',
+        'Each set in use gets twice as many blocks as it has ways, so the second pass misses too. More ways do not help, because the blocks still crowd into half the sets. Power-of-2 strides through arrays cause conflict misses this way.'
+      ];
+      return { name: 'Power-of-2 stride', addresses: addrs, briefing: briefing };
     }
     case 'lru-vs-fifo': {
       if (associativity < 2) {
@@ -1045,9 +1046,8 @@ function generatePreset(name) {
       var addrs = [];
       // (a) Fill set 0 with `ways` distinct blocks
       for (var i = 0; i < ways; i++) addrs.push(set0[i]);
-      // (b) Re-access first two to refresh LRU timestamps
+      // (b) Re-access the first block so LRU and FIFO disagree on the oldest
       addrs.push(set0[0]);
-      addrs.push(set0[1]);
       // (c) New block forces eviction — LRU evicts oldest untouched, FIFO evicts first loaded
       addrs.push(set0[ways]);
       // (d) Re-access first block — LRU kept it (recently used), FIFO evicted it (first in)
@@ -1060,8 +1060,8 @@ function generatePreset(name) {
         name: 'LRU vs FIFO',
         addresses: addrs,
         briefing: [
-          'Fill set 0 with ' + ways + ' blocks (' + addrs.slice(0, ways).join(', ') + '), re-access the first two to refresh them, then introduce new blocks to force evictions.',
-          'With LRU, the recently re-accessed blocks survive because they were just used. With FIFO, the first blocks loaded are evicted regardless of recent access. Switch replacement policy and reload to compare.'
+          'Fill set 0 with ' + ways + ' blocks (' + addrs.slice(0, ways).join(', ') + '), re-access the first one, then introduce new blocks to force evictions.',
+          'With LRU, the re-accessed block survives because it was just used. With FIFO, the first block loaded is evicted regardless of recent access. Switch replacement policy and reload to compare.'
         ]
       };
     }
@@ -1105,6 +1105,7 @@ function generatePreset(name) {
 }
 
 function loadPreset(name) {
+  if (completionTimeout) { clearTimeout(completionTimeout); completionTimeout = null; }
   var preset = generatePreset(name);
   if (!preset) return;
   if (preset.blocked) {
