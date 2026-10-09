@@ -1301,3 +1301,51 @@ main p, main li, main dd, .lede, .how-to-body, .page-head, .app-nav, .site-foote
 /* Columns may shrink below their content; wide content scrolls inside its own card */
 .tool-controls, .tool-results { min-width: 0; }
 @media (max-width: 960px) { .tool-layout { grid-template-columns: minmax(0, 1fr); } }
+
+/* ── Sheet: a modal explanation (native <dialog>, opened by p14mSheet in lib/site.js) ── */
+dialog.sheet {
+  width: min(680px, calc(100vw - 32px));
+  max-height: min(84vh, 900px);
+  padding: 0;
+  border: 0;
+  border-radius: 28px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+dialog.sheet[open] { display: flex; flex-direction: column; animation: sheet-in var(--dur-smooth) var(--ease-emph-decel); }
+dialog.sheet::backdrop { background: rgba(0, 0, 0, 0.4); }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { dialog.sheet[open] { animation: none; } }
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-5) var(--s-6) var(--s-3);
+}
+.sheet-head h2 { margin: 0; font-size: 1.25rem; }
+.sheet-body {
+  padding: 0 var(--s-6) var(--s-6);
+  overflow-y: auto;
+  overflow-wrap: break-word;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.sheet-body h3 { font-size: 1rem; margin: var(--s-5) 0 var(--s-2); }
+.sheet-body ol, .sheet-body ul { padding-left: 20px; margin: 0 0 var(--s-3); }
+.sheet-body li { margin-bottom: var(--s-1); }
+.sheet-body code { font-family: var(--font-mono); color: var(--ink); background: var(--well); padding: 1px 6px; border-radius: 6px; font-size: 0.875em; }
+.sheet-body .data-table-wrap { margin: var(--s-2) 0 var(--s-3); }
+.sheet-body .data-table td { white-space: normal; }
+.sheet-body .data-table td code { white-space: nowrap; }
+.sheet-body .data-table td:first-child { font-family: var(--font-sans); color: var(--ink); }
+.sheet-body .data-table td:first-child { white-space: nowrap; width: 1%; }
+.sheet-body .data-table td:nth-child(3) code { white-space: normal; }
+.sheet-body .data-table td br + code { margin-top: 4px; display: inline-block; }
+@media (max-width: 640px) {
+  .sheet-head { padding: var(--s-4) var(--s-4) var(--s-2); }
+  .sheet-body { padding: 0 var(--s-4) var(--s-5); }
+}

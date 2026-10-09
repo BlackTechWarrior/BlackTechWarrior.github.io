@@ -177,6 +177,15 @@
     .check-result ul { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); }
     .check-result code { font-family: var(--f-mono); }
 
+    /* Laws in the Algebra explanation sheet */
+    .law-list { margin: var(--s-2) 0 var(--s-3); }
+    .law { display: grid; grid-template-columns: 12.5rem minmax(0, 1fr); gap: var(--s-1) var(--s-4); padding: var(--s-3) 0; border-top: 1px solid var(--border-soft); }
+    .law:first-child { border-top: 0; }
+    .law-name { color: var(--ink); font-weight: 500; }
+    .law-body code { display: inline-block; margin: 0 6px 4px 0; }
+    .law-ex { font-size: 0.8125rem; color: var(--muted); }
+    @media (max-width: 640px) { .law { grid-template-columns: minmax(0, 1fr); } }
+
     /* Quine-McCluskey tables */
     .qm-cols { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 4px; }
     .qm-col { flex-shrink: 0; }
@@ -1700,6 +1709,91 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/* ────────── How this works (one sheet per steps view) ────────── */
+
+const BOOLEAN_LAWS = [
+  ['Identity law', "x·1 = x,  x + 0 = x", "A·1 = A"],
+  ['Null law', "x·0 = 0,  x + 1 = 1", "A + 1 = 1"],
+  ['Idempotent law', "x·x = x,  x + x = x", "A·B + A·B = A·B"],
+  ['Complement law', "x·x' = 0,  x + x' = 1", "A·A' = 0"],
+  ['Double negation', "x'' = x", "(A + B)'' = A + B"],
+  ['Constant complement', "0' = 1,  1' = 0", "1' = 0"],
+  ['Commutative law', "x·y = y·x,  x + y = y + x", "B·A = A·B"],
+  ['Distributive law', "x·(y + z) = x·y + x·z", "A·(B + C) = A·B + A·C"],
+  ["De Morgan's law", "(x·y)' = x' + y',  (x + y)' = x'·y'", "(A·B)' = A' + B'"],
+  ['Absorption law', "x + x·y = x,  x·(x + y) = x", "A + A·B = A"],
+  ['Simplification theorem', "x + x'·y = x + y", "A' + A·C' = A' + C'"],
+  ['Combining (adjacency)', "x·y + x·y' = x", "A·B + A·B' = A"],
+  ['Consensus theorem', "x·y + x'·z + y·z = x·y + x'·z", "A·B + A'·C + B·C = A·B + A'·C"],
+  ['XOR definition', "x ⊕ y = x·y' + x'·y", "A ⊕ B = A·B' + A'·B"],
+  ['XNOR definition', "x ⊙ y = x·y + x'·y'", "A ⊙ B = A·B + A'·B'"],
+  ['NAND definition', "x ⊼ y = (x·y)'", "A ⊼ B = (A·B)'"],
+  ['NOR definition', "x ⊽ y = (x + y)'", "A ⊽ B = (A + B)'"],
+];
+
+const OTHER_STEPS = [
+  ['Adding an implied term', 'A term whose cells are all 1 already can be added without changing F.'],
+  ['Removing a covered term', 'A term whose cells are all covered by the other terms can be removed.'],
+  ["Don't-care assignment", "A don't-care is set to 1 when a group needs it and left at 0 otherwise. This changes F only where it is unspecified."],
+  ['Sum of minterms', 'When multiplying out would take too many steps, F is read from the truth table as a sum of minterms.'],
+  ['XOR factoring', 'The XOR definition read right to left, after factoring out shared literals.'],
+];
+
+function openStepsHelp(view) {
+  if (!window.p14mSheet) return;
+  const used = state.algLaws || new Set();
+  const usedTag = (law) => used.has(law) ? ' <span class="tag">used here</span>' : '';
+  let title, html;
+
+  if (view === 'algebra') {
+    title = 'Boolean algebra simplification';
+    html = `<p>The Algebra view rewrites your expression into the minimized SOP. Each step applies one law, everywhere it fits, and shows the result.</p>
+      <h3>Order of the steps</h3>
+      <ol>
+        <li>Rewrite XOR, XNOR, NAND and NOR using AND, OR and NOT.</li>
+        <li>Move every NOT down to single variables with De Morgan's law and double negation.</li>
+        <li>Multiply out with the distributive law until the expression is a sum of products.</li>
+        <li>Shrink the sum: drop repeated and absorbed terms, combine terms that differ in one variable, and remove extra literals and consensus terms.</li>
+        <li>If the result still differs from the K-map's, add or remove terms that the rest already cover, so both answers end the same.</li>
+      </ol>
+      <p>Every step is checked against the truth table before it is shown.</p>
+      <h3>Laws</h3>
+      <div class="law-list">
+      ${BOOLEAN_LAWS.map(([law, rule, ex]) => `<div class="law"><div class="law-name">${law}${usedTag(law)}</div><div class="law-body">${rule.split(',  ').map(r => '<code>' + escapeHtml(r) + '</code>').join(' ')}<div class="law-ex">Example <code>${escapeHtml(ex)}</code></div></div></div>`).join('')}
+      </div>
+      <h3>Other steps you may see</h3>
+      <ul>${OTHER_STEPS.map(([law, what]) => `<li><strong>${law}</strong>${usedTag(law)}: ${escapeHtml(what)}</li>`).join('')}</ul>
+      <p>x, y and z stand for any expression, so a law applies to whole sub-expressions as well as single variables.</p>`;
+  } else if (view === 'qm') {
+    title = 'The Quine-McCluskey method';
+    html = `<p>Quine-McCluskey finds the same minimum SOP as a K-map, using tables instead of pictures. It works for any number of variables, which is why software uses it.</p>
+      <ol>
+        <li>Write each minterm and don't-care in binary and group them by how many 1 bits they have.</li>
+        <li>Compare each group with the next one. Two entries that differ in exactly one bit combine into one entry, with a dash in that bit. Mark both as used.</li>
+        <li>Repeat with the new column until nothing combines. Entries that were never marked are the prime implicants.</li>
+        <li>Build the prime implicant chart: one row per prime, one column per minterm. Don't-cares get no column, because they never need covering.</li>
+        <li>A column with a single mark makes that prime essential: it is the only way to cover that minterm. Take every essential prime.</li>
+        <li>Cover the minterms that are left with as few extra primes as possible. When two covers tie, the one with fewer literals wins.</li>
+      </ol>
+      <p>A dash in a pattern like <code>1-0-</code> means that variable is dropped, so <code>1-0-</code> over A, B, C, D is the term <code>A·C'</code>.</p>`;
+  } else {
+    title = 'Reading a Karnaugh map';
+    html = `<p>A K-map lays out the truth table so that cells next to each other differ in one variable. Grouping neighbours removes that variable.</p>
+      <ol>
+        <li>Rows and columns are in Gray code order (00, 01, 11, 10), so neighbouring cells differ in one bit. The edges wrap around: the left column touches the right one.</li>
+        <li>Circle groups of 1, 2, 4, 8 or more cells that hold only 1s and don't-cares. A group must be a rectangle, possibly wrapping across an edge.</li>
+        <li>Make each group as large as possible, and use as few groups as possible to cover every 1. Groups may overlap.</li>
+        <li>Each group gives one product term: keep the variables that stay the same across the group and drop the ones that change. A group of 2<sup>k</sup> cells drops k variables.</li>
+        <li>OR the product terms together to get the minimized SOP.</li>
+      </ol>
+      <h3>5 and 6 variables</h3>
+      <p>With three variables on one side, cells that differ in one variable are not always side by side. Such a group can look split into mirrored blocks. The Steps view says when a group is split.</p>
+      <h3>POS</h3>
+      <p>For the product of sums, group the 0s instead. Each group gives a sum term where a variable that stays 0 appears plain and one that stays 1 appears complemented.</p>`;
+  }
+  p14mSheet({ title, html });
+}
+
 /* ────────── Quine-McCluskey view ────────── */
 
 function renderQMSteps(result, sopExpr) {
@@ -1933,6 +2027,7 @@ function renderAlgebraSteps(result, sopExpr, xorDetected) {
   const alg = typeof BoolAlg !== 'undefined' ? BoolAlg.derive({
     ast, vars: varNames, ones, dcs, target: sopExpr || '0', xor: xorDetected ? xorDetected.expr : null,
   }) : null;
+  state.algLaws = new Set(alg ? alg.steps.map(st => st.law) : []);
   if (!alg) return '<p class="alg-end" style="margin-top:0;">Algebra steps are not available for this input.</p>';
 
   const startNote = !ast && result.ast ? 'The map was edited, so this starts from its minterms.' : alg.startNote;
@@ -2196,7 +2291,7 @@ function render() {
   if (state.showSteps) {
     const view = state.stepsView;
     let sHtml = `<div class="steps-head">
-      <div class="result-label">Steps</div>
+      <div class="result-label">Steps <button class="btn-copy" type="button" id="stepsHelpBtn">How this works</button></div>
       <div class="mode-selector" role="group" aria-label="Steps view">
         <button class="mode-btn${view === 'kmap' ? ' on' : ''}" data-steps-view="kmap" aria-pressed="${view === 'kmap'}">K-map</button>
         <button class="mode-btn${view === 'algebra' ? ' on' : ''}" data-steps-view="algebra" aria-pressed="${view === 'algebra'}" data-new-until="2026-10-21">Algebra</button>
@@ -2217,6 +2312,7 @@ function render() {
     sHtml += '</div>';
     stepsPanel.innerHTML = sHtml;
     if (window.p14mMarkNew) p14mMarkNew(stepsPanel);
+    document.getElementById('stepsHelpBtn').addEventListener('click', () => openStepsHelp(state.stepsView));
     stepsPanel.querySelectorAll('[data-steps-view]').forEach(btn => {
       btn.addEventListener('click', () => {
         state.stepsView = btn.dataset.stepsView;
