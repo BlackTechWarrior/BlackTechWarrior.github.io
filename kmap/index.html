@@ -148,6 +148,21 @@
     body.dark .steps-box .step-body code { background: rgba(255,255,255,0.08); }
     .steps-box .step-body ul { margin: 4px 0 0 0; padding-left: 18px; }
     .steps-box .step-body li { margin-bottom: 2px; }
+    .steps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .steps-head .result-label { margin: 0; }
+    .steps-head .mode-selector { margin-bottom: 0; }
+    .alg-row { display: flex; gap: 8px; font-family: var(--f-mono); font-size: 13px; line-height: 1.6; }
+    .alg-eq { color: var(--muted); flex-shrink: 0; }
+    .alg-expr { color: var(--ink); overflow-wrap: anywhere; }
+    .alg-step { margin-top: 14px; }
+    .alg-law { font-weight: 600; }
+    .alg-form { font-family: var(--f-mono); font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 8px; }
+    .alg-step .alg-row, .alg-details, .alg-note { margin-left: 20px; }
+    .alg-details { list-style: none; padding: 0; margin-top: 2px; margin-bottom: 0; font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+    .alg-details li { overflow-wrap: anywhere; }
+    .alg-note { font-size: 12px; color: var(--muted); margin-top: 4px; margin-bottom: 0; }
+    .alg-end { margin: 16px 0 0; font-size: 13px; color: var(--muted); }
+    .alg-end code { font-family: var(--f-mono); color: var(--ink); }
 
     .group-legend {
       margin-top: 15px;
@@ -187,6 +202,7 @@
     .empty-state { color: var(--muted); font-size: 0.9375rem; padding: var(--s-6) 0; }
     @media (max-width: 600px) {
       .km-cell { width: 38px; height: 38px; font-size: 14px; }
+      .alg-form { display: block; margin-left: 20px; }
     }
   </style>
 </head>
@@ -233,7 +249,7 @@
       <div class="how-to-body">
         <p>The solver builds the Karnaugh map for 2 to 6 variables, finds the prime implicant groups, and reads off the minimized SOP and POS expressions. You can also view the truth table, get the result as Verilog or VHDL, and draw the gate-level circuit.</p>
         <ul>
-          <li>Supports <strong>2&ndash;6 variables</strong>. Enter them comma-separated (e.g. <code>A, B, C, D</code>).</li>
+          <li>Supports <strong>2&ndash;6 variables</strong>. Enter them comma-separated (e.g. <code>A, B, C, D</code>). Variable names and operator words ignore case, so <code>a and b</code> matches variables <code>A, B</code>.</li>
           <li><strong>Operators are flexible.</strong> You can mix symbols and words freely:
             <code>A * B + C'</code> and <code>A and B or not C</code> are both valid, even <code>A * B or !C</code>.</li>
           <li>Multiple symbols per gate: NOT is <code>' ~ !</code>, AND is <code>. * &amp;</code>, OR is <code>+ |</code>, XOR is <code>^</code>, XNOR is <code>@</code>, NAND is <code>%</code>, NOR is <code>#</code>.</li>
@@ -242,6 +258,7 @@
           <li>Switch to <strong>Minterms/Maxterms</strong> mode to enter indices directly (e.g. <code>1, 3, 5, 7</code>).</li>
           <li>Click any cell in the K-map to toggle between <strong>0, 1, and X</strong> (don't-care). This works in <strong>all modes</strong>. Click <strong>Revert to input</strong> or re-click Generate to restore the original values.</li>
           <li>Toggle <strong>POS</strong>, <strong>Verilog</strong>, <strong>VHDL</strong>, and <strong>Steps</strong> with the buttons below Generate.</li>
+          <li><strong>Steps</strong> has two views. <strong>K-map</strong> shows how each group is read off the map. <strong>Algebra</strong> rewrites your expression into the minimized SOP one Boolean law at a time, naming each law it uses.</li>
           <li>XOR/XNOR patterns are <strong>auto-detected</strong> when the SOP can be simplified using XOR gates.</li>
         </ul>
       </div>
@@ -364,6 +381,7 @@
   <div id="toast" class="toast" style="display: none;"></div>
 
 <script src="/lib/circuit.js"></script>
+<script src="/lib/boolalg.js"></script>
 <script>
 /* ───────────────────────── helpers ───────────────────────── */
 
@@ -438,7 +456,7 @@ function tokenize(expr, varNames) {
 
     let matched = false;
     for (const v of sortedVars) {
-      if (s.substring(i, i + v.length) === v) {
+      if (s.substring(i, i + v.length).toLowerCase() === v.toLowerCase()) {
         const after = i + v.length;
         if (after >= s.length || !isAlnum(s[after])) {
           tokens.push({ type: TOKEN.VAR, name: v });
@@ -698,7 +716,23 @@ function findKmapGroups(grid, rowCodes, colCodes, targetValue = 1) {
     }
   });
 
-  return groups;
+  // Greedy picks can leave a group whose cells later groups cover; drop those, smallest first
+  const coverCount = {};
+  groups.forEach(g => g.cells.forEach(([r, c]) => {
+    const k = cellKey(r, c);
+    if (targetKeys.has(k)) coverCount[k] = (coverCount[k] || 0) + 1;
+  }));
+  const bySize = groups.map((g, i) => i).sort((a, b) => groups[a].cells.length - groups[b].cells.length);
+  const dropped = new Set();
+  for (const gi of bySize) {
+    const keys = groups[gi].cells.map(([r, c]) => cellKey(r, c)).filter(k => targetKeys.has(k));
+    if (keys.every(k => coverCount[k] > 1)) {
+      keys.forEach(k => coverCount[k]--);
+      dropped.add(gi);
+    }
+  }
+
+  return groups.filter((g, i) => !dropped.has(i));
 }
 
 /* ────────── minterm helper ────────── */
@@ -733,6 +767,7 @@ let state = {
   showVerilog: false,
   showVHDL: false,
   showSteps: false,
+  stepsView: 'kmap', // 'kmap' or 'algebra'
   showCircuit: false,
   manualOverrides: {},
   manualMode: false,
@@ -1351,7 +1386,7 @@ function generate() {
       if (/^[0-9]/.test(v)) throw new Error(`Variable "${v}" cannot start with a number`);
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(v)) throw new Error(`Invalid variable name "${v}"`);
     }
-    if (new Set(raw).size !== raw.length) throw new Error("Duplicate variable names");
+    if (new Set(raw.map(v => v.toLowerCase())).size !== raw.length) throw new Error("Duplicate variable names. Names ignore case, so a and A are the same variable.");
     const varNames = raw;
     const n = varNames.length;
     const maxVal = (1 << n) - 1;
@@ -1391,7 +1426,7 @@ function generate() {
       });
 
       const kmap = buildKmapGrid(truthTable, varNames);
-      state.result = { varNames, truthTable, kmap };
+      state.result = { varNames, truthTable, kmap, ast };
       render();
 
     } else if (state.inputMode === 'minterms') {
@@ -1622,6 +1657,51 @@ function generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetect
   return steps;
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderAlgebraSteps(result, sopExpr, xorDetected) {
+  const { varNames, truthTable } = result;
+  const edited = Object.keys(state.manualOverrides).length > 0;
+  const ast = edited ? null : result.ast;
+  const ones = [], dcs = [];
+  truthTable.forEach((row, i) => {
+    if (row.result === 1) ones.push(i);
+    else if (row.result === 'X') dcs.push(i);
+  });
+
+  const alg = typeof BoolAlg !== 'undefined' ? BoolAlg.derive({
+    ast, vars: varNames, ones, dcs, target: sopExpr || '0', xor: xorDetected ? xorDetected.expr : null,
+  }) : null;
+  if (!alg) return '<p class="alg-end" style="margin-top:0;">Algebra steps are not available for this input.</p>';
+
+  const startNote = !ast && result.ast ? 'The map was edited, so this starts from its minterms.' : alg.startNote;
+  let h = `<div class="alg-row"><span class="alg-eq">F =</span><span class="alg-expr">${escapeHtml(alg.start)}</span></div>`;
+  if (startNote) h += `<p class="alg-note" style="margin-left:0;">${escapeHtml(startNote)}</p>`;
+
+  alg.steps.forEach((s, i) => {
+    h += '<div class="alg-step">';
+    h += `<div class="alg-law"><span class="step-num">${i + 1}.</span> ${escapeHtml(s.law)}<span class="alg-form">${escapeHtml(s.form)}</span>`;
+    if (s.flag === 'dc') h += ' <span class="tag">don\'t-care</span>';
+    h += '</div>';
+    h += `<div class="alg-row"><span class="alg-eq">=</span><span class="alg-expr">${escapeHtml(s.expr)}</span></div>`;
+    if (s.details.length) h += '<ul class="alg-details">' + s.details.map(d => `<li>${escapeHtml(d)}</li>`).join('') + '</ul>';
+    if (s.note) h += `<p class="alg-note">${escapeHtml(s.note)}</p>`;
+    h += '</div>';
+  });
+
+  const target = escapeHtml(sopExpr || '0');
+  let end;
+  if (alg.note) end = escapeHtml(alg.note) + ` K-map SOP: <code>${target}</code>`;
+  else if (alg.steps.length && alg.steps[alg.steps.length - 1].law === 'XOR factoring') end = 'Matches the XOR form from the K-map.';
+  else if (!alg.steps.length && !alg.reordered) end = 'This is already the minimized SOP.';
+  else if (alg.reordered) end = `Same terms as the K-map SOP, <code>${target}</code>, in a different order.`;
+  else end = 'Matches the minimized SOP from the K-map.';
+  h += `<p class="alg-end">${end}</p>`;
+  return h;
+}
+
 function render() {
   const effectiveResult = getEffectiveResult();
 
@@ -1848,14 +1928,31 @@ function render() {
   }
 
   if (state.showSteps) {
-    const steps = generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetected);
-    let sHtml = '<div class="result-label" style="margin-top: 0;">Minimization steps</div>';
+    const view = state.stepsView;
+    let sHtml = `<div class="steps-head">
+      <div class="result-label">Steps</div>
+      <div class="mode-selector" role="group" aria-label="Steps view">
+        <button class="mode-btn${view === 'kmap' ? ' on' : ''}" data-steps-view="kmap" aria-pressed="${view === 'kmap'}">K-map</button>
+        <button class="mode-btn${view === 'algebra' ? ' on' : ''}" data-steps-view="algebra" aria-pressed="${view === 'algebra'}">Algebra</button>
+      </div>
+    </div>`;
     sHtml += '<div class="steps-box">';
-    steps.forEach((s, i) => {
-      sHtml += `<div class="step"><span class="step-num">Step ${i + 1}.</span> <span class="step-title">${s.title}</span><div class="step-body">${s.body}</div></div>`;
-    });
+    if (view === 'algebra') {
+      sHtml += renderAlgebraSteps(effectiveResult, sopExpr, xorDetected);
+    } else {
+      const steps = generateSteps(truthTable, varNames, kmap, oneGroups, sopExpr, xorDetected);
+      steps.forEach((s, i) => {
+        sHtml += `<div class="step"><span class="step-num">Step ${i + 1}.</span> <span class="step-title">${s.title}</span><div class="step-body">${s.body}</div></div>`;
+      });
+    }
     sHtml += '</div>';
     stepsPanel.innerHTML = sHtml;
+    stepsPanel.querySelectorAll('[data-steps-view]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.stepsView = btn.dataset.stepsView;
+        render();
+      });
+    });
     stepsPanel.style.display = 'block';
   } else {
     stepsPanel.style.display = 'none';

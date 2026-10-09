@@ -111,7 +111,7 @@
     <div class="how-to-body">
       <p>Type an expression and the circuit is drawn as you type. Every gate is placed by hand-written layout code: inputs on the left, output on the right, wires routed between them.</p>
       <ul>
-        <li>Gates: AND, OR, NOT, XOR, NAND, NOR and XNOR. Variables are single letters, <code>A</code> to <code>Z</code> or <code>a</code> to <code>z</code>.</li>
+        <li>Gates: AND, OR, NOT, XOR, NAND, NOR and XNOR. Variable names and operator words ignore case, so <code>a</code> and <code>A</code> are the same input.</li>
         <li>Symbols and words mix freely: <code>A * (B + C')</code> and <code>A and (B or not C)</code> draw the same circuit.</li>
         <li><strong>Natural fan-in</strong> lets a gate take as many inputs as the expression gives it. <strong>2-input only</strong> rebuilds every gate from 2-input gates, the way most gate libraries do.</li>
         <li><strong>Truth table</strong> lists every input combination and the output. <strong>Export SVG</strong> and <strong>Export PNG</strong> save the diagram as drawn.</li>
@@ -220,7 +220,8 @@ function isAlpha(ch) { return /[a-zA-Z_]/.test(ch); }
 function isAlnum(ch) { return /[a-zA-Z0-9_]/.test(ch); }
 
 function extractVars(expr) {
-  var vars = new Set(), i = 0;
+  // Names ignore case: the first spelling seen is the one shown
+  var vars = new Map(), i = 0;
   while (i < expr.length) {
     if (expr[i] === ' ' || expr[i] === '\t') { i++; continue; }
     if (SYMBOLS[expr[i]] || expr[i] === '(' || expr[i] === ')' || expr[i] === "'") {
@@ -235,10 +236,15 @@ function extractVars(expr) {
       }
     }
     if (kwMatch) continue;
-    if (isAlpha(expr[i])) { var start = i; while (i < expr.length && isAlnum(expr[i])) i++; vars.add(expr.substring(start, i)); continue; }
+    if (isAlpha(expr[i])) {
+      var start = i; while (i < expr.length && isAlnum(expr[i])) i++;
+      var name = expr.substring(start, i);
+      if (!vars.has(name.toLowerCase())) vars.set(name.toLowerCase(), name);
+      continue;
+    }
     i++;
   }
-  return [...vars].sort();
+  return [...vars.values()].sort(function(a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : a.toLowerCase() > b.toLowerCase() ? 1 : 0; });
 }
 
 function tokenize(expr, varNames) {
@@ -256,7 +262,7 @@ function tokenize(expr, varNames) {
     }
     var matched = false;
     for (var v of sortedVars) {
-      if (s.substring(i, i + v.length) === v && (i + v.length >= s.length || !isAlnum(s[i + v.length]))) {
+      if (s.substring(i, i + v.length).toLowerCase() === v.toLowerCase() && (i + v.length >= s.length || !isAlnum(s[i + v.length]))) {
         tokens.push({ type: TOKEN.VAR, name: v }); i += v.length; matched = true; break;
       }
     }
